@@ -1,0 +1,20 @@
+server:
+  port: 2025
+
+#  ==== Database PostgreSQL connection settings ====
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cambofreelance
+    username: *
+    password: *
+
+    #   ==== JDBC driver (optional, usually auto-detected) ====
+    driver-class-name: org.postgresql.Driver
+
+  #   ==== JPA/Hibernate settings ====
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
