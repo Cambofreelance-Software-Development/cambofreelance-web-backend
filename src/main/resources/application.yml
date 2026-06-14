@@ -1,0 +1,13 @@
+spring:
+  config:
+    import: "optional:configserver:http://msa-config-server:8081/"
+  application:
+    name: authentication-service
+  profiles:
+    active: local
+  cloud:
+    compatibility-verifier:
+      enabled: false
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG

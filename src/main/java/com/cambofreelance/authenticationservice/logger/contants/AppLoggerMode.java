@@ -1,0 +1,37 @@
+package com.cambofreelance.authenticationservice.logger.contants;
+
+import com.cambofreelance.authenticationservice.logger.configs.ProjectConfig;
+import java.util.Arrays;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+
+@Slf4j
+public enum AppLoggerMode {
+    FULL("FULL"),
+    PARTIAL("PARTIAL"),
+    FULL_PARTIAL("FULL_PARTIAL");
+
+    private String mode;
+
+    AppLoggerMode(String mode) {
+        this.mode = mode;
+    }
+
+    public static AppLoggerMode fromValue(String mode) {
+        if(StringUtils.isEmpty(mode)) return null;
+
+        return Arrays.stream(AppLoggerMode.values()).filter(i -> i.mode.equals(mode)).findFirst().orElse(null);
+    }
+
+    public static AppLoggerMode fromValue(String mode, AppLoggerMode type) {
+        if (StringUtils.isEmpty(mode))
+            return type;
+
+        return Arrays.stream(AppLoggerMode.values()).filter(i -> i.mode.equals(mode)).findFirst().orElse(type);
+    }
+
+    public static AppLoggerMode getFromProperty() {
+        String logModeStr = ProjectConfig.getProperty(PropertyConstant.WING_LOGGER_MODE);
+        return AppLoggerMode.fromValue(logModeStr, AppLoggerMode.FULL);
+    }
+}
