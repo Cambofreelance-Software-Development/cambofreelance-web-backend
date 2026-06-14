@@ -1,0 +1,141 @@
+server:
+  port: 26022
+
+spring:
+  application:
+    name: authentication-server
+  session:
+    store-type: none
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dev_cms_db
+    username: postgres
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    placeholder-replacement: false
+    enabled: true
+    schemas: public
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+    placeholders:
+      defaultSchema: public
+    rollback-locations: classpath:db/rollback
+  cache:
+    type: redis
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:your-email@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 30000
+      user: default
+      #      password: CF@2025
+      ssl:
+        enabled: false
+      repositories:
+        enabled: false
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 52MB
+otel:
+  exporter:
+    otlp:
+      endpoint: http://alloy.monitoring.svc.cluster.local:4317
+      protocol: grpc
+  logs:
+    exporter: none
+  metrics:
+    exporter: none
+  traces:
+    sampler:
+      probability: 1.0
+
+  service:
+    name: keycloak-authentication-server
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,refresh
+
+logging:
+  enable: true
+  includeRequest: true
+  includeRequestBody: true
+  maskLogKey: maskingKey001,maskingkey001,masking-type-002 # its type is sensitive
+  ignoreDefaultMaskingLogKey: ignoreMaskingKey001,ignoreMasking-type-002
+  includeRequestHeader: true
+  maxRequestBody: 1000 # its value is byte
+  ignoreAntMatches: /abc,/zte-ba/**,/hiding-log # this value just example
+  includeResponse: true
+  includeResponseHeader: true
+  maskResponseHeaderKey: maskingKey001,maskingkey001,masking-type-002 # its type isn't sensitive
+  includeResponseBody: true
+  maxResponseBody: 200 # its value is byte, the log size response
+
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId},%X{spanId}]"
+    console: "[%d] [%t] %-5level [${spring.application.name},%X{traceId},%X{spanId},%X{activityid}] %logger{36} - %msg%n"
+
+springdoc:
+  api-docs:
+    path: /openapi/v3/api-docs
+  packages-to-scan: com.cambofreelance.authenticationservice.controllers
+  paths-to-match: /**
+  swagger-ui:
+    path: /auth/openapi/swagger-ui.html
+
+storage:
+  redis:
+    key-response-code: cms-response-code
+
+
+cms:
+  upload:
+    dir: uploads/logos
+    base-url: /uploads/logos
+  media:
+    upload-dir: uploads/media
+    base-url: /uploads/media
+
+app-config:
+  otp-expired: 120 # OTP expired in 2 min
+  otp-limited-generate: 100 # OTP limited generate in 100 time
+  password-policy: 8
+
+applogger:
+  enabled: true
+  mode: PARTIAL
+
+authentication:
+  jwtExpiration: 1800000       # 30 minutes
+  jwtRefreshExpiration: 604800000  # 7 days
+  jwtSecret: ebe8910a-08c0-11ed-861d-0242ac120002
+
+session:
+  max-concurrent: 5
+
+oauth:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+  github:
+    client-id: ${GITHUB_CLIENT_ID:}
+    client-secret: ${GITHUB_CLIENT_SECRET:}
