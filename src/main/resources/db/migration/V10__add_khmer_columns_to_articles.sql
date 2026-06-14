@@ -1,0 +1,4 @@
+ALTER TABLE public.articles
+    ADD COLUMN IF NOT EXISTS title_kh   VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS content_kh TEXT,
+    ADD COLUMN IF NOT EXISTS excerpt_kh VARCHAR(1000);

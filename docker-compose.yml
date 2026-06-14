@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  postgres-authentication-service:
+    image: postgres:17
+    container_name: postgres-authentication-service
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: BBU@2026
+      POSTGRES_DB: uat_authentication_302B_db
+    ports:
+      - "26027:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bbu-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  authentication-service:
+    container_name: authentication-service
+    build: .
+    ports:
+      - "26010:26010"
+    depends_on:
+      postgres-authentication-service:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-authentication-service:5432/uat_authentication_302B_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: BBU@2026
+    networks:
+      - bbu-network
+    restart: always
+
+networks:
+  bbu-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,1162 @@
+{
+  "info": {
+    "name": "Authentication Service API",
+    "description": "Full API collection for the CamboFreelance authentication & CMS service.",
+    "_postman_id": "cambofreelance-auth-service-v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",     "value": "http://localhost:8080",  "type": "string" },
+    { "key": "access_token", "value": "",                        "type": "string" },
+    { "key": "refresh_token","value": "",                        "type": "string" },
+    { "key": "user_id",      "value": "",                        "type": "string" },
+    { "key": "device_id",    "value": "web-browser-001",         "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (password)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token',  json.data.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                  "  pm.collectionVariables.set('user_id',       json.data.user_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/oauth/token", "host": ["{{base_url}}"], "path": ["oauth","token"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_type\": \"password\",\n  \"username\": \"admin@cambofreelance.com\",\n  \"password\": \"Admin@1234\",\n  \"client_id\": \"cambofreelance-cms\",\n  \"client_secret\": \"secret\",\n  \"scope\": \"openid\",\n  \"application_type\": \"WEB\",\n  \"device_id\": \"{{device_id}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (refresh_token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token',  json.data.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/oauth/token", "host": ["{{base_url}}"], "path": ["oauth","token"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_type\": \"refresh_token\",\n  \"refresh_token\": \"{{refresh_token}}\",\n  \"client_id\": \"cambofreelance-cms\",\n  \"client_secret\": \"secret\",\n  \"device_id\": \"{{device_id}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Google OAuth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/oauth/token", "host": ["{{base_url}}"], "path": ["oauth","token"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_type\": \"social\",\n  \"provider\": \"google\",\n  \"code\": \"<google-auth-code>\",\n  \"redirect_uri\": \"http://localhost:3000/oauth/callback\",\n  \"client_id\": \"cambofreelance-cms\",\n  \"client_secret\": \"secret\",\n  \"device_id\": \"{{device_id}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (GitHub OAuth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/oauth/token", "host": ["{{base_url}}"], "path": ["oauth","token"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_type\": \"social\",\n  \"provider\": \"github\",\n  \"code\": \"<github-auth-code>\",\n  \"redirect_uri\": \"http://localhost:3000/oauth/callback\",\n  \"client_id\": \"cambofreelance-cms\",\n  \"client_secret\": \"secret\",\n  \"device_id\": \"{{device_id}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/oauth/register", "host": ["{{base_url}}"], "path": ["oauth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john_doe\",\n  \"phoneNumber\": \"+85512345678\",\n  \"email\": \"john@example.com\",\n  \"password\": \"Password@123\",\n  \"confirmPassword\": \"Password@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/oauth/forgot-password", "host": ["{{base_url}}"], "path": ["oauth","forgot-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/oauth/reset-password", "host": ["{{base_url}}"], "path": ["oauth","reset-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassword@123\",\n  \"confirmPassword\": \"NewPassword@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" },
+              { "key": "Device-Id",     "value": "{{device_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/oauth/logout", "host": ["{{base_url}}"], "path": ["oauth","logout"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Public Articles",
+      "item": [
+        {
+          "name": "List Published Articles",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/articles?type=BLOGS&search=&page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["articles"],
+              "query": [
+                { "key": "type",   "value": "BLOGS",   "description": "NEWS | PROMOTIONS | BLOGS | ANNOUNCEMENTS | SERVICE | TEAM | COURSE | PRODUCTS | TUTORIAL" },
+                { "key": "search", "value": "",         "disabled": true },
+                { "key": "page",   "value": "0" },
+                { "key": "size",   "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Article by ID (public)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/articles/:id", "host": ["{{base_url}}"], "path": ["articles",":id"], "variable": [{ "key": "id", "value": "article-uuid-here" }] }
+          }
+        },
+        {
+          "name": "Get Article by Slug",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/articles/slug/:slug", "host": ["{{base_url}}"], "path": ["articles","slug",":slug"], "variable": [{ "key": "slug", "value": "my-first-blog-post" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "CMS – Articles",
+      "item": [
+        {
+          "name": "List Articles (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cms/articles?type=BLOGS&workflowStatus=DRAFT&authorId=&search=&page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["cms","articles"],
+              "query": [
+                { "key": "type",           "value": "BLOGS",  "disabled": true },
+                { "key": "workflowStatus", "value": "DRAFT",  "description": "DRAFT | PUBLISHED | ARCHIVED", "disabled": true },
+                { "key": "authorId",       "value": "",        "disabled": true },
+                { "key": "search",         "value": "",        "disabled": true },
+                { "key": "page",           "value": "0" },
+                { "key": "size",           "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Article by ID (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/articles/:id", "host": ["{{base_url}}"], "path": ["cms","articles",":id"], "variable": [{ "key": "id", "value": "article-uuid-here" }] }
+          }
+        },
+        {
+          "name": "Create Article",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/articles", "host": ["{{base_url}}"], "path": ["cms","articles"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Getting Started with Spring Boot\",\n  \"content\": \"<p>Full article content here...</p>\",\n  \"excerpt\": \"A quick intro to Spring Boot.\",\n  \"titleKh\": \"ការចាប់ផ្ដើមជាមួយ Spring Boot\",\n  \"contentKh\": \"<p>ខ្លឹមសារទាំងអស់នៅទីនេះ...</p>\",\n  \"excerptKh\": \"សៀវភៅណែនាំខ្លី Spring Boot\",\n  \"type\": \"BLOGS\",\n  \"featuredImageId\": null,\n  \"attachmentIds\": [],\n  \"authorId\": null,\n  \"authorName\": \"John Doe\",\n  \"tags\": [\"spring\", \"java\", \"backend\"],\n  \"publishedAt\": null,\n  \"sortOrder\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Article",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/articles/:id", "host": ["{{base_url}}"], "path": ["cms","articles",":id"], "variable": [{ "key": "id", "value": "article-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated: Getting Started with Spring Boot\",\n  \"content\": \"<p>Updated content...</p>\",\n  \"excerpt\": \"Updated excerpt.\",\n  \"titleKh\": \"ធ្វើបច្ចុប្បន្នភាព: ការចាប់ផ្ដើមជាមួយ Spring Boot\",\n  \"contentKh\": \"<p>ខ្លឹមសារធ្វើបច្ចុប្បន្នភាព...</p>\",\n  \"excerptKh\": \"ការស្ដែងខ្លីធ្វើបច្ចុប្បន្នភាព\",\n  \"type\": \"BLOGS\",\n  \"featuredImageId\": null,\n  \"attachmentIds\": [],\n  \"authorId\": null,\n  \"authorName\": \"John Doe\",\n  \"tags\": [\"spring\", \"java\"],\n  \"publishedAt\": null,\n  \"sortOrder\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Article Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/articles/:id/status", "host": ["{{base_url}}"], "path": ["cms","articles",":id","status"], "variable": [{ "key": "id", "value": "article-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Copy Article",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/articles/:id/copy", "host": ["{{base_url}}"], "path": ["cms","articles",":id","copy"], "variable": [{ "key": "id", "value": "article-uuid-here" }] }
+          }
+        },
+        {
+          "name": "Delete Article",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/articles/:id", "host": ["{{base_url}}"], "path": ["cms","articles",":id"], "variable": [{ "key": "id", "value": "article-uuid-here" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "CMS – Article Types",
+      "item": [
+        {
+          "name": "List Article Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/article-types", "host": ["{{base_url}}"], "path": ["cms","article-types"] }
+          }
+        },
+        {
+          "name": "Create Article Type",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/article-types", "host": ["{{base_url}}"], "path": ["cms","article-types"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"TIPS\",\n  \"label\": \"Tips & Tricks\",\n  \"labelKh\": \"គន្លឹះ និងល្បិចនានា\",\n  \"sortOrder\": 10\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Article Type",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/article-types/:id", "host": ["{{base_url}}"], "path": ["cms","article-types",":id"], "variable": [{ "key": "id", "value": "type-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"TIPS\",\n  \"label\": \"Tips & Tricks (Updated)\",\n  \"labelKh\": \"គន្លឹះ និងល្បិចនានា\",\n  \"sortOrder\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Article Type",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/article-types/:id", "host": ["{{base_url}}"], "path": ["cms","article-types",":id"], "variable": [{ "key": "id", "value": "type-uuid-here" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?search=&status=ACT&roleId=&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "status", "value": "ACT", "description": "ACT | DEL", "disabled": true },
+                { "key": "roleId", "value": "", "disabled": true },
+                { "key": "page",   "value": "0" },
+                { "key": "size",   "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create User (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"jane_doe\",\n  \"email\": \"jane@example.com\",\n  \"phoneNumber\": \"+85598765432\",\n  \"password\": \"Password@123\",\n  \"userType\": \"ADMIN\",\n  \"roleIds\": [\"role-uuid-here\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Update User (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/users/:userId", "host": ["{{base_url}}"], "path": ["users",":userId"], "variable": [{ "key": "userId", "value": "user-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"jane_doe_updated\",\n  \"email\": \"jane.updated@example.com\",\n  \"phoneNumber\": \"+85598765432\",\n  \"userType\": \"ADMIN\",\n  \"roleIds\": [\"role-uuid-here\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/users/:userId/status", "host": ["{{base_url}}"], "path": ["users",":userId","status"], "variable": [{ "key": "userId", "value": "user-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACT\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete User (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/users/:userId", "host": ["{{base_url}}"], "path": ["users",":userId"], "variable": [{ "key": "userId", "value": "user-uuid-here" }] }
+          }
+        },
+        {
+          "name": "List All Roles (dropdown)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/roles", "host": ["{{base_url}}"], "path": ["roles"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Current User",
+      "item": [
+        {
+          "name": "Get My Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/permissions", "host": ["{{base_url}}"], "path": ["user","permissions"] }
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/profile", "host": ["{{base_url}}"], "path": ["user","profile"] }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/profile", "host": ["{{base_url}}"], "path": ["user","profile"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john_doe_updated\",\n  \"email\": \"john.updated@example.com\",\n  \"phone_number\": \"+85512345678\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/password", "host": ["{{base_url}}"], "path": ["user","password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"OldPassword@123\",\n  \"new_password\": \"NewPassword@456\",\n  \"confirm_password\": \"NewPassword@456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/preferences", "host": ["{{base_url}}"], "path": ["user","preferences"] }
+          }
+        },
+        {
+          "name": "Save My Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/preferences", "host": ["{{base_url}}"], "path": ["user","preferences"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"theme\": \"dark\",\n  \"color\": {\n    \"primary\": \"#6366f1\",\n    \"secondary\": \"#8b5cf6\",\n    \"accent\": \"#06b6d4\"\n  },\n  \"layout\": {\n    \"sidebarCollapsed\": false,\n    \"navStyle\": \"sidebar\",\n    \"menuPosition\": \"left\",\n    \"compactMode\": false\n  },\n  \"accessibility\": {\n    \"fontSize\": \"medium\",\n    \"highContrast\": false,\n    \"reducedMotion\": false,\n    \"screenReader\": false\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Sessions (Self)",
+      "item": [
+        {
+          "name": "Get My Active Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" },
+              { "key": "Device-Id",     "value": "{{device_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/sessions", "host": ["{{base_url}}"], "path": ["user","sessions"] }
+          }
+        },
+        {
+          "name": "Revoke a Session",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/sessions/:sessionId", "host": ["{{base_url}}"], "path": ["user","sessions",":sessionId"], "variable": [{ "key": "sessionId", "value": "session-uuid-here" }] }
+          }
+        },
+        {
+          "name": "Revoke All Other Sessions",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" },
+              { "key": "Device-Id",     "value": "{{device_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/sessions", "host": ["{{base_url}}"], "path": ["user","sessions"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "CMS – Sessions (Admin)",
+      "item": [
+        {
+          "name": "Get User Sessions (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/users/:userId/sessions", "host": ["{{base_url}}"], "path": ["cms","users",":userId","sessions"], "variable": [{ "key": "userId", "value": "user-uuid-here" }] }
+          }
+        },
+        {
+          "name": "Revoke Session (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/users/:userId/sessions/:sessionId", "host": ["{{base_url}}"], "path": ["cms","users",":userId","sessions",":sessionId"], "variable": [{ "key": "userId", "value": "user-uuid-here" }, { "key": "sessionId", "value": "session-uuid-here" }] }
+          }
+        },
+        {
+          "name": "Revoke All Sessions (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/users/:userId/sessions", "host": ["{{base_url}}"], "path": ["cms","users",":userId","sessions"], "variable": [{ "key": "userId", "value": "user-uuid-here" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "CMS – Roles",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cms/roles?search=&status=ACT&level=&page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["cms","roles"],
+              "query": [
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "status", "value": "ACT", "disabled": true },
+                { "key": "level",  "value": "", "disabled": true },
+                { "key": "page",   "value": "0" },
+                { "key": "size",   "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/roles/:id", "host": ["{{base_url}}"], "path": ["cms","roles",":id"], "variable": [{ "key": "id", "value": "role-uuid-here" }] }
+          }
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/roles", "host": ["{{base_url}}"], "path": ["cms","roles"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"EDITOR\",\n  \"name\": \"Editor\",\n  \"convention\": \"Can create and edit articles\",\n  \"level\": 2,\n  \"description\": \"Content editor with limited admin access\",\n  \"permissionIds\": [\"permission-uuid-1\", \"permission-uuid-2\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/roles/:id", "host": ["{{base_url}}"], "path": ["cms","roles",":id"], "variable": [{ "key": "id", "value": "role-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"EDITOR\",\n  \"name\": \"Senior Editor\",\n  \"convention\": \"Can create, edit and publish articles\",\n  \"level\": 3,\n  \"description\": \"Senior content editor\",\n  \"permissionIds\": [\"permission-uuid-1\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Toggle Role Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/roles/:id/status", "host": ["{{base_url}}"], "path": ["cms","roles",":id","status"], "variable": [{ "key": "id", "value": "role-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACT\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Clone Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/roles/:id/clone", "host": ["{{base_url}}"], "path": ["cms","roles",":id","clone"], "variable": [{ "key": "id", "value": "role-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"EDITOR_COPY\",\n  \"name\": \"Editor (Copy)\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Assign Permissions to Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/roles/:id/permissions", "host": ["{{base_url}}"], "path": ["cms","roles",":id","permissions"], "variable": [{ "key": "id", "value": "role-uuid-here" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "[\"permission-uuid-1\", \"permission-uuid-2\", \"permission-uuid-3\"]"
+            }
+          }
+        },
+        {
+          "name": "List All Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/roles/permissions", "host": ["{{base_url}}"], "path": ["cms","roles","permissions"] }
+          }
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/roles/:id", "host": ["{{base_url}}"], "path": ["cms","roles",":id"], "variable": [{ "key": "id", "value": "role-uuid-here" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Media",
+      "item": [
+        {
+          "name": "Get Presigned Upload URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "User-Id",       "value": "{{user_id}}" }
+            ],
+            "url": { "raw": "{{base_url}}/media/presign", "host": ["{{base_url}}"], "path": ["media","presign"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileName\": \"hero-banner.jpg\",\n  \"mimeType\": \"image/jpeg\",\n  \"fileSize\": 204800\n}"
+            }
+          }
+        },
+        {
+          "name": "Confirm Upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/media/confirm/:id", "host": ["{{base_url}}"], "path": ["media","confirm",":id"], "variable": [{ "key": "id", "value": "media-uuid-here" }] }
+          }
+        },
+        {
+          "name": "List Media",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/media?mediaType=IMAGE&search=&page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["media"],
+              "query": [
+                { "key": "mediaType", "value": "IMAGE", "description": "IMAGE | VIDEO | DOCUMENT", "disabled": true },
+                { "key": "search",    "value": "", "disabled": true },
+                { "key": "page",      "value": "0" },
+                { "key": "size",      "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Media by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/media/:id", "host": ["{{base_url}}"], "path": ["media",":id"], "variable": [{ "key": "id", "value": "media-uuid-here" }] }
+          }
+        },
+        {
+          "name": "View/Stream File (public)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/media/:id/view", "host": ["{{base_url}}"], "path": ["media",":id","view"], "variable": [{ "key": "id", "value": "media-uuid-here" }] }
+          }
+        },
+        {
+          "name": "Delete Media",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/media/:id", "host": ["{{base_url}}"], "path": ["media",":id"], "variable": [{ "key": "id", "value": "media-uuid-here" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "CMS – Audit Logs",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cms/audit-logs?userId=&action=&module=&search=&dateFrom=2026-01-01&dateTo=2026-12-31&page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["cms","audit-logs"],
+              "query": [
+                { "key": "userId",   "value": "", "disabled": true },
+                { "key": "action",   "value": "", "disabled": true },
+                { "key": "module",   "value": "", "disabled": true },
+                { "key": "search",   "value": "", "disabled": true },
+                { "key": "dateFrom", "value": "2026-01-01", "disabled": true },
+                { "key": "dateTo",   "value": "2026-12-31", "disabled": true },
+                { "key": "page",     "value": "0" },
+                { "key": "size",     "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Purge Old Audit Logs",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cms/audit-logs/purge?days=90",
+              "host": ["{{base_url}}"],
+              "path": ["cms","audit-logs","purge"],
+              "query": [
+                { "key": "days", "value": "90", "description": "Delete logs older than N days (default 90)" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "CMS – Settings",
+      "item": [
+        {
+          "name": "Get General Settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/cms/settings/general", "host": ["{{base_url}}"], "path": ["cms","settings","general"] }
+          }
+        },
+        {
+          "name": "Update General Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/settings/general", "host": ["{{base_url}}"], "path": ["cms","settings","general"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"siteName\": \"CamboFreelance\",\n  \"environment\": \"DEV\",\n  \"defaultLanguage\": \"EN\",\n  \"timeZone\": \"Asia/Phnom_Penh\",\n  \"siteLogo\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload Logo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/settings/logo", "host": ["{{base_url}}"], "path": ["cms","settings","logo"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "/path/to/logo.png" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get SEO Settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/cms/settings/seo", "host": ["{{base_url}}"], "path": ["cms","settings","seo"] }
+          }
+        },
+        {
+          "name": "Update SEO Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/settings/seo", "host": ["{{base_url}}"], "path": ["cms","settings","seo"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"CamboFreelance – Freelance Platform for Cambodia\",\n  \"description\": \"Find and hire top Cambodian freelancers for any project.\",\n  \"keywords\": \"freelance, cambodia, hire, developer\",\n  \"canonicalUrl\": \"https://cambofreelance.com\",\n  \"robots\": \"index, follow\",\n  \"ogTitle\": \"CamboFreelance\",\n  \"ogDescription\": \"Top freelance platform in Cambodia\",\n  \"ogImage\": \"https://cambofreelance.com/og-image.png\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get CDN Settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/cms/settings/cdn", "host": ["{{base_url}}"], "path": ["cms","settings","cdn"] }
+          }
+        },
+        {
+          "name": "Update CDN Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/settings/cdn", "host": ["{{base_url}}"], "path": ["cms","settings","cdn"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"provider\": \"cloudflare\",\n  \"baseUrl\": \"https://cdn.cambofreelance.com\",\n  \"customDomain\": \"media.cambofreelance.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Storage Settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/cms/settings/storage", "host": ["{{base_url}}"], "path": ["cms","settings","storage"] }
+          }
+        },
+        {
+          "name": "Update Storage Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/settings/storage", "host": ["{{base_url}}"], "path": ["cms","settings","storage"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"MINIO\",\n  \"bucket\": \"cambofreelance-media\",\n  \"accessKey\": \"minioadmin\",\n  \"secretKey\": \"minioadmin\",\n  \"endpoint\": \"http://localhost:9000\",\n  \"region\": \"ap-southeast-1\",\n  \"publicUrl\": \"http://localhost:9000/cambofreelance-media\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Setup Storage CORS",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/cms/settings/storage/setup-cors?origins=https://cambofreelance.com&origins=http://localhost:3000",
+              "host": ["{{base_url}}"],
+              "path": ["cms","settings","storage","setup-cors"],
+              "query": [
+                { "key": "origins", "value": "https://cambofreelance.com" },
+                { "key": "origins", "value": "http://localhost:3000" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Public Site Config (public)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/cms/settings/public", "host": ["{{base_url}}"], "path": ["cms","settings","public"] }
+          }
+        },
+        {
+          "name": "Get Site Stats (public)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/cms/settings/stats", "host": ["{{base_url}}"], "path": ["cms","settings","stats"] }
+          }
+        },
+        {
+          "name": "Update Site Stats",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/settings/stats", "host": ["{{base_url}}"], "path": ["cms","settings","stats"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectsCompleted\": 150,\n  \"happyClients\": 120,\n  \"clientSatisfaction\": 98\n}"
+            }
+          }
+        },
+        {
+          "name": "Get IP Whitelist",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/cms/settings/ip-whitelist", "host": ["{{base_url}}"], "path": ["cms","settings","ip-whitelist"] }
+          }
+        },
+        {
+          "name": "Update IP Whitelist",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/settings/ip-whitelist", "host": ["{{base_url}}"], "path": ["cms","settings","ip-whitelist"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"rules\": [\n    \"192.168.1.1\",\n    \"10.0.0.0/24\",\n    \"203.0.113.0/24\"\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "CMS – Response Codes",
+      "item": [
+        {
+          "name": "List Response Codes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/cms/response-codes?search=&type=&status=ACT&serviceType=&page=0&size=20",
+              "host": ["{{base_url}}"], "path": ["cms","response-codes"],
+              "query": [
+                { "key": "search",      "value": "",    "disabled": true },
+                { "key": "type",        "value": "",    "description": "SUC | ERR", "disabled": true },
+                { "key": "status",      "value": "ACT", "description": "ACT | DEL" },
+                { "key": "serviceType", "value": "",    "disabled": true },
+                { "key": "page",        "value": "0" },
+                { "key": "size",        "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Response Code by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/cms/response-codes/:id", "host": ["{{base_url}}"], "path": ["cms","response-codes",":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Create Response Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/response-codes", "host": ["{{base_url}}"], "path": ["cms","response-codes"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SUC-00099\",\n  \"description\": \"Custom success response\",\n  \"httpStatus\": \"200\",\n  \"key\": \"MESSAGE\",\n  \"type\": \"SUC\",\n  \"messageEn\": \"Operation completed successfully\",\n  \"messageKm\": \"ប្រតិបត្តិការបានបញ្ចប់ដោយជោគជ័យ\",\n  \"messageCn\": \"操作成功完成\",\n  \"serviceType\": \"ALL\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Response Code",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/cms/response-codes/:id", "host": ["{{base_url}}"], "path": ["cms","response-codes",":id"], "variable": [{ "key": "id", "value": "1" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SUC-00099\",\n  \"description\": \"Updated description\",\n  \"httpStatus\": \"200\",\n  \"key\": \"MESSAGE\",\n  \"type\": \"SUC\",\n  \"messageEn\": \"Updated success message\",\n  \"messageKm\": \"សារជោគជ័យធ្វើបច្ចុប្បន្នភាព\",\n  \"messageCn\": \"更新成功消息\",\n  \"serviceType\": \"ALL\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Response Code",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/cms/response-codes/:id", "host": ["{{base_url}}"], "path": ["cms","response-codes",":id"], "variable": [{ "key": "id", "value": "1" }] }
+          }
+        },
+        {
+          "name": "Reload Cache",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/cms/response-codes/reload-cache", "host": ["{{base_url}}"], "path": ["cms","response-codes","reload-cache"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Public – Contact",
+      "item": [
+        {
+          "name": "Submit Contact Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/contact", "host": ["{{base_url}}"], "path": ["contact"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Dinsaren Khun\",\n  \"email\": \"dinsarenkh@gmail.com\",\n  \"subject\": \"Partnership Inquiry\",\n  \"message\": \"Hello, I would like to discuss a potential partnership opportunity with your team.\"\n}"
+            }
+          }
+        }
+      ]
+    }
+
+  ]
+}
