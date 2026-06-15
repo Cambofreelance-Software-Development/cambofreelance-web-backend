@@ -10,7 +10,7 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
       - redis-data:/data
     ports:
-      - "6380:6379"
+      - "6379:6379"
     networks:
       - bbu-network
     healthcheck:

@@ -48,6 +48,7 @@ spring:
         enabled: false
       repositories:
         enabled: false
+      password: BBU@2026
   servlet:
     multipart:
       enabled: true
