@@ -11,9 +11,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class UpdateProfileRequest {
 
-    @JsonProperty("username")
-    private String username;
-
     @Email(message = "Email format is invalid")
     @JsonProperty("email")
     private String email;

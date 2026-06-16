@@ -231,6 +231,7 @@ public class UserServiceImpl implements UserService {
             .phoneNumber(user.getPhoneNumber())
             .userType(user.getUserType())
             .status(user.getStatus())
+            .tenantId(user.getTenantId())
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -287,7 +288,8 @@ public class UserServiceImpl implements UserService {
             .collect(Collectors.toList());
     }
 
-    private UserProfileResponse toProfileResponse(UserEntity user) {
+    @Override
+    public UserProfileResponse toProfileResponse(UserEntity user) {
         List<UserProfileResponse.RoleItem> roles = user.getRoles().stream()
             .map(r -> UserProfileResponse.RoleItem.builder()
                 .roleId(r.getId())
@@ -302,6 +304,7 @@ public class UserServiceImpl implements UserService {
             .phoneNumber(user.getPhoneNumber())
             .userType(user.getUserType())
             .status(user.getStatus())
+            .tenantId(user.getTenantId())
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -342,12 +345,6 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse updateProfile(String userId, UpdateProfileRequest request) throws AppException {
         UserEntity user = userRepository.findById(userId)
             .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "User not found"));
-
-        if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
-            userRepository.findByUsernameAndStatus(request.getUsername(), Constants.STATUS_ACTIVE)
-                .ifPresent(u -> { throw new AppException(ErrorCode.USERNAME_ALREADY_EXIST, "Username already taken"); });
-            user.setUsername(request.getUsername());
-        }
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             userRepository.findByEmailAndStatus(request.getEmail(), Constants.STATUS_ACTIVE)
@@ -391,6 +388,7 @@ public class UserServiceImpl implements UserService {
         ));
         user.setUserType(StringUtils.hasText(request.getUserType()) ? request.getUserType() : Constants.USER);
         user.setStatus(Constants.STATUS_ACTIVE);
+        user.setTenantId(request.getTenantId());
 
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
             Set<RoleEntity> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
@@ -428,6 +426,9 @@ public class UserServiceImpl implements UserService {
         }
         if (StringUtils.hasText(request.getPassword())) {
             user.setPassword(bCryptPasswordEncoder.encode(request.getPassword()));
+        }
+        if (request.getTenantId() != null) {
+            user.setTenantId(request.getTenantId());
         }
         if (request.getRoleIds() != null) {
             Set<RoleEntity> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
