@@ -1,6 +1,6 @@
 spring:
   config:
-    import: "optional:configserver:http://msa-config-server:8081/"
+    import: "optional:configserver:http://svc-msa-config-server:8081/"
   application:
     name: cms-service
   profiles:
