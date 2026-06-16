@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.configs;
 
 import com.cambofreelance.webbackend.filters.AuthTokenFilter;
 import com.cambofreelance.webbackend.filters.IpWhitelistFilter;
+import com.cambofreelance.webbackend.filters.TenantSchemaContextFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,7 @@ public class SecurityConfig {
 
     private final AuthTokenFilter authTokenFilter;
     private final IpWhitelistFilter ipWhitelistFilter;
+    private final TenantSchemaContextFilter tenantSchemaContextFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
@@ -47,12 +49,15 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/cms/settings/public"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/forgot-password"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/reset-password"),
-                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/contact")
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/contact"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/tenants/register"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/packages/active")
                 ).permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(ipWhitelistFilter, AuthTokenFilter.class)
+            .addFilterAfter(tenantSchemaContextFilter, AuthTokenFilter.class)
             .exceptionHandling(ex ->
                 ex.authenticationEntryPoint(customAuthenticationEntryPoint)
             );
@@ -73,6 +78,14 @@ public class SecurityConfig {
     public FilterRegistrationBean<IpWhitelistFilter> ipWhitelistFilterRegistration(
         IpWhitelistFilter filter) {
         FilterRegistrationBean<IpWhitelistFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<TenantSchemaContextFilter> tenantSchemaContextFilterRegistration(
+        TenantSchemaContextFilter filter) {
+        FilterRegistrationBean<TenantSchemaContextFilter> registration = new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);
         return registration;
     }

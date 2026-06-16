@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,7 @@ public class OAuthAuthenticator {
     private final SocialAuthService socialAuthService;
     private final UserAgentParser userAgentParser;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TenantService tenantService;
 
     @Value("${authentication.jwtExpiration}")
     private long jwtExpirationMs;
@@ -59,6 +61,7 @@ public class OAuthAuthenticator {
             if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
                 throw new AppException(ErrorCode.UNAUTHORIZED, "Invalid credentials");
             }
+            checkTenantStatus(user);
 
             // New device detection
             boolean isKnownDevice = refreshTokenRepository.existsByUserIdAndDeviceId(
@@ -109,6 +112,7 @@ public class OAuthAuthenticator {
             if (user == null) {
                 throw new AppException(ErrorCode.UNAUTHORIZED, "User not found");
             }
+            checkTenantStatus(user);
 
             // revoke the old access token from Redis
             tokenRedisCache.revokeAccessToken(existingRefresh.getAccessToken());
@@ -137,6 +141,7 @@ public class OAuthAuthenticator {
                 request.getProvider(), request.getCode(), request.getRedirectUri());
 
             UserEntity user = userService.findOrCreateSocialUser(info);
+            checkTenantStatus(user);
 
             SessionMetadataDto metadata = buildSessionMetadata(httpRequest, true);
 
@@ -191,8 +196,16 @@ public class OAuthAuthenticator {
             .deviceId(deviceId)
             .applicationId(user.getApplicationId())
             .userType(user.getUserType())
+            .tenantId(user.getTenantId())
             .status(Constants.STATUS_ACTIVE)
             .permissions(userService.getPermissionCodes(user.getUserId()))
             .build();
+    }
+
+    /** Blocks login when the user's tenant is suspended or its subscription has expired. */
+    private void checkTenantStatus(UserEntity user) {
+        if (StringUtils.hasText(user.getTenantId())) {
+            tenantService.assertActiveForLogin(user.getTenantId());
+        }
     }
 }

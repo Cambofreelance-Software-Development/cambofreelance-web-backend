@@ -166,8 +166,12 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
         ErrorResponse errorResponse = buildErrorResponse(message);
         BaseResponse<ErrorResponse> baseResponse =
                 buildBaseResponse(ex.getErrorCode(), errorResponse, i18Message);
-        int httpStatus = Strings.isEmpty(errorResponse.getHttpStatus()) ? 200
-                : Integer.parseInt(errorResponse.getHttpStatus());
+        // Only registered response codes carry an explicit httpStatus; ad-hoc AppException
+        // codes (the common case) must fall back to the exception's own status (default 400),
+        // never silently to 200 — otherwise the client treats a failed request as a success.
+        HttpStatus httpStatus = Strings.isEmpty(errorResponse.getHttpStatus())
+                ? ex.getHttpStatus()
+                : HttpStatus.valueOf(Integer.parseInt(errorResponse.getHttpStatus()));
         return ResponseEntity.status(httpStatus).body(baseResponse);
     }
 

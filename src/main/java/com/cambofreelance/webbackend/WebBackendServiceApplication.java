@@ -6,11 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(
     scanBasePackages = "com.cambofreelance.webbackend",
     exclude = UserDetailsServiceAutoConfiguration.class
 )
+@EnableScheduling
 @Slf4j
 public class WebBackendServiceApplication {
     private final Startup startup;

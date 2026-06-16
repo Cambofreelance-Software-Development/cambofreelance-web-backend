@@ -53,6 +53,8 @@ public interface UserService {
 
     Set<String> getPermissionCodes(String userId);
 
+    UserProfileResponse toProfileResponse(UserEntity user);
+
     /** Generates a 6-digit OTP stored in Redis and returns it (dev mode — no email). */
     String forgotPassword(ForgotPasswordRequest request) throws AppException;
 

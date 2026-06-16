@@ -30,4 +30,7 @@ public class AdminUserUpdateRequest {
 
     @JsonProperty("roleIds")
     private List<String> roleIds;
+
+    @JsonProperty("tenantId")
+    private String tenantId;
 }

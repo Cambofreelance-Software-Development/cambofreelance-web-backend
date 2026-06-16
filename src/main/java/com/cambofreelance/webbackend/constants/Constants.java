@@ -12,6 +12,9 @@ public final class Constants {
     public static final String STATUS_LEAVE = "LEA";
     public static final String STATUS_DELETE = "DEL";
     public static final String STATUS_INIT = "INT";
+    public static final String STATUS_SUSPENDED = "SUS";
+    public static final String STATUS_EXPIRED = "EXP";
+    public static final String STATUS_PENDING = "PEN";
     public static final String MENU = "MENU";
     public static final String MENUS = "MENUS";
     public static final String PROMOTION = "PROMOTION";
@@ -69,6 +72,7 @@ public final class Constants {
     public static final String DEVICE_ID = "Device-Id";
     public static final String USER_ID = "User-Id";
     public static final String CLIENT_USER_NAME = "User-Name";
+    public static final String TENANT_ID = "Tenant-Id";
 
     public static final String REDIS_ACCESS_TOKEN_PREFIX = "AUTH:ACCESS:";
     public static final String REDIS_REFRESH_TOKEN_PREFIX = "AUTH:REFRESH:";

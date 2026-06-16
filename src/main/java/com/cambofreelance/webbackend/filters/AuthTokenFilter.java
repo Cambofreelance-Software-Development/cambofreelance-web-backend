@@ -1,5 +1,6 @@
 package com.cambofreelance.webbackend.filters;
 
+import com.cambofreelance.webbackend.caches.ApiUsageRedisCache;
 import com.cambofreelance.webbackend.caches.TokenRedisCache;
 import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.dto.TokenCacheDto;
@@ -30,6 +31,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private final TokenRedisCache tokenRedisCache;
     private final JwtUtils jwtUtils;
     private final ObjectMapper objectMapper;
+    private final ApiUsageRedisCache apiUsageRedisCache;
 
     @Override
     protected void doFilterInternal(
@@ -63,6 +65,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             var authentication = new UsernamePasswordAuthenticationToken(
                 cached.getUserId(), null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            apiUsageRedisCache.increment(cached.getTenantId());
 
             MutableHttpServletRequest mutableRequest = new MutableHttpServletRequest(request);
             mutableRequest.putHeader(Constants.USER_ID, Optional.ofNullable(cached.getUserId()).orElse(""));
@@ -70,6 +73,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             mutableRequest.putHeader(Constants.DEVICE_ID, Optional.ofNullable(cached.getDeviceId()).orElse(""));
             mutableRequest.putHeader(Constants.APPLICATION_TYPE, Optional.ofNullable(cached.getApplicationId()).orElse(""));
             mutableRequest.putHeader(Constants.USER_TYPE, Optional.ofNullable(cached.getUserType()).orElse(""));
+            mutableRequest.putHeader(Constants.TENANT_ID, Optional.ofNullable(cached.getTenantId()).orElse(""));
             mutableRequest.putHeader("X-Client-Ip", extractClientIp(request));
 
             filterChain.doFilter(mutableRequest, response);

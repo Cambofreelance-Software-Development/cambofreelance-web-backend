@@ -58,6 +58,9 @@ public class TenantResponse {
     @JsonProperty("status")
     private String status;
 
+    @JsonProperty("rejectionReason")
+    private String rejectionReason;
+
     @JsonProperty("createdAt")
     private Date createdAt;
 
@@ -82,6 +85,7 @@ public class TenantResponse {
             .planStartDate(e.getPlanStartDate())
             .planExpiredDate(e.getPlanExpiredDate())
             .status(e.getStatus())
+            .rejectionReason(e.getRejectionReason())
             .createdAt(e.getCreatedAt())
             .updatedAt(e.getUpdatedAt())
             .build();

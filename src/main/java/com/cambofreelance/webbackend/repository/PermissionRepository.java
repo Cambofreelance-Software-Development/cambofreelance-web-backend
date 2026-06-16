@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PermissionRepository extends JpaRepository<PermissionEntity, String> {
     List<PermissionEntity> findAllByOrderBySortOrderAsc();
+
+    List<PermissionEntity> findAllByCodeIn(List<String> codes);
 }

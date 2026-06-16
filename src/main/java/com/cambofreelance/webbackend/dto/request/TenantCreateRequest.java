@@ -1,8 +1,6 @@
 package com.cambofreelance.webbackend.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
-import java.util.Date;
 import lombok.Data;
 
 @Data
@@ -34,10 +32,4 @@ public class TenantCreateRequest {
     private String companyPhone;
 
     private String website;
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private Date planStartDate;
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private Date planExpiredDate;
 }

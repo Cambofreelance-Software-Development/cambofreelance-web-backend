@@ -47,6 +47,9 @@ public class UserEntity extends BaseEntity implements Serializable {
     @Column(name = "APPLICATION_ID")
     private String applicationId;
 
+    @Column(name = "TENANT_ID")
+    private String tenantId;
+
     @Column(name = "USER_TYPE")
     private String userType;
 

@@ -21,6 +21,7 @@ public class TokenCacheDto implements Serializable {
     private String deviceId;
     private String applicationId;
     private String userType;
+    private String tenantId;
     private String status;
 
     /** Permission codes collected from all active roles at login time (e.g. "users.view"). */

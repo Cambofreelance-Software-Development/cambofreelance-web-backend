@@ -178,6 +178,7 @@ public class RefreshTokenService {
             .deviceId(deviceId)
             .applicationId(user.getApplicationId())
             .userType(user.getUserType())
+            .tenantId(user.getTenantId())
             .status(Constants.STATUS_ACTIVE)
             .build();
     }

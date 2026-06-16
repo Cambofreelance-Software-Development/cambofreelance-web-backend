@@ -5,6 +5,7 @@ import com.cambofreelance.webbackend.dto.request.TenantUpdateRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
 import com.cambofreelance.webbackend.services.TenantService;
+import com.cambofreelance.webbackend.services.UsageMetricsService;
 import jakarta.validation.Valid;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TenantController {
 
     private final TenantService tenantService;
+    private final UsageMetricsService usageMetricsService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('tenants.view')")
@@ -38,6 +40,23 @@ public class TenantController {
         @RequestParam(defaultValue = "20") int size
     ) {
         var result = tenantService.list(search, status, tenantType, page, size);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasAuthority('tenants.dashboard')")
+    public ResponseEntity<Object> dashboard() {
+        var result = tenantService.getDashboardStats();
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasAuthority('tenants.approve')")
+    public ResponseEntity<Object> listPending(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        var result = tenantService.listPending(page, size);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
@@ -80,6 +99,55 @@ public class TenantController {
         @RequestBody Map<String, String> body
     ) {
         var result = tenantService.updateStatus(id, body.getOrDefault("status", ""));
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('tenants.approve')")
+    public ResponseEntity<Object> approve(@PathVariable String id) {
+        var result = tenantService.approve(id);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasAuthority('tenants.approve')")
+    public ResponseEntity<Object> reject(@PathVariable String id, @RequestBody Map<String, String> body) {
+        var result = tenantService.reject(id, body.get("reason"));
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/{tenantId}/users")
+    @PreAuthorize("hasAuthority('tenant-users.view')")
+    public ResponseEntity<Object> listUsers(
+        @PathVariable String tenantId,
+        @RequestParam(required = false) String search,
+        @RequestParam(required = false) String status,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        var result = tenantService.listTenantUsers(tenantId, search, status, page, size);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PostMapping("/{tenantId}/users/{userId}")
+    @PreAuthorize("hasAuthority('tenant-users.assign')")
+    public ResponseEntity<Object> assignUser(@PathVariable String tenantId, @PathVariable String userId) {
+        var result = tenantService.assignUser(tenantId, userId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{tenantId}/users/{userId}")
+    @PreAuthorize("hasAuthority('tenant-users.remove')")
+    public ResponseEntity<Object> removeUser(@PathVariable String tenantId, @PathVariable String userId) {
+        tenantService.removeUser(tenantId, userId);
+        return new ResponseEntity<>(
+            new MessageResponse("User removed from tenant", ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/{tenantId}/usage")
+    @PreAuthorize("hasAuthority('tenants.view')")
+    public ResponseEntity<Object> usage(@PathVariable String tenantId) {
+        var result = usageMetricsService.getUsageForTenant(tenantId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 }

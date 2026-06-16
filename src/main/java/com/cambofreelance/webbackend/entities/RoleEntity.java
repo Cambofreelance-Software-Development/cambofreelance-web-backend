@@ -46,6 +46,10 @@ public class RoleEntity extends BaseEntity {
     @Column(name = "DESCRIPTION")
     private String description;
 
+    /** null = global/system role (ADMIN, SUPER_ADMIN, ...); set = a tenant's own custom role */
+    @Column(name = "tenant_id")
+    private String tenantId;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "role_permissions",

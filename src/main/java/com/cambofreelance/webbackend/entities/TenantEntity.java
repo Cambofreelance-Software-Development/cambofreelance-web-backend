@@ -76,6 +76,13 @@ public class TenantEntity extends BaseEntity {
     @Temporal(TemporalType.DATE)
     private Date planExpiredDate;
 
-    /** ACT | SUS | EXP | DEL */
+    /** Set when this tenant came from self-service registration; the user who becomes Tenant Admin on approval */
+    @Column(name = "requested_by_user_id")
+    private String requestedByUserId;
+
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
+
+    /** ACT | SUS | EXP | DEL | PEN */
     // status field is inherited from BaseEntity (default ACT)
 }
