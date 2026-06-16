@@ -2,7 +2,7 @@ spring:
   config:
     import: "optional:configserver:http://msa-config-server:8081/"
   application:
-    name: authentication-service
+    name: cms-service
   profiles:
     active: local
   cloud:
