@@ -19,6 +19,10 @@ pipeline {
         IMAGE_NAME = "cms-backend-service"
         DOCKER_REPO_PATH = "${IMAGE_REGISTRY}/${FOLDER_REGISTRY}/${IMAGE_NAME}"
 
+        // SpringProfile Path
+        SPRING_PROFILE = "src/main/resources/application.yml"
+        TARGET_ENV = "dev"
+
         TELEGRAM_CHAT_ID  = '-1003570206702'
         TELEGRAM_TOPIC_ID = '1581'
     }
@@ -48,7 +52,30 @@ pipeline {
                 }
             }
         }
+        stage('Update Spring Profile'){
+            steps {
+                script {
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo "💮 Update Spring Profile"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    sh '''
+                        echo ""
+                        echo "📄 Before:"
+                        cat ${SPRING_PROFILE}
 
+                        echo ""
+                        sed -i "s/active: .*/active: ${TARGET_ENV}/" ${SPRING_PROFILE}
+
+                        echo "📄 After:"
+                        cat ${SPRING_PROFILE}
+
+                        echo ""
+                        echo "✅ Profile updated to: ${TARGET_ENV}"
+                        echo ""
+                    '''
+                }
+            }
+        }
         stage('Docker Build Image') {
             steps {
                 script {
