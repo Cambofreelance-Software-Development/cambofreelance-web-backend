@@ -18,4 +18,6 @@ public interface TenantRoleService {
     void assignToUser(String tenantId, String userId, String roleId);
 
     void removeFromUser(String tenantId, String userId, String roleId);
+
+    List<TenantRoleResponse> seedDefaultRoles(String tenantId);
 }

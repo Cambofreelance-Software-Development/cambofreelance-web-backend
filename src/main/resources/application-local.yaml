@@ -13,7 +13,11 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      # Flyway is the sole source of schema truth for both public and per-tenant schemas.
+      # "validate" doesn't work here: at boot there's no active tenant, so the multi-tenant
+      # connection provider resolves to "public" and Hibernate tries to validate tenant-schema
+      # -only entities (CustomerEntity, ...) against public, where they intentionally don't exist.
+      ddl-auto: none
 
   flyway:
     placeholder-replacement: false

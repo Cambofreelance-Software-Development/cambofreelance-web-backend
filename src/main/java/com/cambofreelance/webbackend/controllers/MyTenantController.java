@@ -226,6 +226,15 @@ public class MyTenantController {
         return new ResponseEntity<>(new MessageResponse("Role deleted successfully", ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
+    @PostMapping("/roles/seed-defaults")
+    @PreAuthorize("hasAuthority('my-tenant.roles.manage')")
+    public ResponseEntity<Object> seedDefaultRoles(
+        @RequestHeader(value = Constants.TENANT_ID, required = false) String tenantId
+    ) {
+        var result = tenantRoleService.seedDefaultRoles(requireTenantId(tenantId));
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.CREATED);
+    }
+
     @PostMapping("/users/{userId}/roles/{roleId}")
     @PreAuthorize("hasAuthority('my-tenant.roles.manage')")
     public ResponseEntity<Object> assignRole(
