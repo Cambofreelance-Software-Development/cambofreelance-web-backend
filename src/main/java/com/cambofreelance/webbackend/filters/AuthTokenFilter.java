@@ -4,7 +4,6 @@ import com.cambofreelance.webbackend.caches.ApiUsageRedisCache;
 import com.cambofreelance.webbackend.caches.TokenRedisCache;
 import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.dto.TokenCacheDto;
-import com.cambofreelance.webbackend.repository.UserRepository;
 import com.cambofreelance.webbackend.utils.JwtUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -14,7 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +32,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final ObjectMapper objectMapper;
     private final ApiUsageRedisCache apiUsageRedisCache;
-    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -60,13 +57,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // Always load permissions from DB so role/permission changes take effect
-            // immediately without requiring the user to re-login.
-            Set<String> permissions = userRepository.findActivePermissionCodesByUserId(cached.getUserId());
-
             var authorities = new java.util.ArrayList<org.springframework.security.core.GrantedAuthority>();
             authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-            permissions.stream()
+            cached.getPermissions().stream()
                 .map(SimpleGrantedAuthority::new)
                 .forEach(authorities::add);
             var authentication = new UsernamePasswordAuthenticationToken(
