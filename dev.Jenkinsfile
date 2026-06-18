@@ -225,9 +225,17 @@ pipeline {
                             git config user.email "jenkins@ci.local"
                             git config user.name "Jenkins"
                             git add "${SERVICE_PATCH}"
-                            git commit -m "Update ${SERVICE_PATCH} to ${DOCKER_FULL_IMAGE}"
-                            # Push via HTTPS with injected credentials to avoid storing tokens in the repo.
-                            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${GIT_REPO_MANIFEST_UPDATE_URL} HEAD:${GIT_MANIFEST_BRANCH}
+
+                            # `git diff --cached --quiet` exits 0 when nothing is staged.
+                            # Skip commit+push if the image tag was already up to date.
+                            if git diff --cached --quiet; then
+                                echo "⚠️ No manifest change detected — image tag already up to date. Skipping commit."
+                            else
+                                git commit -m "Update ${SERVICE_PATCH} to ${DOCKER_FULL_IMAGE}"
+                                # Push via HTTPS with injected credentials to avoid storing tokens in the repo.
+                                git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${GIT_REPO_MANIFEST_UPDATE_URL} HEAD:${GIT_MANIFEST_BRANCH}
+                                echo "✅ Manifest pushed successfully."
+                            fi
                         """
                     }
                 }
