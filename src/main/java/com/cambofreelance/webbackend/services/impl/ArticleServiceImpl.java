@@ -57,7 +57,14 @@ public class ArticleServiceImpl implements ArticleService {
         entity.setViewCount(0);
         entity.setCreatedBy(StringUtils.hasText(createdBy) ? createdBy : Constants.SYSTEM);
         entity.setStatus(Constants.STATUS_ACTIVE);
-        entity.setWorkflowStatus(ArticleWorkflowStatus.DRAFT);
+        String requestedWorkflow = request.getWorkflowStatus();
+        String workflowStatus = (requestedWorkflow != null && ArticleWorkflowStatus.isValid(requestedWorkflow))
+            ? requestedWorkflow.toUpperCase()
+            : ArticleWorkflowStatus.DRAFT;
+        entity.setWorkflowStatus(workflowStatus);
+        if (ArticleWorkflowStatus.PUBLISHED.equals(workflowStatus) && request.getPublishedAt() == null) {
+            entity.setPublishedAt(new Date());
+        }
 
         resolveFeaturedImage(entity, request.getFeaturedImageId());
         resolveAttachments(entity, request.getAttachmentIds());
@@ -90,6 +97,14 @@ public class ArticleServiceImpl implements ArticleService {
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         entity.setUpdatedBy(updatedBy);
         entity.setUpdatedAt(new Date());
+
+        if (request.getWorkflowStatus() != null && ArticleWorkflowStatus.isValid(request.getWorkflowStatus())) {
+            String newWorkflow = request.getWorkflowStatus().toUpperCase();
+            entity.setWorkflowStatus(newWorkflow);
+            if (ArticleWorkflowStatus.PUBLISHED.equals(newWorkflow) && entity.getPublishedAt() == null) {
+                entity.setPublishedAt(new Date());
+            }
+        }
 
         resolveFeaturedImage(entity, request.getFeaturedImageId());
         resolveAttachments(entity, request.getAttachmentIds());

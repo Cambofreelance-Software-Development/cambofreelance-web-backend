@@ -3,6 +3,7 @@ package com.cambofreelance.webbackend.logger.exceptions;
 import com.cambofreelance.webbackend.caches.ResponseCodeRedisCache;
 import com.cambofreelance.webbackend.caches.ResponseManagerCache;
 import com.cambofreelance.webbackend.dto.ResponseCodeDto;
+import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.contants.LoggerConstant;
 import com.cambofreelance.webbackend.logger.contants.LoggerErrorCode;
 import com.cambofreelance.webbackend.logger.contants.enums.AcceptLanguage;
@@ -27,6 +28,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -192,6 +194,24 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
                 buildBaseResponse(LoggerErrorCode.INVALID_FIELD, errorResponse, i18Message);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+        appLogger.setException(ex);
+
+        Map<String, String> message = resolveMessage(ErrorCode.ACCESS_DENIED);
+        String i18Message = resolveI18Message(message, request);
+
+        if (Objects.equals(i18Message, "Message not yet update in our system") || Strings.isEmpty(i18Message)) {
+            i18Message = "You do not have permission to access this resource";
+        }
+
+        ErrorResponse errorResponse = buildErrorResponse(message);
+        BaseResponse<ErrorResponse> baseResponse =
+                buildBaseResponse(ErrorCode.ACCESS_DENIED, errorResponse, i18Message);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(baseResponse);
     }
 
     @ExceptionHandler(Exception.class)

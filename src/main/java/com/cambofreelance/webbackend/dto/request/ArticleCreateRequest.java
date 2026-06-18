@@ -26,6 +26,9 @@ public class ArticleCreateRequest {
     @NotBlank
     private String type;
 
+    /** DRAFT | REVIEW | APPROVAL | PUBLISHED | ARCHIVED — defaults to DRAFT if omitted */
+    private String workflowStatus;
+
     private String featuredImageId;
 
     private List<String> attachmentIds = new ArrayList<>();

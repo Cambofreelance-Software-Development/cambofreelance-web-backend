@@ -100,6 +100,45 @@ public class TenantRoleServiceImpl implements TenantRoleService {
         userRepository.save(user);
     }
 
+    @Override
+    @Transactional
+    public List<TenantRoleResponse> seedDefaultRoles(String tenantId) {
+        record DefaultRole(String name, String description, Set<String> codes) {}
+        List<DefaultRole> defaults = List.of(
+            new DefaultRole("Administrator",
+                "Full access to all loan management features",
+                TenantAssignablePermissions.ROLE_ADMINISTRATOR),
+            new DefaultRole("Loan Officer",
+                "Customer management, loan applications and collection follow-up",
+                TenantAssignablePermissions.ROLE_LOAN_OFFICER),
+            new DefaultRole("Approver",
+                "Loan approval, disbursement authorization and reporting",
+                TenantAssignablePermissions.ROLE_APPROVER),
+            new DefaultRole("Cashier",
+                "Payment collection and receipt management",
+                TenantAssignablePermissions.ROLE_CASHIER)
+        );
+
+        List<String> existingNames = roleRepository.findByTenantIdAndStatusNot(tenantId, Constants.STATUS_DELETE)
+            .stream().map(RoleEntity::getName).toList();
+
+        List<TenantRoleResponse> created = new ArrayList<>();
+        for (DefaultRole def : defaults) {
+            if (existingNames.contains(def.name())) continue;
+            RoleEntity role = new RoleEntity();
+            role.setId(UUID.randomUUID().toString());
+            role.setCode("TR_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            role.setName(def.name());
+            role.setDescription(def.description());
+            role.setTenantId(tenantId);
+            role.setStatus(Constants.STATUS_ACTIVE);
+            role.setCreatedAt(new Date());
+            role.setPermissions(resolveAllowedPermissions(def.codes()));
+            created.add(TenantRoleResponse.from(roleRepository.save(role)));
+        }
+        return created;
+    }
+
     private Set<PermissionEntity> resolveAllowedPermissions(Set<String> requestedCodes) {
         if (requestedCodes == null || requestedCodes.isEmpty()) {
             return new HashSet<>();

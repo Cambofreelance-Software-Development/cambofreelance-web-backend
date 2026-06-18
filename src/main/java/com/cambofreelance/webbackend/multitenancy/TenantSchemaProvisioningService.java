@@ -34,12 +34,16 @@ public class TenantSchemaProvisioningService {
             throw new AppException("SCHEMA_PROVISION_FAILED", "Failed to create schema for tenant: " + tenantId);
         }
 
-        Flyway.configure()
+        Flyway flyway = Flyway.configure()
             .dataSource(dataSource)
             .schemas(schema)
             .locations(TENANT_MIGRATION_LOCATION)
-            .load()
-            .migrate();
+            .load();
+
+        // Repair before migrating so that any previously-failed migration entry is cleared
+        // from flyway_schema_history and retried instead of blocking all subsequent migrations.
+        flyway.repair();
+        flyway.migrate();
 
         log.info("Provisioned schema {} for tenantId={}", schema, tenantId);
     }
