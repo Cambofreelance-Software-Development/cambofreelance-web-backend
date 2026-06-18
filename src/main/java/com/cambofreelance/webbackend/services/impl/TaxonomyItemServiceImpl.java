@@ -63,7 +63,7 @@ public class TaxonomyItemServiceImpl implements TaxonomyItemService {
         }
 
         taxonomyItemEntity.setMetadata(request.getMetadata());
-        taxonomyItemEntity.setStatus(Constants.STATUS_ACTIVE);
+        taxonomyItemEntity.setStatus(Constants.STATUS_ACT);
         taxonomyItemEntity.setUserId(UUID.randomUUID());
         taxonomyItemEntity.setCreatedAt(new Date());
         taxonomyItemRepository.save(taxonomyItemEntity);
@@ -87,14 +87,14 @@ public class TaxonomyItemServiceImpl implements TaxonomyItemService {
 //    )
     public UpdateTaxonomyItemResponse updateTaxonomyItem(UpdateTaxonomyItemRequest request, String userId) throws AppException {
         TaxonomyItemEntity item = taxonomyItemRepository
-            .findByCodeAndStatus(request.getCode(), Constants.STATUS_ACTIVE)
+            .findByCodeAndStatus(request.getCode(), Constants.STATUS_ACT)
             .orElseThrow(() -> new AppException("Taxonomy item with code '" + request.getCode() + "' not found."));
 
         if (request.getParentCode() != null && !request.getParentCode().isBlank()) {
             // NOTE: original code compared request.getCode() to itself — fixed to compare parentCode vs code
             if (!request.getParentCode().equals(request.getCode())) {
                 boolean parentExists = taxonomyItemRepository
-                    .findByCodeAndStatus(request.getParentCode(), Constants.STATUS_ACTIVE)
+                    .findByCodeAndStatus(request.getParentCode(), Constants.STATUS_ACT)
                     .isPresent();
                 if (!parentExists) {
                     throw new AppException("Parent code '" + request.getParentCode() + "' does not exist.");
@@ -131,7 +131,15 @@ public class TaxonomyItemServiceImpl implements TaxonomyItemService {
 
         Pageable pageable = PaginationUtils.toPageable(req, "createdAt");
         List<String> searchFields = List.of("displayKm", "code", "taxonomyCode", "parentCode", "displayEn");
-        List<FilterRequest> filters = Optional.ofNullable(req.getFilter()).orElse(List.of());
+        List<FilterRequest> filters = new java.util.ArrayList<>(Optional.ofNullable(req.getFilter()).orElse(List.of()));
+        boolean hasStatusFilter = filters.stream().anyMatch(f -> "status".equals(f.getField()));
+        if (!hasStatusFilter) {
+            FilterRequest defaultStatus = new FilterRequest();
+            defaultStatus.setField("status");
+            defaultStatus.setOperator("=");
+            defaultStatus.setValue(Constants.STATUS_ACT);
+            filters.add(defaultStatus);
+        }
         Specification<TaxonomyItemEntity> spec = SpecificationBuilder.build(filters, req.getSearch(), searchFields);
         Page<TaxonomyItemEntity> listContent = taxonomyItemRepository.findAll(spec, pageable);
 
@@ -147,7 +155,7 @@ public class TaxonomyItemServiceImpl implements TaxonomyItemService {
         log.info("Cache miss — fetching taxonomy item from DB: {}", request.getCode());
 
         TaxonomyItemEntity item = taxonomyItemRepository
-            .findByCodeAndStatus(request.getCode(), Constants.STATUS_ACTIVE)
+            .findByCodeAndStatus(request.getCode(), Constants.STATUS_ACT)
             .orElseThrow(() -> {
                 log.error("Taxonomy item not found for code: {}", request.getCode());
                 return new AppException(ErrorCode.INVALID_REQ_ERROR);
@@ -165,7 +173,7 @@ public class TaxonomyItemServiceImpl implements TaxonomyItemService {
 //    })
     public String deleteByCode(DetailTaxonomyItemRequest code, String userId) throws AppException {
         TaxonomyItemEntity item = taxonomyItemRepository
-            .findByCodeAndStatus(code.getCode(), Constants.STATUS_ACTIVE)
+            .findByCodeAndStatus(code.getCode(), Constants.STATUS_ACT)
             .orElseThrow(() -> new AppException("Taxonomy Item with code '" + code.getCode() + "' not found or already deleted."));
 
         item.setStatus(Constants.STATUS_DEL);

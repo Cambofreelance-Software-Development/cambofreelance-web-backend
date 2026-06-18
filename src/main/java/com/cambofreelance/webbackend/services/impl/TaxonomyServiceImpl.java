@@ -61,7 +61,7 @@ public class TaxonomyServiceImpl implements TaxonomyService {
         taxonomyEntity.setIsHierarchical(request.getIsHierarchical());
         taxonomyEntity.setDescription(request.getDescription());
         taxonomyEntity.setRemark(request.getRemark());
-        taxonomyEntity.setStatus(Constants.STATUS_ACTIVE);
+        taxonomyEntity.setStatus(Constants.STATUS_ACT);
         taxonomyEntity.setUserId(UUID.randomUUID());
         taxonomyEntity.setCreatedAt(new Date());
         taxonomyRepository.save(taxonomyEntity);
@@ -78,7 +78,7 @@ public class TaxonomyServiceImpl implements TaxonomyService {
 //    )
     public UpdateTaxonomyResponse updateTaxonomy(UpdateTaxonomyRequest request, String userId) throws AppException {
         TaxonomyEntity taxonomyEntity = taxonomyRepository
-            .findByCodeAndStatus(request.getCode(), Constants.STATUS_ACTIVE)
+            .findByCodeAndStatus(request.getCode(), Constants.STATUS_ACT)
             .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQ_ERROR));
 
         taxonomyEntity.setName(request.getName());
@@ -104,7 +104,7 @@ public class TaxonomyServiceImpl implements TaxonomyService {
         log.info("Cache miss — fetching taxonomy from DB: {}", code.getCode());
 
         TaxonomyEntity taxonomyEntity = taxonomyRepository
-            .findByCodeAndStatus(code.getCode(), Constants.STATUS_ACTIVE)
+            .findByCodeAndStatus(code.getCode(), Constants.STATUS_ACT)
             .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQ_ERROR));
 
         DetailTaxonomyResponse response = new DetailTaxonomyResponse();
@@ -124,7 +124,7 @@ public class TaxonomyServiceImpl implements TaxonomyService {
 //    })
     public String deleteByCode(DetailTaxonomyRequest code, String userId) throws AppException {
         TaxonomyEntity taxonomyEntity = taxonomyRepository
-            .findByCodeAndStatus(code.getCode(), Constants.STATUS_ACTIVE)
+            .findByCodeAndStatus(code.getCode(), Constants.STATUS_ACT)
             .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQ_ERROR));
 
         taxonomyEntity.setStatus(Constants.STATUS_DEL);
