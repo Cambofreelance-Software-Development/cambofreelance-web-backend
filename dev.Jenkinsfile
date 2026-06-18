@@ -8,7 +8,7 @@ pipeline {
     // ─────────────────────────────────────────────────────────────────────────
     environment {
         PROJECT_SERVICE  = "CMS Backend 🗃️"
-        GIT_BRANCH = "feature/article-management-system"
+        GIT_BRANCH = "deploy/dev"
         GIT_REPO_URL = "https://github.com/Cambofreelance-Software-Development/cambofreelance-web-backend.git"
         GIT_CREDENTIALS_ID = "github_credentials"
 
