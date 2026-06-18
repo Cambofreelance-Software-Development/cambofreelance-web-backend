@@ -44,7 +44,7 @@ public class LoggerUtils {
 
     public static String getServiceName(HttpServletRequest request) {
         String serviceName = request.getHeader("SERVICE-NAME");
-        return ObjectUtils.isEmpty(serviceName) ? "AUTHENTICATION-SERVICE" : serviceName;
+        return ObjectUtils.isEmpty(serviceName) ? "CABMOFEELANCE-SERVER" : serviceName;
     }
 
     public static String toJsonString(Object object) {
