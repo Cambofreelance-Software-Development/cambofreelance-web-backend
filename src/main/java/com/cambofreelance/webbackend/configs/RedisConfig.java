@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.lettuce.core.resource.ClientResources;
+import io.lettuce.core.resource.DefaultClientResources;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +29,12 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
     private final ObjectMapper objectMapper;
+
+    @Bean(destroyMethod = "shutdown")
+    public ClientResources lettuceClientResources() {
+        return DefaultClientResources.create();
+    }
+
     @Bean
     public ReactiveRedisTemplate<String, String> reactiveRedisTemplate(
         ReactiveRedisConnectionFactory connectionFactory) {
