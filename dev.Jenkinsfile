@@ -166,7 +166,7 @@ pipeline {
 
                         echo ""
                         echo "Building Docker image: ${DOCKER_FULL_IMAGE}"
-                        docker build -t ${DOCKER_FULL_IMAGE} .
+                        docker build -t ${DOCKER_FULL_IMAGE} --no-cache .
 
                         echo ""
                         echo "✅ Docker images created:"
