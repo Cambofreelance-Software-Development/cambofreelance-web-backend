@@ -7,10 +7,18 @@ spring:
   session:
     store-type: none
   datasource:
-    url: jdbc:postgresql://localhost:5432/local_cms_db
-    username: postgres
-    password: 1234
+    url: jdbc:postgresql://194.233.91.140:4010/db_cms_prod
+    username: superuser
+    password: CF_SUPERUSER@@2026
     driver-class-name: org.postgresql.Driver
+
+
+#      - user: superuser
+#      - pass: CF_SUPERUSER@@2026
+#      - host: 194.233.91.140:4010
+#      - host: 62.146.239.183:4011
+#      - database:
+#          - db_cms
   jpa:
     hibernate:
       # Flyway is the sole source of schema truth for both public and per-tenant schemas.
@@ -19,17 +27,22 @@ spring:
       # -only entities (CustomerEntity, ...) against public, where they intentionally don't exist.
       ddl-auto: none
 
+#  flyway:
+#    baseline-on-migrate: true        # only needed if DB has pre-Flyway tables
+#    baseline-version: 0              # version to baseline at
+#    out-of-order: false              # keep this false to enforce ordering
+#    validate-on-migrate: true        # good practic
   flyway:
     placeholder-replacement: false
     enabled: true
     schemas: public
-    baseline-on-migrate: false
+    baseline-on-migrate: true
+    baseline-version: 0
     locations: classpath:db/migration
     ignore-migration-patterns: "*:missing"
-    out-of-order: true
-    placeholders:
-      defaultSchema: public
+    out-of-order: false
     rollback-locations: classpath:db/rollback
+
   cache:
     type: redis
   mail:
