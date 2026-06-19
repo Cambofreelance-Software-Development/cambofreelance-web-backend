@@ -47,6 +47,11 @@ public class CustomerResponse {
     private String createdBy;
     private Date updatedAt;
     private String updatedBy;
+    private static String getUserName(Map<String, String> userNames, String userId) {
+        return (userNames == null || userId == null)
+            ? null
+            : userNames.get(userId);
+    }
 
     public static CustomerResponse from(CustomerEntity e, Map<String, String> userNames) {
         return CustomerResponse.builder()
@@ -66,21 +71,26 @@ public class CustomerResponse {
             .guarantorName(e.getGuarantorName())
             .guarantorPhone(e.getGuarantorPhone())
             .onboardingStatus(e.getOnboardingStatus())
+
             .submittedBy(e.getSubmittedBy())
-            .submittedByName(userNames.get(e.getSubmittedBy()))
+            .submittedByName(getUserName(userNames, e.getSubmittedBy()))
             .submittedAt(e.getSubmittedAt())
+
             .verifiedBy(e.getVerifiedBy())
-            .verifiedByName(userNames.get(e.getVerifiedBy()))
+            .verifiedByName(getUserName(userNames, e.getVerifiedBy()))
             .verifiedAt(e.getVerifiedAt())
             .verificationNote(e.getVerificationNote())
+
             .approvedBy(e.getApprovedBy())
-            .approvedByName(userNames.get(e.getApprovedBy()))
+            .approvedByName(getUserName(userNames, e.getApprovedBy()))
             .approvedAt(e.getApprovedAt())
             .approvalNote(e.getApprovalNote())
+
             .rejectedBy(e.getRejectedBy())
-            .rejectedByName(userNames.get(e.getRejectedBy()))
+            .rejectedByName(getUserName(userNames, e.getRejectedBy()))
             .rejectedAt(e.getRejectedAt())
             .rejectionReason(e.getRejectionReason())
+
             .status(e.getStatus())
             .createdAt(e.getCreatedAt())
             .createdBy(e.getCreatedBy())
