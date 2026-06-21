@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.services.impl;
 
 import com.cambofreelance.webbackend.constants.Constants;
+import com.cambofreelance.webbackend.constants.ErrorCode;
 import com.cambofreelance.webbackend.dto.request.SubscriptionCreateRequest;
 import com.cambofreelance.webbackend.dto.request.TenantCreateRequest;
 import com.cambofreelance.webbackend.dto.request.TenantRegistrationRequest;
@@ -244,14 +245,14 @@ public class TenantServiceImpl implements TenantService {
 
         String username = tenant.getCode() + "." + request.getUsername().trim();
         if (userRepository.findByUsernameAndStatus(username, Constants.STATUS_ACTIVE).isPresent()) {
-            throw new AppException("USERNAME_ALREADY_EXIST", "Username already exists");
+            throw new AppException(ErrorCode.USERNAME_ALREADY_EXIST, "Username already exists");
         }
         if (userRepository.findByEmailAndStatus(request.getEmail(), Constants.STATUS_ACTIVE).isPresent()) {
-            throw new AppException("EMAIL_ALREADY_EXIST", "Email already in use");
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXIST, "Email already in use");
         }
         if (StringUtils.hasText(request.getPhoneNumber())
             && userRepository.findByPhoneNumberAndStatus(request.getPhoneNumber(), Constants.STATUS_ACTIVE).isPresent()) {
-            throw new AppException("PHONE_ALREADY_EXIST", "Phone number already in use");
+            throw new AppException(ErrorCode.PHONE_ALREADY_EXIST, "Phone number already in use");
         }
 
         Date now = new Date();
@@ -277,12 +278,12 @@ public class TenantServiceImpl implements TenantService {
 
         if (StringUtils.hasText(request.getEmail()) && !request.getEmail().equals(user.getEmail())) {
             userRepository.findByEmailAndStatus(request.getEmail(), Constants.STATUS_ACTIVE)
-                .ifPresent(u -> { throw new AppException("EMAIL_ALREADY_EXIST", "Email already in use"); });
+                .ifPresent(u -> { throw new AppException(ErrorCode.EMAIL_ALREADY_EXIST, "Email already in use"); });
             user.setEmail(request.getEmail());
         }
         if (StringUtils.hasText(request.getPhoneNumber()) && !request.getPhoneNumber().equals(user.getPhoneNumber())) {
             userRepository.findByPhoneNumberAndStatus(request.getPhoneNumber(), Constants.STATUS_ACTIVE)
-                .ifPresent(u -> { throw new AppException("PHONE_ALREADY_EXIST", "Phone number already in use"); });
+                .ifPresent(u -> { throw new AppException(ErrorCode.PHONE_ALREADY_EXIST, "Phone number already in use"); });
             user.setPhoneNumber(request.getPhoneNumber());
         }
         if (StringUtils.hasText(request.getPassword())) {
@@ -298,7 +299,7 @@ public class TenantServiceImpl implements TenantService {
     @Transactional
     public UserProfileResponse updateTenantUserStatus(String tenantId, String userId, String status) {
         if (!ALLOWED_USER_STATUS_UPDATES.contains(status)) {
-            throw new AppException("INVALID_STATUS", "Status must be one of ACT, LEA");
+            throw new AppException(ErrorCode.INVALID_REQ_ERROR, "Status must be one of ACT, LEA");
         }
         UserEntity user = findTenantOwnedUser(tenantId, userId);
         user.setStatus(status);
