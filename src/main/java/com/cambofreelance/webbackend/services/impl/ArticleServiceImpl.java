@@ -9,6 +9,7 @@ import com.cambofreelance.webbackend.entities.ArticleEntity;
 import com.cambofreelance.webbackend.entities.MediaFileEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.ArticleRepository;
+import com.cambofreelance.webbackend.repository.AuthorRepository;
 import com.cambofreelance.webbackend.repository.MediaRepository;
 import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.services.ArticleService;
@@ -31,6 +32,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     private final ArticleRepository articleRepository;
     private final MediaRepository   mediaRepository;
+    private final AuthorRepository  authorRepository;
 
     @Override
     @Transactional
@@ -49,8 +51,9 @@ public class ArticleServiceImpl implements ArticleService {
         entity.setContentKh(request.getContentKh());
         entity.setExcerptKh(request.getExcerptKh());
         entity.setType(request.getType().toUpperCase());
-        entity.setAuthorId(StringUtils.hasText(request.getAuthorId()) ? request.getAuthorId() : createdBy);
-        entity.setAuthorName(request.getAuthorName());
+        String authorId = StringUtils.hasText(request.getAuthorId()) ? request.getAuthorId() : createdBy;
+        entity.setAuthorId(authorId);
+        entity.setAuthorName(resolveAuthorName(authorId, request.getAuthorName()));
         entity.setTags(tagsToString(request.getTags()));
         entity.setPublishedAt(request.getPublishedAt());
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
@@ -91,7 +94,7 @@ public class ArticleServiceImpl implements ArticleService {
         entity.setExcerptKh(request.getExcerptKh());
         entity.setType(request.getType().toUpperCase());
         entity.setAuthorId(request.getAuthorId());
-        entity.setAuthorName(request.getAuthorName());
+        entity.setAuthorName(resolveAuthorName(request.getAuthorId(), request.getAuthorName()));
         entity.setTags(tagsToString(request.getTags()));
         entity.setPublishedAt(request.getPublishedAt());
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
@@ -266,5 +269,18 @@ public class ArticleServiceImpl implements ArticleService {
     private String tagsToString(List<String> tags) {
         if (tags == null || tags.isEmpty()) return null;
         return String.join(",", tags);
+    }
+
+    /** Returns the explicit authorName when provided; otherwise resolves name from the authors table. */
+    private String resolveAuthorName(String authorId, String authorName) {
+        if (StringUtils.hasText(authorName)) {
+            return authorName;
+        }
+        if (StringUtils.hasText(authorId)) {
+            return authorRepository.findById(authorId)
+                .map(a -> a.getName())
+                .orElse(null);
+        }
+        return null;
     }
 }
