@@ -11,9 +11,12 @@ public final class ArticleType {
     public static final String COURSE        = "COURSE";
     public static final String PRODUCTS      = "PRODUCTS";
     public static final String TUTORIAL      = "TUTORIAL";
+    public static final String STATS         = "STATS";
+    public static final String REVIEW        = "REVIEW";
+    public static final String FEATURE       = "FEATURE";
 
     private static final String[] ALL = {
-        NEWS, PROMOTIONS, BLOGS, ANNOUNCEMENTS, SERVICE, TEAM, COURSE, PRODUCTS, TUTORIAL
+        NEWS, PROMOTIONS, BLOGS, ANNOUNCEMENTS, SERVICE, TEAM, COURSE, PRODUCTS, TUTORIAL, STATS, REVIEW, FEATURE
     };
 
     public static boolean isValid(String value) {
