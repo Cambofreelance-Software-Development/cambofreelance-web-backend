@@ -56,7 +56,7 @@ pipeline {
                     env.GIT_COMMIT_SHA    = sha
                     env.GIT_COMMIT_SHORT  = sha.take(7)
                     // Full image reference with SHA tag — used in Build, Push, Update Manifest, and Clean stages.
-                    env.DOCKER_FULL_IMAGE = "${env.DOCKER_REPO_PATH}:${sha}"
+                    env.DOCKER_FULL_IMAGE = "${env.DOCKER_REPO_PATH}:${env.GIT_COMMIT_SHORT}${env.BUILD_NUMBER}"
 
                     echo "📋 Branch     : ${env.GIT_BRANCH}"
                     echo "📋 Full SHA   : ${env.GIT_COMMIT_SHA}"
