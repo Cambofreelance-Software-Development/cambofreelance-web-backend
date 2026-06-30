@@ -432,11 +432,12 @@ public class TenantServiceImpl implements TenantService {
         if (StringUtils.hasText(tenant.getRequestedByUserId())) {
             userRepository.findById(tenant.getRequestedByUserId()).ifPresent(user -> {
                 user.setTenantId(tenant.getId());
-                roleRepository.findByCode("TENANT_ADMIN").ifPresent(role -> {
-                    Set<RoleEntity> roles = new HashSet<>(user.getRoles());
-                    roles.add(role);
-                    user.setRoles(roles);
-                });
+                RoleEntity tenantAdmin = roleRepository.findByCode("TENANT_ADMIN")
+                    .orElseThrow(() -> new AppException("TENANT_ADMIN_ROLE_MISSING",
+                        "TENANT_ADMIN role not found — cannot grant tenant admin access on approval"));
+                Set<RoleEntity> roles = new HashSet<>(user.getRoles());
+                roles.add(tenantAdmin);
+                user.setRoles(roles);
                 userRepository.save(user);
             });
         }

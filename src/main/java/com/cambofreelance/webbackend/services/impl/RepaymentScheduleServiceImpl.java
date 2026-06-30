@@ -13,6 +13,8 @@ import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.LoanApplicationRepository;
 import com.cambofreelance.webbackend.repository.RepaymentInstallmentRepository;
 import com.cambofreelance.webbackend.services.RepaymentScheduleService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,6 +37,9 @@ public class RepaymentScheduleServiceImpl implements RepaymentScheduleService {
     private final RepaymentInstallmentRepository installmentRepository;
     private final LoanApplicationRepository      loanApplicationRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Override
     @Transactional
     @Auditable(action = "GENERATE", module = "REPAYMENT_SCHEDULE")
@@ -47,7 +52,7 @@ public class RepaymentScheduleServiceImpl implements RepaymentScheduleService {
         }
 
         List<RepaymentInstallmentEntity> installments = buildInstallments(loan, userId);
-        installments.forEach(installmentRepository::save);
+        persistAll(installments);
         return toResponse(loan, installments);
     }
 
@@ -67,8 +72,19 @@ public class RepaymentScheduleServiceImpl implements RepaymentScheduleService {
 
         installmentRepository.deleteByLoanApplicationId(loanApplicationId);
         List<RepaymentInstallmentEntity> installments = buildInstallments(loan, userId);
-        installments.forEach(installmentRepository::save);
+        persistAll(installments);
         return toResponse(loan, installments);
+    }
+
+    // Use EntityManager.persist() directly: with manually-assigned String IDs,
+    // installmentRepository.save() routes through EntityManager.merge() and does a
+    // SELECT-before-INSERT per row. For a daily 12-month loan that's 360 × 2 round-trips
+    // to a remote DB — enough to blow past the 10s frontend timeout.
+    private void persistAll(List<RepaymentInstallmentEntity> installments) {
+        for (RepaymentInstallmentEntity e : installments) {
+            entityManager.persist(e);
+        }
+        entityManager.flush();
     }
 
     @Override
