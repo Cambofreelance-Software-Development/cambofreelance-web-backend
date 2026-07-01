@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.constants.ErrorCode;
 import com.cambofreelance.webbackend.dto.request.CdnSettingRequest;
+import com.cambofreelance.webbackend.dto.request.ContactSettingRequest;
 import com.cambofreelance.webbackend.dto.request.SiteStatsRequest;
 import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
@@ -168,5 +169,21 @@ public class CmsSettingController {
     public ResponseEntity<Object> updateIpWhitelist(@RequestBody IpWhitelistRequest request) {
         return new ResponseEntity<>(
             new MessageResponse(cmsSettingService.updateIpWhitelistSettings(request), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── Contact & Social ──────────────────────────────────────────────────────
+
+    @GetMapping("/contact")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getContactSettings() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getContactSettings(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/contact")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updateContactSettings(@RequestBody ContactSettingRequest request) {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.updateContactSettings(request), ErrorCode.SUCCESS), HttpStatus.OK);
     }
 }

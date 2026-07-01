@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.services;
 
 import com.cambofreelance.webbackend.dto.request.CdnSettingRequest;
+import com.cambofreelance.webbackend.dto.request.ContactSettingRequest;
 import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
 import java.util.List;
 import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
@@ -9,6 +10,7 @@ import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsSeoSettingResponse;
+import com.cambofreelance.webbackend.dto.response.ContactSettingResponse;
 import com.cambofreelance.webbackend.dto.response.IpWhitelistResponse;
 import com.cambofreelance.webbackend.dto.response.SitePublicConfigResponse;
 import com.cambofreelance.webbackend.dto.response.SiteStatsResponse;
@@ -40,4 +42,7 @@ public interface CmsSettingService {
     SiteStatsResponse updateStatsSettings(int projectsCompleted, int happyClients, int clientSatisfaction);
 
     SitePublicConfigResponse getSitePublicConfig();
+
+    ContactSettingResponse getContactSettings();
+    ContactSettingResponse updateContactSettings(ContactSettingRequest request);
 }

@@ -5,11 +5,13 @@ import com.cambofreelance.webbackend.constants.SettingGroup;
 import com.cambofreelance.webbackend.dto.request.CdnSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
+import com.cambofreelance.webbackend.dto.request.ContactSettingRequest;
 import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsSeoSettingResponse;
+import com.cambofreelance.webbackend.dto.response.ContactSettingResponse;
 import com.cambofreelance.webbackend.dto.response.IpWhitelistResponse;
 import com.cambofreelance.webbackend.dto.response.SitePublicConfigResponse;
 import com.cambofreelance.webbackend.dto.response.SiteStatsResponse;
@@ -285,20 +287,62 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Override
     public SitePublicConfigResponse getSitePublicConfig() {
         Map<String, String> general = loadGroup(SettingGroup.GENERAL);
+        Map<String, String> contact = loadGroup(SettingGroup.CONTACT);
         Map<String, String> social  = loadGroup(SettingGroup.SOCIAL);
         return SitePublicConfigResponse.builder()
             .siteName(general.getOrDefault("site_name", "Cambo Freelance"))
             .siteDescription(general.getOrDefault("site_description",
                 "Professional freelance team from Cambodia delivering technology-driven solutions."))
             .siteLogo(general.getOrDefault("site_logo", ""))
-            .siteAddress(general.getOrDefault("site_address", "Street 123, BKK1, Phnom Penh, Cambodia"))
-            .siteEmail(general.getOrDefault("site_email", "hello@cambofreelance.com"))
-            .sitePhone(general.getOrDefault("site_phone", "+855 (0) 12 345 678"))
+            .siteAddress(contact.getOrDefault("contact_address", general.getOrDefault("site_address", "")))
+            .siteEmail(contact.getOrDefault("contact_email", general.getOrDefault("site_email", "")))
+            .sitePhone(contact.getOrDefault("contact_phone", general.getOrDefault("site_phone", "")))
+            .footerCopyright(contact.getOrDefault("contact_footer_copyright", ""))
+            .socialTelegram(social.getOrDefault("social_telegram", ""))
             .socialTwitter(social.getOrDefault("social_twitter", ""))
             .socialLinkedin(social.getOrDefault("social_linkedin", ""))
             .socialInstagram(social.getOrDefault("social_instagram", ""))
             .socialFacebook(social.getOrDefault("social_facebook", ""))
             .build();
+    }
+
+    // ── Contact & Social ──────────────────────────────────────────────────────
+
+    @Override
+    public ContactSettingResponse getContactSettings() {
+        Map<String, String> contact = loadGroup(SettingGroup.CONTACT);
+        Map<String, String> social  = loadGroup(SettingGroup.SOCIAL);
+        return ContactSettingResponse.builder()
+            .siteEmail(contact.getOrDefault("contact_email", ""))
+            .sitePhone(contact.getOrDefault("contact_phone", ""))
+            .siteAddress(contact.getOrDefault("contact_address", ""))
+            .footerCopyright(contact.getOrDefault("contact_footer_copyright", ""))
+            .socialTelegram(social.getOrDefault("social_telegram", ""))
+            .socialFacebook(social.getOrDefault("social_facebook", ""))
+            .socialLinkedin(social.getOrDefault("social_linkedin", ""))
+            .socialTwitter(social.getOrDefault("social_twitter", ""))
+            .socialInstagram(social.getOrDefault("social_instagram", ""))
+            .build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated contact & social settings")
+    public ContactSettingResponse updateContactSettings(ContactSettingRequest req) {
+        upsert("contact_email",            orEmpty(req.getSiteEmail()),        SettingGroup.CONTACT);
+        upsert("contact_phone",            orEmpty(req.getSitePhone()),        SettingGroup.CONTACT);
+        upsert("contact_address",          orEmpty(req.getSiteAddress()),      SettingGroup.CONTACT);
+        upsert("contact_footer_copyright", orEmpty(req.getFooterCopyright()),  SettingGroup.CONTACT);
+        upsert("social_telegram",          orEmpty(req.getSocialTelegram()),   SettingGroup.SOCIAL);
+        upsert("social_facebook",          orEmpty(req.getSocialFacebook()),   SettingGroup.SOCIAL);
+        upsert("social_linkedin",          orEmpty(req.getSocialLinkedin()),   SettingGroup.SOCIAL);
+        upsert("social_twitter",           orEmpty(req.getSocialTwitter()),    SettingGroup.SOCIAL);
+        upsert("social_instagram",         orEmpty(req.getSocialInstagram()),  SettingGroup.SOCIAL);
+        return getContactSettings();
+    }
+
+    private String orEmpty(String value) {
+        return value != null ? value : "";
     }
 
     private int parseInt(String value) {

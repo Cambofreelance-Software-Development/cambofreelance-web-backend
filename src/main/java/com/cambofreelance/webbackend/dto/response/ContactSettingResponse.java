@@ -5,18 +5,15 @@ import lombok.Data;
 
 @Data
 @Builder
-public class SitePublicConfigResponse {
+public class ContactSettingResponse {
 
-    private String siteName;
-    private String siteDescription;
-    private String siteLogo;
-    private String siteAddress;
     private String siteEmail;
     private String sitePhone;
+    private String siteAddress;
     private String footerCopyright;
     private String socialTelegram;
-    private String socialTwitter;
-    private String socialLinkedin;
-    private String socialInstagram;
     private String socialFacebook;
+    private String socialLinkedin;
+    private String socialTwitter;
+    private String socialInstagram;
 }
