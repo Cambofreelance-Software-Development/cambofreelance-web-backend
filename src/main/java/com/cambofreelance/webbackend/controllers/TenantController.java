@@ -1,9 +1,12 @@
 package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.dto.request.TenantCreateRequest;
+import com.cambofreelance.webbackend.dto.request.TenantRoleCreateRequest;
+import com.cambofreelance.webbackend.dto.request.TenantRoleUpdateRequest;
 import com.cambofreelance.webbackend.dto.request.TenantUpdateRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
+import com.cambofreelance.webbackend.services.TenantRoleService;
 import com.cambofreelance.webbackend.services.TenantService;
 import com.cambofreelance.webbackend.services.UsageMetricsService;
 import jakarta.validation.Valid;
@@ -29,6 +32,7 @@ public class TenantController {
 
     private final TenantService tenantService;
     private final UsageMetricsService usageMetricsService;
+    private final TenantRoleService tenantRoleService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('tenants.view')")
@@ -149,5 +153,41 @@ public class TenantController {
     public ResponseEntity<Object> usage(@PathVariable String tenantId) {
         var result = usageMetricsService.getUsageForTenant(tenantId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/{tenantId}/roles")
+    @PreAuthorize("hasAuthority('tenant-roles.view')")
+    public ResponseEntity<Object> listRoles(@PathVariable String tenantId) {
+        var result = tenantRoleService.listForTenant(tenantId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PostMapping("/{tenantId}/roles")
+    @PreAuthorize("hasAuthority('tenant-roles.manage')")
+    public ResponseEntity<Object> createRole(
+        @PathVariable String tenantId,
+        @Valid @RequestBody TenantRoleCreateRequest request
+    ) {
+        var result = tenantRoleService.create(tenantId, request);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{tenantId}/roles/{roleId}")
+    @PreAuthorize("hasAuthority('tenant-roles.manage')")
+    public ResponseEntity<Object> updateRole(
+        @PathVariable String tenantId,
+        @PathVariable String roleId,
+        @RequestBody TenantRoleUpdateRequest request
+    ) {
+        var result = tenantRoleService.update(tenantId, roleId, request);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{tenantId}/roles/{roleId}")
+    @PreAuthorize("hasAuthority('tenant-roles.manage')")
+    public ResponseEntity<Object> deleteRole(@PathVariable String tenantId, @PathVariable String roleId) {
+        tenantRoleService.delete(tenantId, roleId);
+        return new ResponseEntity<>(
+            new MessageResponse("Role deleted successfully", ErrorCode.SUCCESS), HttpStatus.OK);
     }
 }

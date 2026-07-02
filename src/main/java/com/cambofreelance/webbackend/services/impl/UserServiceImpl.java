@@ -284,6 +284,7 @@ public class UserServiceImpl implements UserService {
                 .roleId(r.getId())
                 .roleName(r.getName())
                 .code(r.getCode())
+                .tenantId(r.getTenantId())
                 .build())
             .collect(Collectors.toList());
     }

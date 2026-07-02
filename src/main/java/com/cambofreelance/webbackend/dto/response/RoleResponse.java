@@ -36,6 +36,9 @@ public class RoleResponse {
     @JsonProperty("description")
     private String description;
 
+    @JsonProperty("tenantId")
+    private String tenantId;
+
     @JsonProperty("status")
     private String status;
 
@@ -69,6 +72,7 @@ public class RoleResponse {
             .convention(e.getConvention())
             .level(e.getLevel())
             .description(e.getDescription())
+            .tenantId(e.getTenantId())
             .status(e.getStatus())
             .createdAt(e.getCreatedAt())
             .updatedAt(e.getUpdatedAt())
