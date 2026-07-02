@@ -22,8 +22,10 @@ public final class ErrorCode {
     public static final String CHANGE_PASSWORD_SUCCESS = "SUC-00005";
     public static final String UPDATE_PROFILE_SUCCESS = "SUC-00006";
 
-    public static final String ARTICLE_NOT_FOUND     = "ERR-00014";
-    public static final String INVALID_ARTICLE_TYPE  = "ERR-00015";
+    public static final String ARTICLE_NOT_FOUND          = "ERR-00014";
+    public static final String INVALID_ARTICLE_TYPE        = "ERR-00015";
+    public static final String PHONE_ALREADY_EXISTS        = "ERR-00016";
+    public static final String IDENTITY_CARD_ALREADY_EXISTS = "ERR-00017";
 
     private ErrorCode() {
     }

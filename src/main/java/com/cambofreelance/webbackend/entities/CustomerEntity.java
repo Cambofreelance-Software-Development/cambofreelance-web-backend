@@ -58,6 +58,18 @@ public class CustomerEntity extends BaseEntity {
     @Column(name = "address")
     private String address;
 
+    @Column(name = "province_code")
+    private String provinceCode;
+
+    @Column(name = "district_code")
+    private String districtCode;
+
+    @Column(name = "commune_code")
+    private String communeCode;
+
+    @Column(name = "village_code")
+    private String villageCode;
+
     @Column(name = "occupation")
     private String occupation;
 

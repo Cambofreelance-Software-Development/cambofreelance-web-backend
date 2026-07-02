@@ -1,0 +1,5 @@
+ALTER TABLE customers
+    ADD COLUMN IF NOT EXISTS province_code VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS district_code VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS commune_code  VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS village_code  VARCHAR(50);

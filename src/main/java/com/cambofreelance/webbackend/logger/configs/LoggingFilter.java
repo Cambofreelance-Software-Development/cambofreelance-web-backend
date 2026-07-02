@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.logger.configs;
 
 import com.cambofreelance.webbackend.logger.contants.enums.AppLoggerMode;
 import com.cambofreelance.webbackend.logger.dto.AppLogger;
+import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.logger.utils.LoggerUtils;
 //import io.opentelemetry.api.trace.Span;
 import jakarta.servlet.FilterChain;
@@ -92,8 +93,31 @@ public class LoggingFilter extends OncePerRequestFilter {
             filterChain.doFilter(requestWrapper, responseWrapper);
 
         } catch (Exception ex) {
-            appLogger.setException(ex);
-            throw ex;
+            // Unwrap NestedServletException to check if the root cause is a handled business error
+            Throwable root = (ex instanceof ServletException se && se.getRootCause() != null)
+                    ? se.getRootCause() : ex;
+            if (root instanceof AppException appEx) {
+                // Business exception that slipped past @ControllerAdvice (e.g., its own handler threw).
+                // Write a minimal JSON error response directly so the client gets a proper 4xx, not a 500.
+                if (!responseWrapper.isCommitted()) {
+                    int statusCode = appEx.getHttpStatus() != null ? appEx.getHttpStatus().value() : 400;
+                    String msg = appEx.getMessage() != null ? appEx.getMessage() : appEx.getErrorCode();
+                    // Escape any quotes in msg to keep JSON valid
+                    String safeMsgForJson = msg.replace("\"", "\\\"");
+                    String body = "{\"code\":\"" + appEx.getErrorCode()
+                            + "\",\"success\":false,\"message\":\"" + safeMsgForJson
+                            + "\",\"timestamp\":" + System.currentTimeMillis() + ",\"data\":null}";
+                    responseWrapper.setStatus(statusCode);
+                    responseWrapper.setContentType("application/json;charset=UTF-8");
+                    responseWrapper.getWriter().write(body);
+                    responseWrapper.getWriter().flush();
+                    log.warn("AppException escaped @ControllerAdvice [{}]: {}", appEx.getErrorCode(), msg);
+                }
+                // Do not re-throw — response is written; finally block will copy it
+            } else {
+                appLogger.setException(ex);
+                throw ex;
+            }
 
         } finally {
             Instant end = Instant.now();

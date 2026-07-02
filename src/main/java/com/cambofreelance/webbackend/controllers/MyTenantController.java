@@ -52,7 +52,7 @@ public class MyTenantController {
     private final InvoiceService invoiceService;
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('my-tenant.users.manage', 'my-tenant.subscription.view', 'my-tenant.usage.view', 'my-tenant.roles.manage')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Object> myTenant(
         @RequestHeader(value = Constants.TENANT_ID, required = false) String tenantId
     ) {

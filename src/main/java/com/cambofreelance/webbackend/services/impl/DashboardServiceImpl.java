@@ -4,6 +4,7 @@ import com.cambofreelance.webbackend.dto.response.CurrencyDataPoint;
 import com.cambofreelance.webbackend.dto.response.DashboardResponse;
 import com.cambofreelance.webbackend.dto.response.DashboardSummaryResponse;
 import com.cambofreelance.webbackend.dto.response.DpdBucketPoint;
+import com.cambofreelance.webbackend.dto.response.LoanCurrencySummary;
 import com.cambofreelance.webbackend.dto.response.MonthlyDataPoint;
 import com.cambofreelance.webbackend.services.DashboardService;
 import jakarta.persistence.EntityManager;
@@ -18,10 +19,13 @@ public class DashboardServiceImpl implements DashboardService {
     @PersistenceContext
     private EntityManager em;
 
+    private static final List<String> CURRENCIES = List.of("USD", "KHR");
+
     @Override
     public DashboardResponse getDashboard() {
         return DashboardResponse.builder()
             .summary(buildSummary())
+            .loansByCurrency(loansByCurrency())
             .monthlyDisbursement(monthlyDisbursement())
             .collectionTrend(collectionTrend())
             .portfolioByCurrency(portfolioByCurrency())
@@ -92,6 +96,42 @@ public class DashboardServiceImpl implements DashboardService {
             "WHERE la.application_status = 'APPROVED' AND la.status = 'ACT' " +
             "GROUP BY la.currency ORDER BY la.currency").getResultList();
         return rows.stream().map(r -> new CurrencyDataPoint((String) r[0], num(r[1]), dec(r[2]))).toList();
+    }
+
+    private List<LoanCurrencySummary> loansByCurrency() {
+        return CURRENCIES.stream().map(currency -> {
+            long activeLoans = num(em.createNativeQuery(
+                "SELECT COUNT(*) FROM loan_applications " +
+                "WHERE currency = ?1 AND application_status = 'APPROVED' AND status = 'ACT'")
+                .setParameter(1, currency).getSingleResult());
+
+            long totalApplications = num(em.createNativeQuery(
+                "SELECT COUNT(*) FROM loan_applications WHERE currency = ?1 AND status = 'ACT'")
+                .setParameter(1, currency).getSingleResult());
+
+            BigDecimal portfolioAmount = dec(em.createNativeQuery(
+                "SELECT COALESCE(SUM(loan_amount),0) FROM loan_applications " +
+                "WHERE currency = ?1 AND application_status = 'APPROVED' AND status = 'ACT'")
+                .setParameter(1, currency).getSingleResult());
+
+            BigDecimal outstandingBalance = dec(em.createNativeQuery(
+                "SELECT COALESCE(SUM(ri.remaining_balance),0) " +
+                "FROM repayment_installments ri " +
+                "JOIN loan_applications la ON la.id = ri.loan_application_id " +
+                "WHERE la.currency = ?1 AND ri.installment_status IN ('PENDING','PARTIAL_PAID','OVERDUE')")
+                .setParameter(1, currency).getSingleResult());
+
+            BigDecimal todayCollections = dec(em.createNativeQuery(
+                "SELECT COALESCE(SUM(p.total_paid),0) " +
+                "FROM payments p " +
+                "JOIN loan_applications la ON la.id = p.loan_application_id " +
+                "WHERE la.currency = ?1 AND p.payment_date = CURRENT_DATE " +
+                "  AND p.payment_status = 'ACTIVE' AND p.status = 'ACT'")
+                .setParameter(1, currency).getSingleResult());
+
+            return new LoanCurrencySummary(currency, activeLoans, totalApplications,
+                portfolioAmount, outstandingBalance, todayCollections);
+        }).toList();
     }
 
     @SuppressWarnings("unchecked")

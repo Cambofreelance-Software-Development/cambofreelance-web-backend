@@ -27,6 +27,10 @@ public class CustomerCreateRequest {
     private String alternatePhone;
     private String identityCardNumber;
     private String address;
+    private String provinceCode;
+    private String districtCode;
+    private String communeCode;
+    private String villageCode;
     private String occupation;
     private String employerName;
     private BigDecimal monthlyIncome;

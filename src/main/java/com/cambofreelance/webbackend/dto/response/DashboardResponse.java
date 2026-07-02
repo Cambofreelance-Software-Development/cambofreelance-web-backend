@@ -8,6 +8,7 @@ import lombok.Data;
 @Builder
 public class DashboardResponse {
     private DashboardSummaryResponse summary;
+    private List<LoanCurrencySummary> loansByCurrency;
     private List<MonthlyDataPoint> monthlyDisbursement;
     private List<MonthlyDataPoint> collectionTrend;
     private List<CurrencyDataPoint> portfolioByCurrency;

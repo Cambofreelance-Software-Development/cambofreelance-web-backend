@@ -15,6 +15,7 @@ import com.cambofreelance.webbackend.dto.response.MediaFileResponse;
 import com.cambofreelance.webbackend.entities.CustomerDocumentEntity;
 import com.cambofreelance.webbackend.entities.CustomerEntity;
 import com.cambofreelance.webbackend.entities.UserEntity;
+import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.CustomerDocumentRepository;
 import com.cambofreelance.webbackend.repository.CustomerRepository;
@@ -61,9 +62,11 @@ public class CustomerServiceImpl implements CustomerService {
         entity.setCustomerCode(nextCustomerCode());
         applyFields(entity, request.getFirstName(), request.getLastName(), request.getGender(),
             request.getDateOfBirth(), request.getPhoneNumber(), request.getAlternatePhone(),
-            request.getIdentityCardNumber(), request.getAddress(), request.getOccupation(),
-            request.getEmployerName(), request.getMonthlyIncome(), request.getGuarantorName(),
-            request.getGuarantorPhone());
+            request.getIdentityCardNumber(), request.getAddress(),
+            request.getProvinceCode(), request.getDistrictCode(),
+            request.getCommuneCode(), request.getVillageCode(),
+            request.getOccupation(), request.getEmployerName(),
+            request.getMonthlyIncome(), request.getGuarantorName(), request.getGuarantorPhone());
         entity.setOnboardingStatus(CustomerStatus.DRAFT);
         entity.setCreatedBy(StringUtils.hasText(createdByUserId) ? createdByUserId : Constants.SYSTEM);
         customerRepository.save(entity);
@@ -79,9 +82,11 @@ public class CustomerServiceImpl implements CustomerService {
 
         applyFields(entity, request.getFirstName(), request.getLastName(), request.getGender(),
             request.getDateOfBirth(), request.getPhoneNumber(), request.getAlternatePhone(),
-            request.getIdentityCardNumber(), request.getAddress(), request.getOccupation(),
-            request.getEmployerName(), request.getMonthlyIncome(), request.getGuarantorName(),
-            request.getGuarantorPhone());
+            request.getIdentityCardNumber(), request.getAddress(),
+            request.getProvinceCode(), request.getDistrictCode(),
+            request.getCommuneCode(), request.getVillageCode(),
+            request.getOccupation(), request.getEmployerName(),
+            request.getMonthlyIncome(), request.getGuarantorName(), request.getGuarantorPhone());
         entity.setUpdatedBy(updatedByUserId);
         entity.setUpdatedAt(new Date());
         customerRepository.save(entity);
@@ -123,7 +128,7 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerDocumentResponse uploadDocument(String customerId, CustomerDocumentUploadRequest request, String uploadedByUserId) {
         findOrThrow(customerId);
         if (!CustomerDocumentType.isValid(request.getDocumentType())) {
-            throw badRequest("INVALID_DOCUMENT_TYPE",
+            throw new AppException("INVALID_DOCUMENT_TYPE",
                 "Document type must be one of NATIONAL_ID_FRONT, NATIONAL_ID_BACK, CUSTOMER_PHOTO, ADDRESS_VERIFICATION, INCOME_VERIFICATION, GUARANTOR_ID");
         }
         MediaFileResponse media = mediaService.getById(request.getMediaId());
@@ -159,7 +164,7 @@ public class CustomerServiceImpl implements CustomerService {
     public void deleteDocument(String customerId, String documentId, String userId) {
         CustomerDocumentEntity doc = customerDocumentRepository.findById(documentId)
             .filter(d -> d.getCustomerId().equals(customerId))
-            .orElseThrow(() -> notFound("CUSTOMER_DOCUMENT_NOT_FOUND", "Customer document not found: " + documentId));
+            .orElseThrow(() -> new AppException("CUSTOMER_DOCUMENT_NOT_FOUND", "Customer document not found: " + documentId));
         doc.setStatus(Constants.STATUS_DELETE);
         doc.setUpdatedBy(userId);
         doc.setUpdatedAt(new Date());
@@ -252,10 +257,11 @@ public class CustomerServiceImpl implements CustomerService {
 
     private void applyFields(CustomerEntity entity, String firstName, String lastName, String gender,
         Date dateOfBirth, String phoneNumber, String alternatePhone, String identityCardNumber,
-        String address, String occupation, String employerName, BigDecimal monthlyIncome,
+        String address, String provinceCode, String districtCode, String communeCode, String villageCode,
+        String occupation, String employerName, BigDecimal monthlyIncome,
         String guarantorName, String guarantorPhone) {
         if (!Gender.isValid(gender)) {
-            throw badRequest("INVALID_GENDER", "Gender must be one of MALE, FEMALE, OTHER");
+            throw new AppException("INVALID_GENDER", "Gender must be one of MALE, FEMALE, OTHER");
         }
         entity.setFirstName(firstName);
         entity.setLastName(lastName);
@@ -265,6 +271,10 @@ public class CustomerServiceImpl implements CustomerService {
         entity.setAlternatePhone(alternatePhone);
         entity.setIdentityCardNumber(identityCardNumber);
         entity.setAddress(address);
+        entity.setProvinceCode(provinceCode);
+        entity.setDistrictCode(districtCode);
+        entity.setCommuneCode(communeCode);
+        entity.setVillageCode(villageCode);
         entity.setOccupation(occupation);
         entity.setEmployerName(employerName);
         entity.setMonthlyIncome(monthlyIncome);
@@ -277,21 +287,21 @@ public class CustomerServiceImpl implements CustomerService {
             ? customerRepository.existsByPhoneNumber(phoneNumber)
             : customerRepository.existsByPhoneNumberAndIdNot(phoneNumber, excludeId);
         if (phoneExists) {
-            throw conflict("PHONE_ALREADY_EXISTS", "A customer with this phone number already exists: " + phoneNumber);
+            throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS, "A customer with this phone number already exists.");
         }
         if (StringUtils.hasText(identityCardNumber)) {
             boolean idExists = excludeId == null
                 ? customerRepository.existsByIdentityCardNumber(identityCardNumber)
                 : customerRepository.existsByIdentityCardNumberAndIdNot(identityCardNumber, excludeId);
             if (idExists) {
-                throw conflict("IDENTITY_CARD_ALREADY_EXISTS", "A customer with this identity card number already exists: " + identityCardNumber);
+                throw new AppException(ErrorCode.IDENTITY_CARD_ALREADY_EXISTS, "A customer with this identity card number already exists.");
             }
         }
     }
 
     private void assertTransition(CustomerEntity entity, String... allowedFrom) {
         if (Arrays.stream(allowedFrom).noneMatch(s -> s.equals(entity.getOnboardingStatus()))) {
-            throw badRequest("INVALID_CUSTOMER_STATUS_TRANSITION",
+            throw new AppException("INVALID_CUSTOMER_STATUS_TRANSITION",
                 "Customer is in status " + entity.getOnboardingStatus() + "; expected one of " + Arrays.toString(allowedFrom));
         }
     }
@@ -321,24 +331,6 @@ public class CustomerServiceImpl implements CustomerService {
 
     private CustomerEntity findOrThrow(String customerId) {
         return customerRepository.findById(customerId)
-            .orElseThrow(() -> notFound("CUSTOMER_NOT_FOUND", "Customer not found: " + customerId));
-    }
-
-    private AppException notFound(String code, String message) {
-        AppException ex = new AppException(code, message);
-        ex.setHttpStatus(HttpStatus.NOT_FOUND);
-        return ex;
-    }
-
-    private AppException conflict(String code, String message) {
-        AppException ex = new AppException(code, message);
-        ex.setHttpStatus(HttpStatus.CONFLICT);
-        return ex;
-    }
-
-    private AppException badRequest(String code, String message) {
-        AppException ex = new AppException(code, message);
-        ex.setHttpStatus(HttpStatus.BAD_REQUEST);
-        return ex;
+            .orElseThrow(() -> new AppException("CUSTOMER_NOT_FOUND", "Customer not found: " + customerId));
     }
 }

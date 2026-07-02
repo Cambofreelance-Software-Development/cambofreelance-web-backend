@@ -21,6 +21,10 @@ public class CustomerResponse {
     private String alternatePhone;
     private String identityCardNumber;
     private String address;
+    private String provinceCode;
+    private String districtCode;
+    private String communeCode;
+    private String villageCode;
     private String occupation;
     private String employerName;
     private BigDecimal monthlyIncome;
@@ -65,6 +69,10 @@ public class CustomerResponse {
             .alternatePhone(e.getAlternatePhone())
             .identityCardNumber(e.getIdentityCardNumber())
             .address(e.getAddress())
+            .provinceCode(e.getProvinceCode())
+            .districtCode(e.getDistrictCode())
+            .communeCode(e.getCommuneCode())
+            .villageCode(e.getVillageCode())
             .occupation(e.getOccupation())
             .employerName(e.getEmployerName())
             .monthlyIncome(e.getMonthlyIncome())

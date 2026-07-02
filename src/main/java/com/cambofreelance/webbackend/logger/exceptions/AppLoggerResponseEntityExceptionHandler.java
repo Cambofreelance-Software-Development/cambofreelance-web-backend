@@ -11,6 +11,7 @@ import com.cambofreelance.webbackend.logger.dto.AppLogger;
 import com.cambofreelance.webbackend.logger.dto.BaseResponse;
 import com.cambofreelance.webbackend.logger.dto.ErrorResponse;
 import com.cambofreelance.webbackend.logger.utils.ExceptionUtils;
+import jakarta.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Objects;
@@ -46,7 +47,12 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
     private final ResponseCodeRedisCache responseCodeRedisCache;
 
     private Map<String, String> resolveMessage(String errorCode) {
-        var responseCode = responseCodeRedisCache.getRespCode(errorCode);
+        ResponseCodeDto responseCode = null;
+        try {
+            responseCode = responseCodeRedisCache.getRespCode(errorCode);
+        } catch (Exception ignored) {
+            // Redis may be unavailable; fall through to in-memory cache
+        }
         if (Objects.isNull(responseCode)) {
             responseCode = ResponseManagerCache.getRespCode(errorCode);
         }
@@ -191,7 +197,8 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
         String i18Message = resolveI18Message(message, request);
 
         if (Objects.equals(i18Message, "Message not yet update in our system")) {
-            i18Message = ex.getMessage();
+            String msg = ex.getMessage();
+            i18Message = (msg != null && !msg.isBlank()) ? msg : ex.getErrorCode();
         }
 
         ErrorResponse errorResponse = buildErrorResponse(message);
@@ -241,6 +248,15 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
                 buildBaseResponse(ErrorCode.ACCESS_DENIED, errorResponse, i18Message);
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(baseResponse);
+    }
+
+    @ExceptionHandler(ServletException.class)
+    public ResponseEntity<Object> handleServletException(ServletException ex, WebRequest request) {
+        Throwable cause = ex.getRootCause();
+        if (cause instanceof AppException appEx) {
+            return handleAppException(appEx, request);
+        }
+        return handleGeneralException(ex, request);
     }
 
     @ExceptionHandler(Exception.class)

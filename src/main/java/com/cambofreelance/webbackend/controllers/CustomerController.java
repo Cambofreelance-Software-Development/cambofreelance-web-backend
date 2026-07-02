@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.constants.Constants;
+import com.cambofreelance.webbackend.dto.request.BaseRequest;
 import com.cambofreelance.webbackend.dto.request.CustomerCreateRequest;
 import com.cambofreelance.webbackend.dto.request.CustomerDocumentUploadRequest;
 import com.cambofreelance.webbackend.dto.request.CustomerStatusActionRequest;
@@ -9,6 +10,7 @@ import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
 import com.cambofreelance.webbackend.services.CustomerService;
+import com.cambofreelance.webbackend.services.TaxonomyItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final TaxonomyItemService taxonomyItemService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('customers.create')")
@@ -200,6 +203,13 @@ public class CustomerController {
     ) {
         requireTenantId(tenantId);
         var result = customerService.deactivate(customerId, userId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    /** Read-only taxonomy item lookup — any authenticated tenant user may call this (no extra permission). */
+    @PostMapping("/taxonomy-items")
+    public ResponseEntity<Object> listTaxonomyItems(@RequestBody BaseRequest request) {
+        var result = taxonomyItemService.listAllTaxonomyItems(request);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
