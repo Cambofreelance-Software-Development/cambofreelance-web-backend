@@ -21,7 +21,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     echo $TZ > /etc/timezone
 
 # Make the wrapper executable and build the application
-RUN chmod +x ./gradlew && ./gradlew bootJar --no-daemon
+RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew && ./gradlew bootJar --no-daemon
 
 
 # Stage 2: Run the application
