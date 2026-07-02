@@ -9,5 +9,6 @@ import lombok.Data;
 public class DpdBucketPoint {
     private String bucket;
     private long loanCount;
-    private BigDecimal totalOverdue;
+    private BigDecimal totalOverdueUsd;
+    private BigDecimal totalOverdueKhr;
 }

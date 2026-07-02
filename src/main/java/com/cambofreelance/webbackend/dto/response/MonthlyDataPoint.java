@@ -8,5 +8,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class MonthlyDataPoint {
     private String month;
-    private BigDecimal total;
+    private BigDecimal totalUsd;
+    private BigDecimal totalKhr;
 }

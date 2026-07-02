@@ -40,23 +40,43 @@ public class DashboardServiceImpl implements DashboardService {
         long totalActiveLoans = num(em.createNativeQuery(
             "SELECT COUNT(*) FROM loan_applications WHERE application_status = 'APPROVED' AND status = 'ACT'").getSingleResult());
 
+        // These three are USD-only: this app never sums USD and KHR together (no FX conversion exists
+        // anywhere in the codebase), so a currency-blind SUM would mix raw amounts from two different
+        // currencies (KHR figures run ~4000x USD for the same real value) into one meaningless number.
+        // Per-currency figures are available separately via loansByCurrency()/portfolioByCurrency().
         BigDecimal totalLoanPortfolio = dec(em.createNativeQuery(
-            "SELECT COALESCE(SUM(loan_amount),0) FROM loan_applications WHERE application_status = 'APPROVED' AND status = 'ACT'").getSingleResult());
+            "SELECT COALESCE(SUM(loan_amount),0) FROM loan_applications " +
+            "WHERE currency = 'USD' AND application_status = 'APPROVED' AND status = 'ACT'").getSingleResult());
 
-        BigDecimal todayCollections = dec(em.createNativeQuery(
-            "SELECT COALESCE(SUM(total_paid),0) FROM payments WHERE payment_date = CURRENT_DATE AND payment_status = 'ACTIVE' AND status = 'ACT'").getSingleResult());
+        BigDecimal todayCollectionsUsd = dec(em.createNativeQuery(
+            "SELECT COALESCE(SUM(p.total_paid),0) " +
+            "FROM payments p " +
+            "JOIN loan_applications la ON la.id = p.loan_application_id " +
+            "WHERE la.currency = 'USD' AND p.payment_date = CURRENT_DATE " +
+            "  AND p.payment_status = 'ACTIVE' AND p.status = 'ACT'").getSingleResult());
+
+        BigDecimal todayCollectionsKhr = dec(em.createNativeQuery(
+            "SELECT COALESCE(SUM(p.total_paid),0) " +
+            "FROM payments p " +
+            "JOIN loan_applications la ON la.id = p.loan_application_id " +
+            "WHERE la.currency = 'KHR' AND p.payment_date = CURRENT_DATE " +
+            "  AND p.payment_status = 'ACTIVE' AND p.status = 'ACT'").getSingleResult());
 
         long overdueLoans = num(em.createNativeQuery(
             "SELECT COUNT(DISTINCT loan_application_id) FROM repayment_installments WHERE installment_status = 'OVERDUE'").getSingleResult());
 
         BigDecimal outstandingBalance = dec(em.createNativeQuery(
-            "SELECT COALESCE(SUM(remaining_balance),0) FROM repayment_installments WHERE installment_status IN ('PENDING','PARTIAL_PAID','OVERDUE')").getSingleResult());
+            "SELECT COALESCE(SUM(ri.remaining_balance),0) " +
+            "FROM repayment_installments ri " +
+            "JOIN loan_applications la ON la.id = ri.loan_application_id " +
+            "WHERE la.currency = 'USD' AND ri.installment_status IN ('PENDING','PARTIAL_PAID','OVERDUE')").getSingleResult());
 
         return DashboardSummaryResponse.builder()
             .totalCustomers(totalCustomers)
             .totalActiveLoans(totalActiveLoans)
             .totalLoanPortfolio(totalLoanPortfolio)
-            .todayCollections(todayCollections)
+            .todayCollectionsUsd(todayCollectionsUsd)
+            .todayCollectionsKhr(todayCollectionsKhr)
             .overdueLoans(overdueLoans)
             .outstandingBalance(outstandingBalance)
             .build();
@@ -66,26 +86,29 @@ public class DashboardServiceImpl implements DashboardService {
     private List<MonthlyDataPoint> monthlyDisbursement() {
         List<Object[]> rows = em.createNativeQuery(
             "SELECT TO_CHAR(DATE_TRUNC('month', d.disbursement_date), 'YYYY-MM') as month," +
-            "       COALESCE(SUM(d.disbursement_amount), 0) as total " +
+            "       COALESCE(SUM(CASE WHEN d.currency = 'USD' THEN d.disbursement_amount ELSE 0 END), 0) as total_usd," +
+            "       COALESCE(SUM(CASE WHEN d.currency = 'KHR' THEN d.disbursement_amount ELSE 0 END), 0) as total_khr " +
             "FROM loan_disbursements d " +
             "WHERE d.disbursement_date >= CURRENT_DATE - INTERVAL '12 months' " +
             "  AND d.disbursement_status = 'COMPLETED' AND d.status = 'ACT' " +
             "GROUP BY DATE_TRUNC('month', d.disbursement_date) " +
             "ORDER BY DATE_TRUNC('month', d.disbursement_date)").getResultList();
-        return rows.stream().map(r -> new MonthlyDataPoint((String) r[0], dec(r[1]))).toList();
+        return rows.stream().map(r -> new MonthlyDataPoint((String) r[0], dec(r[1]), dec(r[2]))).toList();
     }
 
     @SuppressWarnings("unchecked")
     private List<MonthlyDataPoint> collectionTrend() {
         List<Object[]> rows = em.createNativeQuery(
             "SELECT TO_CHAR(DATE_TRUNC('month', p.payment_date), 'YYYY-MM') as month," +
-            "       COALESCE(SUM(p.total_paid), 0) as total " +
+            "       COALESCE(SUM(CASE WHEN la.currency = 'USD' THEN p.total_paid ELSE 0 END), 0) as total_usd," +
+            "       COALESCE(SUM(CASE WHEN la.currency = 'KHR' THEN p.total_paid ELSE 0 END), 0) as total_khr " +
             "FROM payments p " +
+            "JOIN loan_applications la ON la.id = p.loan_application_id " +
             "WHERE p.payment_date >= CURRENT_DATE - INTERVAL '12 months' " +
             "  AND p.payment_status = 'ACTIVE' AND p.status = 'ACT' " +
             "GROUP BY DATE_TRUNC('month', p.payment_date) " +
             "ORDER BY DATE_TRUNC('month', p.payment_date)").getResultList();
-        return rows.stream().map(r -> new MonthlyDataPoint((String) r[0], dec(r[1]))).toList();
+        return rows.stream().map(r -> new MonthlyDataPoint((String) r[0], dec(r[1]), dec(r[2]))).toList();
     }
 
     @SuppressWarnings("unchecked")
@@ -138,16 +161,18 @@ public class DashboardServiceImpl implements DashboardService {
     private List<DpdBucketPoint> overdueAnalysis() {
         List<Object[]> rows = em.createNativeQuery(
             "SELECT " +
-            "  CASE WHEN dpd BETWEEN 1 AND 30 THEN '1-30 days' " +
-            "       WHEN dpd BETWEEN 31 AND 60 THEN '31-60 days' " +
-            "       WHEN dpd BETWEEN 61 AND 90 THEN '61-90 days' " +
+            "  CASE WHEN cc.dpd BETWEEN 1 AND 30 THEN '1-30 days' " +
+            "       WHEN cc.dpd BETWEEN 31 AND 60 THEN '31-60 days' " +
+            "       WHEN cc.dpd BETWEEN 61 AND 90 THEN '61-90 days' " +
             "       ELSE '90+ days' END as bucket, " +
             "  COUNT(*) as loan_count, " +
-            "  COALESCE(SUM(total_overdue_amount), 0) as total_overdue " +
-            "FROM collection_cases " +
-            "WHERE dpd > 0 AND status = 'ACT' " +
-            "GROUP BY bucket ORDER BY MIN(dpd)").getResultList();
-        return rows.stream().map(r -> new DpdBucketPoint((String) r[0], num(r[1]), dec(r[2]))).toList();
+            "  COALESCE(SUM(CASE WHEN la.currency = 'USD' THEN cc.total_overdue_amount ELSE 0 END), 0) as total_overdue_usd, " +
+            "  COALESCE(SUM(CASE WHEN la.currency = 'KHR' THEN cc.total_overdue_amount ELSE 0 END), 0) as total_overdue_khr " +
+            "FROM collection_cases cc " +
+            "JOIN loan_applications la ON la.id = cc.loan_application_id " +
+            "WHERE cc.dpd > 0 AND cc.status = 'ACT' " +
+            "GROUP BY bucket ORDER BY MIN(cc.dpd)").getResultList();
+        return rows.stream().map(r -> new DpdBucketPoint((String) r[0], num(r[1]), dec(r[2]), dec(r[3]))).toList();
     }
 
     private static long num(Object v) {
