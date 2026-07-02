@@ -39,6 +39,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 @Service
@@ -97,13 +99,31 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public TenantResponse create(TenantCreateRequest request) {
-        if (tenantRepository.existsByCode(request.getCode())) {
-            throw new AppException("TENANT_CODE_EXISTS", "Tenant code '" + request.getCode() + "' already exists");
+        String code = request.getCode().trim().toLowerCase();
+        if (tenantRepository.existsByCode(code)) {
+            throw new AppException("TENANT_CODE_EXISTS", "Tenant code '" + code + "' already exists");
         }
+
+        String username = code + "." + request.getUsername().trim();
+        if (userRepository.findByUsernameAndStatus(username, Constants.STATUS_ACTIVE).isPresent()) {
+            throw new AppException("USERNAME_ALREADY_EXIST", "Username already exists");
+        }
+        if (userRepository.findByEmailAndStatus(request.getEmail(), Constants.STATUS_ACTIVE).isPresent()) {
+            throw new AppException("EMAIL_ALREADY_EXIST", "Email already in use");
+        }
+        if (StringUtils.hasText(request.getPhoneNumber())
+            && userRepository.findByPhoneNumberAndStatus(request.getPhoneNumber(), Constants.STATUS_ACTIVE).isPresent()) {
+            throw new AppException("PHONE_ALREADY_EXIST", "Phone number already in use");
+        }
+        RoleEntity tenantAdmin = roleRepository.findByCode("TENANT_ADMIN")
+            .orElseThrow(() -> new AppException("TENANT_ADMIN_ROLE_MISSING",
+                "TENANT_ADMIN role not found — cannot grant tenant admin access"));
+
+        Date now = new Date();
 
         TenantEntity entity = new TenantEntity();
         entity.setId(UUID.randomUUID().toString());
-        entity.setCode(request.getCode().trim().toUpperCase());
+        entity.setCode(code);
         entity.setName(request.getName());
         entity.setTenantType(request.getTenantType());
         entity.setDescription(request.getDescription());
@@ -116,10 +136,36 @@ public class TenantServiceImpl implements TenantService {
         entity.setCompanyPhone(request.getCompanyPhone());
         entity.setWebsite(request.getWebsite());
         entity.setStatus(Constants.STATUS_ACTIVE);
-        entity.setCreatedAt(new Date());
-
+        entity.setSchemaStatus("PENDING");
+        entity.setCreatedAt(now);
         TenantEntity saved = tenantRepository.save(entity);
-        tenantSchemaProvisioningService.provisionSchema(saved.getId());
+
+        UserEntity user = new UserEntity();
+        user.setUserId(UUID.randomUUID().toString());
+        user.setUsername(username);
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setPassword(bCryptPasswordEncoder.encode(request.getPassword()));
+        user.setUserType(Constants.USER);
+        user.setStatus(Constants.STATUS_ACTIVE);
+        user.setTenantId(saved.getId());
+        user.setRoles(new HashSet<>(Set.of(tenantAdmin)));
+        user.setCreatedAt(now);
+        userRepository.save(user);
+
+        subscriptionService.subscribeToFreePlan(saved.getId());
+
+        // Schema creation + Flyway migration is the slow part — defer it to a background
+        // thread that only starts once this transaction (tenant + user + subscription) commits,
+        // so the API response isn't blocked on CREATE SCHEMA/migrate.
+        String tenantId = saved.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                tenantSchemaProvisioningService.provisionSchemaAsync(tenantId);
+            }
+        });
+
         return TenantResponse.from(saved);
     }
 
@@ -346,8 +392,9 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public TenantRegistrationResponse register(TenantRegistrationRequest request) {
-        if (tenantRepository.existsByCode(request.getCode())) {
-            throw new AppException("TENANT_CODE_EXISTS", "Tenant code '" + request.getCode() + "' already exists");
+        String code = request.getCode().trim().toLowerCase();
+        if (tenantRepository.existsByCode(code)) {
+            throw new AppException("TENANT_CODE_EXISTS", "Tenant code '" + code + "' already exists");
         }
         if (userRepository.findByUsernameAndStatus(request.getUsername(), Constants.STATUS_ACTIVE).isPresent()) {
             throw new AppException("USERNAME_ALREADY_EXIST", "Username already exists");
@@ -375,7 +422,7 @@ public class TenantServiceImpl implements TenantService {
 
         TenantEntity tenant = new TenantEntity();
         tenant.setId(UUID.randomUUID().toString());
-        tenant.setCode(request.getCode().trim().toUpperCase());
+        tenant.setCode(code);
         tenant.setName(request.getName());
         tenant.setTenantType(request.getTenantType());
         tenant.setDescription(request.getDescription());
@@ -389,6 +436,7 @@ public class TenantServiceImpl implements TenantService {
         tenant.setWebsite(request.getWebsite());
         tenant.setRequestedByUserId(user.getUserId());
         tenant.setStatus(Constants.STATUS_PENDING);
+        tenant.setSchemaStatus("PENDING");
         tenant.setCreatedAt(now);
         tenantRepository.save(tenant);
 
@@ -442,7 +490,14 @@ public class TenantServiceImpl implements TenantService {
             });
         }
 
-        tenantSchemaProvisioningService.provisionSchema(tenantId);
+        // Same as create(): defer the slow CREATE SCHEMA + Flyway migrate to a background
+        // thread that only starts once this transaction commits.
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                tenantSchemaProvisioningService.provisionSchemaAsync(tenantId);
+            }
+        });
 
         return TenantResponse.from(findOrThrow(tenantId));
     }

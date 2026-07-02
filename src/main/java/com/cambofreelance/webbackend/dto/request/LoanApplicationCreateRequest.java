@@ -1,7 +1,6 @@
 package com.cambofreelance.webbackend.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -15,8 +14,8 @@ public class LoanApplicationCreateRequest {
     @NotBlank(message = "Customer ID is required")
     private String customerId;
 
+    /** Minimum depends on currency (USD 10 / KHR 40000) — enforced in LoanApplicationServiceImpl. */
     @NotNull(message = "Loan amount is required")
-    @DecimalMin(value = "500.01", message = "Loan amount must be greater than 500")
     private BigDecimal loanAmount;
 
     @NotBlank(message = "Currency is required")

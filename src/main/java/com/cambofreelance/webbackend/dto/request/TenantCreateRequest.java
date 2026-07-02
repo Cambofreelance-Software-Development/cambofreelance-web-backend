@@ -1,5 +1,6 @@
 package com.cambofreelance.webbackend.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -32,4 +33,18 @@ public class TenantCreateRequest {
     private String companyPhone;
 
     private String website;
+
+    // Tenant admin user, auto-created and assigned to the tenant
+
+    @NotBlank(message = "Username is required")
+    private String username;
+
+    @NotBlank(message = "Email is required")
+    @Email
+    private String email;
+
+    private String phoneNumber;
+
+    @NotBlank(message = "Password is required")
+    private String password;
 }

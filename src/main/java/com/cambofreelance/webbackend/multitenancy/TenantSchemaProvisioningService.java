@@ -1,13 +1,16 @@
 package com.cambofreelance.webbackend.multitenancy;
 
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
+import com.cambofreelance.webbackend.repository.TenantRepository;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Date;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 /**
@@ -23,6 +26,7 @@ public class TenantSchemaProvisioningService {
     private static final String TENANT_MIGRATION_LOCATION = "classpath:db/tenant-migration";
 
     private final DataSource dataSource;
+    private final TenantRepository tenantRepository;
 
     public void provisionSchema(String tenantId) {
         String schema = TenantSchemaUtil.schemaName(tenantId);
@@ -46,5 +50,28 @@ public class TenantSchemaProvisioningService {
         flyway.migrate();
 
         log.info("Provisioned schema {} for tenantId={}", schema, tenantId);
+    }
+
+    /**
+     * Runs schema provisioning off the request thread and flips the tenant's schemaStatus
+     * to READY/FAILED when done, so the create-tenant API doesn't block on CREATE SCHEMA + Flyway.
+     */
+    @Async("tenantProvisioningExecutor")
+    public void provisionSchemaAsync(String tenantId) {
+        try {
+            provisionSchema(tenantId);
+            updateSchemaStatus(tenantId, "READY");
+        } catch (Exception ex) {
+            log.error("Async schema provisioning failed for tenantId={}", tenantId, ex);
+            updateSchemaStatus(tenantId, "FAILED");
+        }
+    }
+
+    private void updateSchemaStatus(String tenantId, String schemaStatus) {
+        tenantRepository.findById(tenantId).ifPresent(tenant -> {
+            tenant.setSchemaStatus(schemaStatus);
+            tenant.setUpdatedAt(new Date());
+            tenantRepository.save(tenant);
+        });
     }
 }

@@ -83,6 +83,10 @@ public class TenantEntity extends BaseEntity {
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 
+    /** PENDING | READY | FAILED — background schema/Flyway provisioning state */
+    @Column(name = "schema_status", nullable = false)
+    private String schemaStatus = "READY";
+
     /** ACT | SUS | EXP | DEL | PEN */
     // status field is inherited from BaseEntity (default ACT)
 }

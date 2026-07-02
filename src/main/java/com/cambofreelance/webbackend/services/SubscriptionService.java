@@ -17,6 +17,9 @@ public interface SubscriptionService {
 
     SubscriptionResponse subscribe(String tenantId, SubscriptionCreateRequest request);
 
+    /** Auto-assigns the FREE package for 1 month, activated immediately. Used when an admin creates a new tenant. */
+    SubscriptionResponse subscribeToFreePlan(String tenantId);
+
     /** Used by tenant self-registration: validates the package/cycle/amount but stays PEN, no dates, no tenant sync. */
     SubscriptionResponse createPending(String tenantId, SubscriptionCreateRequest request);
 

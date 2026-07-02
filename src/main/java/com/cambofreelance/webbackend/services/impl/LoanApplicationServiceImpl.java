@@ -71,6 +71,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         CustomerEntity customer = findCustomerOrThrow(request.getCustomerId());
 
         validateEnums(request.getCurrency(), request.getTenorUnit(), request.getPaymentType(), request.getPurpose());
+        assertMinLoanAmount(request.getLoanAmount(), request.getCurrency());
 
         LoanApplicationEntity entity = new LoanApplicationEntity();
         entity.setId(UUID.randomUUID().toString());
@@ -151,6 +152,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             }
             entity.setPurpose(request.getPurpose().toUpperCase());
         }
+        assertMinLoanAmount(entity.getLoanAmount(), entity.getCurrency());
 
         entity.setUpdatedBy(updatedByUserId);
         entity.setUpdatedAt(new Date());
@@ -425,6 +427,14 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         }
         if (!LoanPurpose.isValid(purpose)) {
             throw badRequest("INVALID_PURPOSE", "Purpose must be one of BUSINESS, FARMING, PERSONAL");
+        }
+    }
+
+    private void assertMinLoanAmount(BigDecimal loanAmount, String currency) {
+        BigDecimal minAmount = LoanCurrency.minLoanAmount(currency);
+        if (loanAmount == null || loanAmount.compareTo(minAmount) < 0) {
+            throw badRequest("LOAN_AMOUNT_TOO_LOW",
+                "Loan amount must be at least " + minAmount + " " + currency.toUpperCase());
         }
     }
 

@@ -98,6 +98,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     @Transactional
+    public SubscriptionResponse subscribeToFreePlan(String tenantId) {
+        SubscriptionPackageEntity freePkg = packageRepository.findByCode("FREE")
+            .orElseThrow(() -> new AppException("PACKAGE_NOT_FOUND", "FREE subscription package not found"));
+
+        SubscriptionCreateRequest request = new SubscriptionCreateRequest();
+        request.setPackageId(freePkg.getId());
+        request.setBillingCycle(BillingCycle.MONTHLY);
+        request.setAmount(BigDecimal.ZERO);
+        request.setCurrency("USD");
+        request.setAutoRenewal(false);
+        return subscribe(tenantId, request);
+    }
+
+    @Override
+    @Transactional
     public SubscriptionResponse createPending(String tenantId, SubscriptionCreateRequest request) {
         if (!tenantRepository.existsById(tenantId)) {
             throw new AppException("TENANT_NOT_FOUND", "Tenant not found: " + tenantId);

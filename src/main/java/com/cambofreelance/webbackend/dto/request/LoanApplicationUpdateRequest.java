@@ -1,7 +1,6 @@
 package com.cambofreelance.webbackend.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -13,7 +12,7 @@ public class LoanApplicationUpdateRequest {
 
     private String customerId;
 
-    @DecimalMin(value = "500.01", message = "Loan amount must be greater than 500")
+    /** Minimum depends on currency (USD 10 / KHR 40000) — enforced in LoanApplicationServiceImpl. */
     private BigDecimal loanAmount;
 
     private String currency;
