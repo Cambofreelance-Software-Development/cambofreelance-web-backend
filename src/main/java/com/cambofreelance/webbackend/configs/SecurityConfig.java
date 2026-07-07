@@ -42,6 +42,8 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher("/auth/openapi/swagger-ui.html"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/articles"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/articles/**"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/features"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/feature-categories"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/media/*/view"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/cms/settings/stats"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/cms/settings/public"),
