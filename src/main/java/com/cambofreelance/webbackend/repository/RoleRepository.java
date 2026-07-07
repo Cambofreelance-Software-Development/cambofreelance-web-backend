@@ -16,8 +16,4 @@ public interface RoleRepository extends JpaRepository<RoleEntity, String>,
     List<RoleEntity> findAllByStatus(String status);
 
     boolean existsByCodeAndStatusNot(String code, String status);
-
-    List<RoleEntity> findByTenantIdAndStatusNot(String tenantId, String status);
-
-    Optional<RoleEntity> findByIdAndTenantId(String id, String tenantId);
 }

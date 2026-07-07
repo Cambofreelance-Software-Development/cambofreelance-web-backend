@@ -37,10 +37,4 @@ public class OAuthRequest {
   @JsonProperty("refresh_token")
   private String refreshToken;
 
-  @JsonProperty("provider")
-  private String provider;
-
-  @JsonProperty("code")
-  private String code;
-
 }

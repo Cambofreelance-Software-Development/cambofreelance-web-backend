@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -34,10 +33,8 @@ public class OAuthAuthenticator {
     private final TokenRedisCache tokenRedisCache;
     private final JwtUtils jwtUtils;
     private final UserService userService;
-    private final SocialAuthService socialAuthService;
     private final UserAgentParser userAgentParser;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final TenantService tenantService;
 
     @Value("${authentication.jwtExpiration}")
     private long jwtExpirationMs;
@@ -61,8 +58,6 @@ public class OAuthAuthenticator {
             if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
                 throw new AppException(ErrorCode.UNAUTHORIZED, "Invalid credentials");
             }
-            checkTenantStatus(user);
-
             // New device detection
             boolean isKnownDevice = refreshTokenRepository.existsByUserIdAndDeviceId(
                 user.getUserId(), request.getDeviceId());
@@ -112,8 +107,6 @@ public class OAuthAuthenticator {
             if (user == null) {
                 throw new AppException(ErrorCode.UNAUTHORIZED, "User not found");
             }
-            checkTenantStatus(user);
-
             // revoke the old access token from Redis
             tokenRedisCache.revokeAccessToken(existingRefresh.getAccessToken());
 
@@ -130,32 +123,6 @@ public class OAuthAuthenticator {
             response.setToken(accessToken);
             response.setRefreshToken(newRefresh.getRefreshToken());
             response.setExpiresIn(issuedAt);
-
-        } else if (request.getGrantType().equals(Constants.SOCIAL)) {
-            log.info("Social login via provider: {}", request.getProvider());
-            if (request.getProvider() == null || request.getCode() == null) {
-                throw new AppException(ErrorCode.BAD_REQUEST, "provider and code are required for social login");
-            }
-
-            SocialAuthService.SocialUserInfo info = socialAuthService.fetchUserInfo(
-                request.getProvider(), request.getCode(), request.getRedirectUri());
-
-            UserEntity user = userService.findOrCreateSocialUser(info);
-            checkTenantStatus(user);
-
-            SessionMetadataDto metadata = buildSessionMetadata(httpRequest, true);
-
-            String accessToken = jwtUtils.generateJwtToken(user, issuedAt, request.getDeviceId());
-            RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(
-                accessToken, user.getUserId(), request.getDeviceId(), Constants.STATUS_ACTIVE, user, metadata);
-
-            TokenCacheDto dto = buildTokenCacheDto(user, request.getDeviceId());
-            tokenRedisCache.storeAccessToken(accessToken, dto, jwtExpirationMs);
-
-            response.setToken(accessToken);
-            response.setRefreshToken(refreshToken.getRefreshToken());
-            response.setExpiresIn(issuedAt);
-            response.setNewDevice(true);
 
         } else {
             log.error("Invalid grant type: {}", request.getGrantType());
@@ -196,16 +163,8 @@ public class OAuthAuthenticator {
             .deviceId(deviceId)
             .applicationId(user.getApplicationId())
             .userType(user.getUserType())
-            .tenantId(user.getTenantId())
             .status(Constants.STATUS_ACTIVE)
             .permissions(userService.getPermissionCodes(user.getUserId()))
             .build();
-    }
-
-    /** Blocks login when the user's tenant is suspended or its subscription has expired. */
-    private void checkTenantStatus(UserEntity user) {
-        if (StringUtils.hasText(user.getTenantId())) {
-            tenantService.assertActiveForLogin(user.getTenantId());
-        }
     }
 }

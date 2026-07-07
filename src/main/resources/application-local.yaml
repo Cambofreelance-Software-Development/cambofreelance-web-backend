@@ -7,7 +7,7 @@ spring:
   session:
     store-type: none
   datasource:
-    url: jdbc:postgresql://194.233.91.140:4010/db_cms_prod
+    url: jdbc:postgresql://194.233.91.140:4010/dev_softpoint_auto_id
     username: superuser
     password: CF_SUPERUSER@@2026
     driver-class-name: org.postgresql.Driver
@@ -21,10 +21,8 @@ spring:
 #          - db_cms
   jpa:
     hibernate:
-      # Flyway is the sole source of schema truth for both public and per-tenant schemas.
-      # "validate" doesn't work here: at boot there's no active tenant, so the multi-tenant
-      # connection provider resolves to "public" and Hibernate tries to validate tenant-schema
-      # -only entities (CustomerEntity, ...) against public, where they intentionally don't exist.
+      # Flyway is the sole source of schema truth. Hibernate does not manage or validate the
+      # schema; "none" avoids DDL generation and boot-time validation against the live DB.
       ddl-auto: none
 
 #  flyway:
@@ -150,11 +148,3 @@ authentication:
 
 session:
   max-concurrent: 5
-
-oauth:
-  google:
-    client-id: ${GOOGLE_CLIENT_ID:}
-    client-secret: ${GOOGLE_CLIENT_SECRET:}
-  github:
-    client-id: ${GITHUB_CLIENT_ID:}
-    client-secret: ${GITHUB_CLIENT_SECRET:}

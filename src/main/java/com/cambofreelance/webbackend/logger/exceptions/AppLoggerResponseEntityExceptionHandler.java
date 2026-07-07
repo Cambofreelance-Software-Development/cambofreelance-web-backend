@@ -27,7 +27,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -123,34 +122,6 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
         ErrorResponse errorResponse = buildErrorResponse(message);
         BaseResponse<ErrorResponse> baseResponse =
                 buildBaseResponse(LoggerErrorCode.DATABASE_CONNECTION_ERROR, errorResponse, i18Message);
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(baseResponse);
-    }
-
-    @ExceptionHandler(InvalidDataAccessResourceUsageException.class)
-    public ResponseEntity<Object> handleInvalidDataAccessResourceUsage(
-            InvalidDataAccessResourceUsageException ex, WebRequest request) {
-        appLogger.setException(ex);
-
-        if (!isMissingTenantTable(ex)) {
-            return handleGeneralException(ex, request);
-        }
-
-        String messageText = "Tenant schema is missing required tables. Please re-run tenant provisioning.";
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .messageEn(messageText)
-                .messageKm("Tenant schema is missing required tables. Please re-run tenant provisioning.")
-                .messageCh("Tenant schema is missing required tables. Please re-run tenant provisioning.")
-                .httpStatus(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()))
-                .build();
-
-        BaseResponse<ErrorResponse> baseResponse = BaseResponse.<ErrorResponse>builder()
-                .code("SCHEMA_PROVISION_FAILED")
-                .success(false)
-                .timestamp(System.currentTimeMillis())
-                .data(errorResponse)
-                .message(messageText)
-                .build();
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(baseResponse);
     }
@@ -267,15 +238,4 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
                 : String.format("%s [%s]", baseMessage, errors);
     }
 
-    private boolean isMissingTenantTable(Throwable ex) {
-        Throwable current = ex;
-        while (current != null) {
-            String message = current.getMessage();
-            if (message != null && message.contains("relation \"") && message.contains(" does not exist")) {
-                return true;
-            }
-            current = current.getCause();
-        }
-        return false;
-    }
 }

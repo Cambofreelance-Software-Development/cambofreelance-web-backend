@@ -67,12 +67,10 @@ public final class Constants {
     public static final String ROLE_USER = "UserEntity";
     public static final String PASSWORD = "password";
     public static final String REFRESH_TOKEN = "refresh_token";
-    public static final String SOCIAL = "social";
     public static final String USER_TYPE = "UserEntity-Type";
     public static final String DEVICE_ID = "Device-Id";
     public static final String USER_ID = "User-Id";
     public static final String CLIENT_USER_NAME = "User-Name";
-    public static final String TENANT_ID = "Tenant-Id";
 
     public static final String REDIS_ACCESS_TOKEN_PREFIX = "AUTH:ACCESS:";
     public static final String REDIS_REFRESH_TOKEN_PREFIX = "AUTH:REFRESH:";

@@ -231,7 +231,6 @@ public class UserServiceImpl implements UserService {
             .phoneNumber(user.getPhoneNumber())
             .userType(user.getUserType())
             .status(user.getStatus())
-            .tenantId(user.getTenantId())
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -304,7 +303,6 @@ public class UserServiceImpl implements UserService {
             .phoneNumber(user.getPhoneNumber())
             .userType(user.getUserType())
             .status(user.getStatus())
-            .tenantId(user.getTenantId())
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -388,7 +386,6 @@ public class UserServiceImpl implements UserService {
         ));
         user.setUserType(StringUtils.hasText(request.getUserType()) ? request.getUserType() : Constants.USER);
         user.setStatus(Constants.STATUS_ACTIVE);
-        user.setTenantId(request.getTenantId());
 
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
             Set<RoleEntity> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
@@ -426,9 +423,6 @@ public class UserServiceImpl implements UserService {
         }
         if (StringUtils.hasText(request.getPassword())) {
             user.setPassword(bCryptPasswordEncoder.encode(request.getPassword()));
-        }
-        if (request.getTenantId() != null) {
-            user.setTenantId(request.getTenantId());
         }
         if (request.getRoleIds() != null) {
             Set<RoleEntity> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
@@ -514,44 +508,5 @@ public class UserServiceImpl implements UserService {
         user.setPassword(bCryptPasswordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         passwordResetCache.delete(request.getEmail());
-    }
-
-    @Override
-    @Transactional
-    public UserEntity findOrCreateSocialUser(com.cambofreelance.webbackend.services.SocialAuthService.SocialUserInfo info) {
-        // Try to find existing social user by provider + provider ID
-        Optional<UserEntity> existing = userRepository
-            .findBySocialProviderAndSocialProviderId(info.getProvider(), info.getProviderId());
-        if (existing.isPresent()) {
-            return existing.get();
-        }
-
-        // Fall back to finding by email (link existing account)
-        Optional<UserEntity> byEmail = userRepository.findByEmailAndStatus(info.getEmail(), Constants.STATUS_ACTIVE);
-        if (byEmail.isPresent()) {
-            UserEntity user = byEmail.get();
-            // Link the social provider to the existing account
-            user.setSocialProvider(info.getProvider());
-            user.setSocialProviderId(info.getProviderId());
-            return userRepository.save(user);
-        }
-
-        // Create a new user for this social identity
-        UserEntity user = new UserEntity();
-        user.setUserId(UUID.randomUUID().toString());
-        user.setEmail(info.getEmail());
-        // Derive a unique username from name + short ID suffix
-        String baseName = info.getName().isBlank() ? info.getEmail().split("@")[0] : info.getName().replaceAll("\\s+", "").toLowerCase();
-        String suffix = user.getUserId().substring(0, 6);
-        user.setUsername(baseName + "_" + suffix);
-        user.setSocialProvider(info.getProvider());
-        user.setSocialProviderId(info.getProviderId());
-        user.setRegisterChannel("SOCIAL");
-        user.setUserType(Constants.USER);
-        user.setStatus(Constants.STATUS_ACTIVE);
-        user.setCreatedBy(Constants.SYSTEM);
-        // Set an impossible-to-authenticate password (not a valid bcrypt hash)
-        user.setPassword(null);
-        return userRepository.save(user);
     }
 }

@@ -4,7 +4,7 @@ spring:
   application:
     name: cms-service
   profiles:
-    active: dev
+    active: local
   cloud:
     compatibility-verifier:
       enabled: false

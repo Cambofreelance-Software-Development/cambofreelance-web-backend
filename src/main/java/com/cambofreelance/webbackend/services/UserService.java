@@ -59,6 +59,4 @@ public interface UserService {
     String forgotPassword(ForgotPasswordRequest request) throws AppException;
 
     void resetPassword(ResetPasswordRequest request) throws AppException;
-
-    UserEntity findOrCreateSocialUser(SocialAuthService.SocialUserInfo info) throws AppException;
 }

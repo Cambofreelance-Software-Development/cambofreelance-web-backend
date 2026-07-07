@@ -35,9 +35,6 @@ public class UserProfileResponse {
     @JsonProperty("status")
     private String status;
 
-    @JsonProperty("tenantId")
-    private String tenantId;
-
     @JsonProperty("createdAt")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date createdAt;

@@ -51,7 +51,6 @@ public class JwtUtils {
         .claim(Constants.APPLICATION_TYPE, userEntity.getApplicationId())
         .claim(Constants.USER_TYPE, userEntity.getUserType())
         .claim(Constants.USER_ID, userEntity.getUserId())
-        .claim(Constants.TENANT_ID, userEntity.getTenantId())
         .claim(Constants.DEVICE_ID,deviceId)
         .claim(Constants.CLIENT_USER_NAME,userEntity.getUsername())
         .setIssuedAt(date)

@@ -47,9 +47,6 @@ public class UserEntity extends BaseEntity implements Serializable {
     @Column(name = "APPLICATION_ID")
     private String applicationId;
 
-    @Column(name = "TENANT_ID")
-    private String tenantId;
-
     @Column(name = "USER_TYPE")
     private String userType;
 
@@ -76,12 +73,6 @@ public class UserEntity extends BaseEntity implements Serializable {
     @Column(name = "INVALID_OTP_AT")
     @Temporal(TemporalType.TIMESTAMP)
     private Date invalidOtpAt;
-
-    @Column(name = "SOCIAL_PROVIDER")
-    private String socialProvider;
-
-    @Column(name = "SOCIAL_PROVIDER_ID")
-    private String socialProviderId;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "USER_ROLES",
