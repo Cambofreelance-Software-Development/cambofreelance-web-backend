@@ -110,7 +110,7 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
                 .messageEn(formatErrorMessage(message.get(LoggerConstant.MESSAGE), errors))
                 .messageKm(formatErrorMessage(message.get(LoggerConstant.MESSAGE_KH), errors))
                 .messageCh(formatErrorMessage(message.get(LoggerConstant.MESSAGE_CN), errors))
-                .httpStatus(formatErrorMessage(message.get(LoggerConstant.HTTP_STATUS), errors))
+                .httpStatus(message.get(LoggerConstant.HTTP_STATUS))
                 .build();
 
         BaseResponse<ErrorResponse> baseResponse = buildBaseResponse(LoggerErrorCode.BAD_REQUEST, errorResponse,
@@ -194,23 +194,51 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
         appLogger.setException(ex);
 
         Map<String, String> message = resolveMessage(ex.getErrorCode());
-        String i18Message = resolveI18Message(message, request);
+        // Language-agnostic catalog-miss check: the EN entry is the placeholder text
+        // regardless of the request's Accept-Language.
+        boolean catalogMiss = Objects.equals(
+                message.get(LoggerConstant.MESSAGE),
+                ExceptionUtils.messageNotFound().get(LoggerConstant.MESSAGE));
 
-        if (Objects.equals(i18Message, "Message not yet update in our system")) {
+        String i18Message = resolveI18Message(message, request);
+        ErrorResponse errorResponse = buildErrorResponse(message);
+
+        if (catalogMiss) {
             String msg = ex.getMessage();
-            i18Message = (msg != null && !msg.isBlank()) ? msg : ex.getErrorCode();
+            String fallback = (msg != null && !msg.isBlank()) ? msg : ex.getErrorCode();
+            i18Message = fallback;
+            // Carry the real message in the body too, so clients reading
+            // data.messageEn/messageKm don't render the placeholder text.
+            errorResponse = ErrorResponse.builder()
+                    .messageEn(fallback)
+                    .messageKm(fallback)
+                    .messageCh(fallback)
+                    .build();
         }
 
-        ErrorResponse errorResponse = buildErrorResponse(message);
         BaseResponse<ErrorResponse> baseResponse =
                 buildBaseResponse(ex.getErrorCode(), errorResponse, i18Message);
-        // Only registered response codes carry an explicit httpStatus; ad-hoc AppException
-        // codes (the common case) must fall back to the exception's own status (default 400),
-        // never silently to 200 — otherwise the client treats a failed request as a success.
-        HttpStatus httpStatus = Strings.isEmpty(errorResponse.getHttpStatus())
-                ? ex.getHttpStatus()
-                : HttpStatus.valueOf(Integer.parseInt(errorResponse.getHttpStatus()));
-        return ResponseEntity.status(httpStatus).body(baseResponse);
+        return ResponseEntity
+                .status(resolveErrorStatus(errorResponse.getHttpStatus(), ex))
+                .body(baseResponse);
+    }
+
+    /**
+     * Registered response codes carry an explicit httpStatus; ad-hoc AppException codes
+     * (the common case) fall back to the exception's own status (default 400). A blank,
+     * malformed, or 2xx catalog status is never honoured for an error response —
+     * otherwise the client treats a failed request as a success.
+     */
+    private HttpStatus resolveErrorStatus(String catalogStatus, AppException ex) {
+        if (Strings.isEmpty(catalogStatus)) {
+            return ex.getHttpStatus();
+        }
+        try {
+            HttpStatus status = HttpStatus.valueOf(Integer.parseInt(catalogStatus.trim()));
+            return status.isError() ? status : ex.getHttpStatus();
+        } catch (IllegalArgumentException e) {
+            return ex.getHttpStatus();
+        }
     }
 
     @Override

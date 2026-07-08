@@ -20,7 +20,7 @@ public final class ErrorCode {
     public final static String CREATE_DATA_SUCCESS = "SUC-003";
     public final static String UPDATE_DATA_SUCCESS = "SUC-004";
     public final static String DELETE_DATA_SUCCESS = "SUC-005";
-    public final static String UPDATE_PASSWORD_SUCCESS = "SUC-006";
+    public final static String UPDATE_PASSWORD_SUCCESS = "SUC-007";
 
     public final static String USERNAME_ALREADY_EXIST = "ERR-0006";
     public final static String EMAIL_ALREADY_EXIST = "ERR-0007";
@@ -29,4 +29,5 @@ public final class ErrorCode {
     public static final String LOGIN_SUCCESS = "ERR-00007";
     public static final String INVALID_OTP   = "ERR-0011";
     public static final String OTP_EXPIRED   = "ERR-0012";
+    public static final String REGISTER_SUCCESS = "SUC-007";
 }

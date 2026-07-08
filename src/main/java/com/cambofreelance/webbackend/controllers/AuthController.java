@@ -46,7 +46,7 @@ public class AuthController {
         @RequestHeader(value = Constants.CLIENT_LANG, required = false) String userLang) {
         log.info("Request for register user {}", request);
         userService.registerUser(request);
-        MessageResponse messageResponse = new MessageResponse("", ErrorCode.LOGIN_SUCCESS);
+        MessageResponse messageResponse = new MessageResponse("", ErrorCode.REGISTER_SUCCESS);
         return new ResponseEntity<>(messageResponse, HttpStatus.OK);
     }
 
