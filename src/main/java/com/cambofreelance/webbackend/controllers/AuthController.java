@@ -54,7 +54,8 @@ public class AuthController {
     public ResponseEntity<Object> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         String otp = userService.forgotPassword(request);
         // otp is null when email not found — return same response for security
-        Object data = (otp != null) ? java.util.Map.of("otp", otp) : "";
+        log.info(" Send to mail : {} and OTP {}", request.getEmail(), otp);
+        Object data = (otp != null) ? java.util.Map.of("otp", "") : "";
         return new ResponseEntity<>(new MessageResponse(data, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
