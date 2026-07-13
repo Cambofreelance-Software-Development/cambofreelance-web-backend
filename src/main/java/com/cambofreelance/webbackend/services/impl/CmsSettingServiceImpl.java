@@ -5,11 +5,15 @@ import com.cambofreelance.webbackend.constants.SettingGroup;
 import com.cambofreelance.webbackend.dto.request.CdnSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
+import com.cambofreelance.webbackend.dto.request.HardwarePageSettingRequest;
+import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsSeoSettingResponse;
+import com.cambofreelance.webbackend.dto.response.HardwarePageSettingResponse;
+import com.cambofreelance.webbackend.dto.response.HomepagePageSettingResponse;
 import com.cambofreelance.webbackend.dto.response.IpWhitelistResponse;
 import com.cambofreelance.webbackend.dto.response.SitePublicConfigResponse;
 import com.cambofreelance.webbackend.dto.response.SiteStatsResponse;
@@ -299,6 +303,159 @@ public class CmsSettingServiceImpl implements CmsSettingService {
             .socialInstagram(social.getOrDefault("social_instagram", ""))
             .socialFacebook(social.getOrDefault("social_facebook", ""))
             .build();
+    }
+
+    // ── Hardware page ─────────────────────────────────────────────────────────
+
+    @Override
+    public HardwarePageSettingResponse getHardwarePageSettings() {
+        Map<String, String> m = loadGroup(SettingGroup.HARDWARE);
+        return HardwarePageSettingResponse.builder()
+            .heroTitle(m.getOrDefault("hardware_hero_title", ""))
+            .heroTitleKh(m.getOrDefault("hardware_hero_title_kh", ""))
+            .heroSubtitle(m.getOrDefault("hardware_hero_subtitle", ""))
+            .heroSubtitleKh(m.getOrDefault("hardware_hero_subtitle_kh", ""))
+            .heroCtaLabel(m.getOrDefault("hardware_hero_cta_label", ""))
+            .heroCtaLabelKh(m.getOrDefault("hardware_hero_cta_label_kh", ""))
+            .heroCtaLink(m.getOrDefault("hardware_hero_cta_link", ""))
+            .downloadAndroidUrl(m.getOrDefault("hardware_download_android_url", ""))
+            .downloadIosUrl(m.getOrDefault("hardware_download_ios_url", ""))
+            .build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated hardware page settings")
+    public HardwarePageSettingResponse updateHardwarePageSettings(HardwarePageSettingRequest req) {
+        upsert("hardware_hero_title",           req.getHeroTitle(),          SettingGroup.HARDWARE);
+        upsert("hardware_hero_title_kh",        req.getHeroTitleKh(),        SettingGroup.HARDWARE);
+        upsert("hardware_hero_subtitle",        req.getHeroSubtitle(),       SettingGroup.HARDWARE);
+        upsert("hardware_hero_subtitle_kh",     req.getHeroSubtitleKh(),     SettingGroup.HARDWARE);
+        upsert("hardware_hero_cta_label",       req.getHeroCtaLabel(),       SettingGroup.HARDWARE);
+        upsert("hardware_hero_cta_label_kh",    req.getHeroCtaLabelKh(),     SettingGroup.HARDWARE);
+        upsert("hardware_hero_cta_link",        req.getHeroCtaLink(),        SettingGroup.HARDWARE);
+        upsert("hardware_download_android_url", req.getDownloadAndroidUrl(), SettingGroup.HARDWARE);
+        upsert("hardware_download_ios_url",     req.getDownloadIosUrl(),     SettingGroup.HARDWARE);
+        return getHardwarePageSettings();
+    }
+
+    // ── Homepage ──────────────────────────────────────────────────────────────
+
+    @Override
+    public HomepagePageSettingResponse getHomepagePageSettings() {
+        Map<String, String> m = loadGroup(SettingGroup.HOMEPAGE);
+        return HomepagePageSettingResponse.builder()
+            .heroTitle(m.getOrDefault("home_hero_title", ""))
+            .heroTitleKh(m.getOrDefault("home_hero_title_kh", ""))
+            .heroSubtitle(m.getOrDefault("home_hero_subtitle", ""))
+            .heroSubtitleKh(m.getOrDefault("home_hero_subtitle_kh", ""))
+            .heroCtaLabel(m.getOrDefault("home_hero_cta_label", ""))
+            .heroCtaLabelKh(m.getOrDefault("home_hero_cta_label_kh", ""))
+            .heroCtaLink(m.getOrDefault("home_hero_cta_link", ""))
+            .heroVideoLabel(m.getOrDefault("home_hero_video_label", ""))
+            .heroVideoLabelKh(m.getOrDefault("home_hero_video_label_kh", ""))
+            .heroVideoUrl(m.getOrDefault("home_hero_video_url", ""))
+            .heroImageUrl(m.getOrDefault("home_hero_image_url", ""))
+            .metricsTitle(m.getOrDefault("home_metrics_title", ""))
+            .metricsTitleKh(m.getOrDefault("home_metrics_title_kh", ""))
+            .metricsSubtitle(m.getOrDefault("home_metrics_subtitle", ""))
+            .metricsSubtitleKh(m.getOrDefault("home_metrics_subtitle_kh", ""))
+            .lifestyleImage1Url(m.getOrDefault("home_lifestyle_image_1_url", ""))
+            .lifestyleImage2Url(m.getOrDefault("home_lifestyle_image_2_url", ""))
+            .lifestyleImage3Url(m.getOrDefault("home_lifestyle_image_3_url", ""))
+            .helpTitle(m.getOrDefault("home_help_title", ""))
+            .helpTitleKh(m.getOrDefault("home_help_title_kh", ""))
+            .helpLivechatTitle(m.getOrDefault("home_help_livechat_title", ""))
+            .helpLivechatTitleKh(m.getOrDefault("home_help_livechat_title_kh", ""))
+            .helpLivechatDescription(m.getOrDefault("home_help_livechat_description", ""))
+            .helpLivechatDescriptionKh(m.getOrDefault("home_help_livechat_description_kh", ""))
+            .helpLivechatCtaLabel(m.getOrDefault("home_help_livechat_cta_label", ""))
+            .helpLivechatCtaLabelKh(m.getOrDefault("home_help_livechat_cta_label_kh", ""))
+            .helpLivechatCtaLink(m.getOrDefault("home_help_livechat_cta_link", ""))
+            .helpCenterTitle(m.getOrDefault("home_help_center_title", ""))
+            .helpCenterTitleKh(m.getOrDefault("home_help_center_title_kh", ""))
+            .helpCenterDescription(m.getOrDefault("home_help_center_description", ""))
+            .helpCenterDescriptionKh(m.getOrDefault("home_help_center_description_kh", ""))
+            .helpCenterCtaLabel(m.getOrDefault("home_help_center_cta_label", ""))
+            .helpCenterCtaLabelKh(m.getOrDefault("home_help_center_cta_label_kh", ""))
+            .helpCenterCtaLink(m.getOrDefault("home_help_center_cta_link", ""))
+            .helpCommunityTitle(m.getOrDefault("home_help_community_title", ""))
+            .helpCommunityTitleKh(m.getOrDefault("home_help_community_title_kh", ""))
+            .helpCommunityDescription(m.getOrDefault("home_help_community_description", ""))
+            .helpCommunityDescriptionKh(m.getOrDefault("home_help_community_description_kh", ""))
+            .helpCommunityCtaLabel(m.getOrDefault("home_help_community_cta_label", ""))
+            .helpCommunityCtaLabelKh(m.getOrDefault("home_help_community_cta_label_kh", ""))
+            .helpCommunityCtaLink(m.getOrDefault("home_help_community_cta_link", ""))
+            .partnerTitle(m.getOrDefault("home_partner_title", ""))
+            .partnerTitleKh(m.getOrDefault("home_partner_title_kh", ""))
+            .partnerDescription(m.getOrDefault("home_partner_description", ""))
+            .partnerDescriptionKh(m.getOrDefault("home_partner_description_kh", ""))
+            .partnerCtaLabel(m.getOrDefault("home_partner_cta_label", ""))
+            .partnerCtaLabelKh(m.getOrDefault("home_partner_cta_label_kh", ""))
+            .partnerCtaLink(m.getOrDefault("home_partner_cta_link", ""))
+            .build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated homepage settings")
+    public HomepagePageSettingResponse updateHomepagePageSettings(HomepagePageSettingRequest req) {
+        upsert("home_hero_title",              req.getHeroTitle(),              SettingGroup.HOMEPAGE);
+        upsert("home_hero_title_kh",           req.getHeroTitleKh(),            SettingGroup.HOMEPAGE);
+        upsert("home_hero_subtitle",           req.getHeroSubtitle(),           SettingGroup.HOMEPAGE);
+        upsert("home_hero_subtitle_kh",        req.getHeroSubtitleKh(),         SettingGroup.HOMEPAGE);
+        upsert("home_hero_cta_label",          req.getHeroCtaLabel(),           SettingGroup.HOMEPAGE);
+        upsert("home_hero_cta_label_kh",       req.getHeroCtaLabelKh(),         SettingGroup.HOMEPAGE);
+        upsert("home_hero_cta_link",           req.getHeroCtaLink(),            SettingGroup.HOMEPAGE);
+        upsert("home_hero_video_label",        req.getHeroVideoLabel(),         SettingGroup.HOMEPAGE);
+        upsert("home_hero_video_label_kh",     req.getHeroVideoLabelKh(),       SettingGroup.HOMEPAGE);
+        upsert("home_hero_video_url",          req.getHeroVideoUrl(),           SettingGroup.HOMEPAGE);
+        upsert("home_hero_image_url",          req.getHeroImageUrl(),           SettingGroup.HOMEPAGE);
+
+        upsert("home_metrics_title",           req.getMetricsTitle(),           SettingGroup.HOMEPAGE);
+        upsert("home_metrics_title_kh",        req.getMetricsTitleKh(),         SettingGroup.HOMEPAGE);
+        upsert("home_metrics_subtitle",        req.getMetricsSubtitle(),        SettingGroup.HOMEPAGE);
+        upsert("home_metrics_subtitle_kh",     req.getMetricsSubtitleKh(),      SettingGroup.HOMEPAGE);
+        upsert("home_lifestyle_image_1_url",   req.getLifestyleImage1Url(),     SettingGroup.HOMEPAGE);
+        upsert("home_lifestyle_image_2_url",   req.getLifestyleImage2Url(),     SettingGroup.HOMEPAGE);
+        upsert("home_lifestyle_image_3_url",   req.getLifestyleImage3Url(),     SettingGroup.HOMEPAGE);
+
+        upsert("home_help_title",              req.getHelpTitle(),              SettingGroup.HOMEPAGE);
+        upsert("home_help_title_kh",           req.getHelpTitleKh(),            SettingGroup.HOMEPAGE);
+
+        upsert("home_help_livechat_title",            req.getHelpLivechatTitle(),          SettingGroup.HOMEPAGE);
+        upsert("home_help_livechat_title_kh",         req.getHelpLivechatTitleKh(),        SettingGroup.HOMEPAGE);
+        upsert("home_help_livechat_description",      req.getHelpLivechatDescription(),    SettingGroup.HOMEPAGE);
+        upsert("home_help_livechat_description_kh",   req.getHelpLivechatDescriptionKh(),  SettingGroup.HOMEPAGE);
+        upsert("home_help_livechat_cta_label",        req.getHelpLivechatCtaLabel(),       SettingGroup.HOMEPAGE);
+        upsert("home_help_livechat_cta_label_kh",     req.getHelpLivechatCtaLabelKh(),     SettingGroup.HOMEPAGE);
+        upsert("home_help_livechat_cta_link",         req.getHelpLivechatCtaLink(),        SettingGroup.HOMEPAGE);
+
+        upsert("home_help_center_title",            req.getHelpCenterTitle(),          SettingGroup.HOMEPAGE);
+        upsert("home_help_center_title_kh",         req.getHelpCenterTitleKh(),        SettingGroup.HOMEPAGE);
+        upsert("home_help_center_description",      req.getHelpCenterDescription(),    SettingGroup.HOMEPAGE);
+        upsert("home_help_center_description_kh",   req.getHelpCenterDescriptionKh(),  SettingGroup.HOMEPAGE);
+        upsert("home_help_center_cta_label",        req.getHelpCenterCtaLabel(),       SettingGroup.HOMEPAGE);
+        upsert("home_help_center_cta_label_kh",     req.getHelpCenterCtaLabelKh(),     SettingGroup.HOMEPAGE);
+        upsert("home_help_center_cta_link",         req.getHelpCenterCtaLink(),        SettingGroup.HOMEPAGE);
+
+        upsert("home_help_community_title",            req.getHelpCommunityTitle(),          SettingGroup.HOMEPAGE);
+        upsert("home_help_community_title_kh",         req.getHelpCommunityTitleKh(),        SettingGroup.HOMEPAGE);
+        upsert("home_help_community_description",      req.getHelpCommunityDescription(),    SettingGroup.HOMEPAGE);
+        upsert("home_help_community_description_kh",   req.getHelpCommunityDescriptionKh(),  SettingGroup.HOMEPAGE);
+        upsert("home_help_community_cta_label",        req.getHelpCommunityCtaLabel(),       SettingGroup.HOMEPAGE);
+        upsert("home_help_community_cta_label_kh",     req.getHelpCommunityCtaLabelKh(),     SettingGroup.HOMEPAGE);
+        upsert("home_help_community_cta_link",         req.getHelpCommunityCtaLink(),        SettingGroup.HOMEPAGE);
+
+        upsert("home_partner_title",           req.getPartnerTitle(),           SettingGroup.HOMEPAGE);
+        upsert("home_partner_title_kh",        req.getPartnerTitleKh(),         SettingGroup.HOMEPAGE);
+        upsert("home_partner_description",     req.getPartnerDescription(),     SettingGroup.HOMEPAGE);
+        upsert("home_partner_description_kh",  req.getPartnerDescriptionKh(),   SettingGroup.HOMEPAGE);
+        upsert("home_partner_cta_label",       req.getPartnerCtaLabel(),        SettingGroup.HOMEPAGE);
+        upsert("home_partner_cta_label_kh",    req.getPartnerCtaLabelKh(),      SettingGroup.HOMEPAGE);
+        upsert("home_partner_cta_link",        req.getPartnerCtaLink(),         SettingGroup.HOMEPAGE);
+
+        return getHomepagePageSettings();
     }
 
     private int parseInt(String value) {

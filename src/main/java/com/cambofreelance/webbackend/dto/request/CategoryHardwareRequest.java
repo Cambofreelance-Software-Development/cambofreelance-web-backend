@@ -11,5 +11,15 @@ public class CategoryHardwareRequest {
 
     private String nameKh;
 
+    private String description;
+
+    private String descriptionKh;
+
+    private String imageId;
+
+    private String icon;
+
+    private String moreLink;
+
     private Integer sortOrder = 0;
 }

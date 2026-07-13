@@ -97,9 +97,12 @@ public class HardwareServiceImpl implements HardwareService {
         entity.setDescription(request.getDescription());
         entity.setDescriptionKh(request.getDescriptionKh());
         entity.setConnectivity(request.getConnectivity());
+        entity.setPrice(request.getPrice());
         entity.setPlatform(request.getPlatform());
+        entity.setCountries(request.getCountries());
         entity.setIcon(request.getIcon());
         entity.setLink(request.getLink());
+        entity.setReleaseDate(request.getReleaseDate());
         resolveImage(entity, request.getImageId());
         resolveCategory(entity, request.getCategoryId());
     }

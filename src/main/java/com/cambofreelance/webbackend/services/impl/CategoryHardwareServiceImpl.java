@@ -5,8 +5,10 @@ import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.dto.request.CategoryHardwareRequest;
 import com.cambofreelance.webbackend.dto.response.CategoryHardwareResponse;
 import com.cambofreelance.webbackend.entities.CategoryHardwareEntity;
+import com.cambofreelance.webbackend.entities.MediaFileEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.CategoryHardwareRepository;
+import com.cambofreelance.webbackend.repository.MediaRepository;
 import com.cambofreelance.webbackend.services.CategoryHardwareService;
 import jakarta.transaction.Transactional;
 import java.util.Date;
@@ -25,6 +27,7 @@ import org.springframework.util.StringUtils;
 public class CategoryHardwareServiceImpl implements CategoryHardwareService {
 
     private final CategoryHardwareRepository categoryHardwareRepository;
+    private final MediaRepository            mediaRepository;
 
     @Override
     public List<CategoryHardwareResponse> listAll() {
@@ -54,8 +57,7 @@ public class CategoryHardwareServiceImpl implements CategoryHardwareService {
     public CategoryHardwareResponse create(CategoryHardwareRequest request, String createdBy) {
         CategoryHardwareEntity entity = new CategoryHardwareEntity();
         entity.setId(UUID.randomUUID().toString());
-        entity.setName(request.getName().trim());
-        entity.setNameKh(request.getNameKh());
+        applyRequest(entity, request);
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         entity.setCreatedBy(StringUtils.hasText(createdBy) ? createdBy : Constants.SYSTEM);
         entity.setStatus(Constants.STATUS_ACTIVE);
@@ -67,12 +69,32 @@ public class CategoryHardwareServiceImpl implements CategoryHardwareService {
     @Auditable(action = "UPDATE", module = "CATEGORY_HARDWARE", entityClass = CategoryHardwareEntity.class)
     public CategoryHardwareResponse update(String id, CategoryHardwareRequest request, String updatedBy) {
         CategoryHardwareEntity entity = requireById(id);
-        entity.setName(request.getName().trim());
-        entity.setNameKh(request.getNameKh());
+        applyRequest(entity, request);
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : entity.getSortOrder());
         entity.setUpdatedBy(updatedBy);
         entity.setUpdatedAt(new Date());
         return CategoryHardwareResponse.from(categoryHardwareRepository.save(entity));
+    }
+
+    private void applyRequest(CategoryHardwareEntity entity, CategoryHardwareRequest request) {
+        entity.setName(request.getName().trim());
+        entity.setNameKh(request.getNameKh());
+        entity.setDescription(request.getDescription());
+        entity.setDescriptionKh(request.getDescriptionKh());
+        entity.setIcon(request.getIcon());
+        entity.setMoreLink(request.getMoreLink());
+        resolveImage(entity, request.getImageId());
+    }
+
+    private void resolveImage(CategoryHardwareEntity entity, String imageId) {
+        if (StringUtils.hasText(imageId)) {
+            MediaFileEntity image = mediaRepository.findById(imageId)
+                .filter(m -> Constants.STATUS_ACTIVE.equals(m.getStatus()))
+                .orElse(null);
+            entity.setImage(image);
+        } else {
+            entity.setImage(null);
+        }
     }
 
     @Override

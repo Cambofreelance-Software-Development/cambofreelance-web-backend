@@ -5,6 +5,8 @@ import com.cambofreelance.webbackend.dto.request.CdnSettingRequest;
 import com.cambofreelance.webbackend.dto.request.SiteStatsRequest;
 import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
+import com.cambofreelance.webbackend.dto.request.HardwarePageSettingRequest;
+import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
@@ -152,6 +154,56 @@ public class CmsSettingController {
             request.getClientSatisfaction()
         );
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── Hardware page ─────────────────────────────────────────────────────────
+
+    /** No auth — consumed by the public /en/hardware page. */
+    @GetMapping("/hardware/public")
+    public ResponseEntity<Object> getHardwarePagePublic() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getHardwarePageSettings(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/hardware")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getHardwarePageSettings() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getHardwarePageSettings(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/hardware")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updateHardwarePageSettings(
+        @Valid @RequestBody HardwarePageSettingRequest request
+    ) {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.updateHardwarePageSettings(request), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── Homepage ──────────────────────────────────────────────────────────────
+
+    /** No auth — consumed by the public home page. */
+    @GetMapping("/homepage/public")
+    public ResponseEntity<Object> getHomepagePagePublic() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getHomepagePageSettings(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/homepage")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getHomepagePageSettings() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getHomepagePageSettings(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/homepage")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updateHomepagePageSettings(
+        @Valid @RequestBody HomepagePageSettingRequest request
+    ) {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.updateHomepagePageSettings(request), ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
     // ── IP Whitelist ──────────────────────────────────────────────────────────

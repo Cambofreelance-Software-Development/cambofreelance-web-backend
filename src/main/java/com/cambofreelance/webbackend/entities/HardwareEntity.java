@@ -9,6 +9,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.DynamicUpdate;
@@ -45,8 +46,14 @@ public class HardwareEntity extends BaseEntity implements Serializable {
     @Column(name = "connectivity", length = 255)
     private String connectivity;
 
+    @Column(name = "price", length = 50)
+    private String price;
+
     @Column(name = "platform", length = 100)
     private String platform;
+
+    @Column(name = "countries", length = 500)
+    private String countries;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
@@ -56,11 +63,17 @@ public class HardwareEntity extends BaseEntity implements Serializable {
     @JoinColumn(name = "image_id")
     private MediaFileEntity image;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     @Column(name = "icon", length = 100)
     private String icon;
 
     @Column(name = "link", length = 500)
     private String link;
+
+    @Column(name = "release_date")
+    private LocalDate releaseDate;
 
     @Column(name = "sort_order")
     private Integer sortOrder = 0;

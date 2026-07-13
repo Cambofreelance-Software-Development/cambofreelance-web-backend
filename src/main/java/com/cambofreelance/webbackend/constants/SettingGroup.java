@@ -8,4 +8,6 @@ public final class SettingGroup {
     public static final String IP_WHITELIST = "IP_WHITELIST";
     public static final String STATS        = "STATS";
     public static final String SOCIAL       = "SOCIAL";
+    public static final String HARDWARE     = "HARDWARE";
+    public static final String HOMEPAGE     = "HOMEPAGE";
 }

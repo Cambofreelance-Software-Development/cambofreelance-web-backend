@@ -14,6 +14,11 @@ public class CategoryHardwareResponse {
     private String id;
     private String name;
     private String nameKh;
+    private String description;
+    private String descriptionKh;
+    private MediaFileResponse image;
+    private String icon;
+    private String moreLink;
     private Integer sortOrder;
     private String status;
     private Date createdAt;
@@ -24,6 +29,11 @@ public class CategoryHardwareResponse {
             .id(e.getId())
             .name(e.getName())
             .nameKh(e.getNameKh())
+            .description(e.getDescription())
+            .descriptionKh(e.getDescriptionKh())
+            .image(e.getImage() != null ? MediaFileResponse.from(e.getImage()) : null)
+            .icon(e.getIcon())
+            .moreLink(e.getMoreLink())
             .sortOrder(e.getSortOrder())
             .status(e.getStatus())
             .createdAt(e.getCreatedAt())
