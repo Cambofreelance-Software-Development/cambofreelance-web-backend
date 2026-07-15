@@ -76,6 +76,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
             .defaultLanguage(m.getOrDefault("default_language", "en"))
             .timeZone(m.getOrDefault("time_zone", "Asia/Phnom_Penh"))
             .siteLogo(m.getOrDefault("site_logo", ""))
+            .siteDescription(m.getOrDefault("site_description", ""))
             .build();
     }
 
@@ -89,6 +90,9 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         upsert("time_zone",        req.getTimeZone(),        SettingGroup.GENERAL);
         if (req.getSiteLogo() != null) {
             upsert("site_logo", req.getSiteLogo(), SettingGroup.GENERAL);
+        }
+        if (req.getSiteDescription() != null) {
+            upsert("site_description", req.getSiteDescription(), SettingGroup.GENERAL);
         }
         return getGeneralSettings();
     }
@@ -300,7 +304,9 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         return SitePublicConfigResponse.builder()
             .siteName(general.getOrDefault("site_name", "Cambo Freelance"))
             .siteDescription(general.getOrDefault("site_description",
-                "Professional freelance team from Cambodia delivering technology-driven solutions."))
+                "Our digital space is undergoing a major redesign to serve you better. "
+                    + "We're preparing to launch advanced Point-of-Sale (POS) management platforms "
+                    + "and retail solutions very soon."))
             .siteLogo(general.getOrDefault("site_logo", ""))
             .siteAddress(general.getOrDefault("site_address", "Street 123, BKK1, Phnom Penh, Cambodia"))
             .siteEmail(general.getOrDefault("site_email", "hello@cambofreelance.com"))

@@ -21,4 +21,6 @@ public class CmsGeneralSettingRequest {
     private String timeZone;
 
     private String siteLogo;
+
+    private String siteDescription;
 }

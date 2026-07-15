@@ -60,6 +60,8 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/home-products"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/business-types"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/feature-tabs"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/app-releases"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/app-releases/latest"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/forgot-password"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/reset-password"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/contact")
