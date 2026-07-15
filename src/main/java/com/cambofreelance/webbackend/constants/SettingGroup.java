@@ -10,4 +10,9 @@ public final class SettingGroup {
     public static final String SOCIAL       = "SOCIAL";
     public static final String HARDWARE     = "HARDWARE";
     public static final String HOMEPAGE     = "HOMEPAGE";
+    public static final String PARTNER_CTA  = "PARTNER_CTA";
+    public static final String PAGE_HEROES  = "PAGE_HEROES";
+    public static final String PAGE_CTAS    = "PAGE_CTAS";
 }
+
+

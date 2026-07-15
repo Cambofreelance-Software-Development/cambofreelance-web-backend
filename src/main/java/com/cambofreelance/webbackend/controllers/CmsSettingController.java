@@ -8,6 +8,9 @@ import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HardwarePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
+import com.cambofreelance.webbackend.dto.request.PageCtasRequest;
+import com.cambofreelance.webbackend.dto.request.PageHeroesRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCtaSettingRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
 import com.cambofreelance.webbackend.services.CmsSettingService;
@@ -204,6 +207,81 @@ public class CmsSettingController {
     ) {
         return new ResponseEntity<>(
             new MessageResponse(cmsSettingService.updateHomepagePageSettings(request), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── Partner CTA ───────────────────────────────────────────────────────────
+
+    /** No auth — consumed by the public home page Partner CTA section. */
+    @GetMapping("/partner-cta/public")
+    public ResponseEntity<Object> getPartnerCtaPublic() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getPartnerCtaSettings(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/partner-cta")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getPartnerCtaSettings() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getPartnerCtaSettings(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/partner-cta")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updatePartnerCtaSettings(
+        @Valid @RequestBody PartnerCtaSettingRequest request
+    ) {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.updatePartnerCtaSettings(request), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── Page Heroes ───────────────────────────────────────────────────────────
+
+    /** No auth — consumed by public page hero components. */
+    @GetMapping("/page-heroes/public")
+    public ResponseEntity<Object> getPageHeroesPublic() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getPageHeroes(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/page-heroes")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getPageHeroes() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getPageHeroes(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/page-heroes")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updatePageHeroes(
+        @Valid @RequestBody PageHeroesRequest request
+    ) {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.updatePageHeroes(request), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── Page CTAs ─────────────────────────────────────────────────────────────
+
+    /** No auth — consumed by public page bottom-CTA components. */
+    @GetMapping("/page-ctas/public")
+    public ResponseEntity<Object> getPageCtasPublic() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getPageCtas(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/page-ctas")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getPageCtas() {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.getPageCtas(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/page-ctas")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updatePageCtas(
+        @Valid @RequestBody PageCtasRequest request
+    ) {
+        return new ResponseEntity<>(
+            new MessageResponse(cmsSettingService.updatePageCtas(request), ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
     // ── IP Whitelist ──────────────────────────────────────────────────────────

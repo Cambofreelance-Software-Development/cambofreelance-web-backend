@@ -8,12 +8,18 @@ import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HardwarePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
+import com.cambofreelance.webbackend.dto.request.PageCtasRequest;
+import com.cambofreelance.webbackend.dto.request.PageHeroesRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCtaSettingRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsSeoSettingResponse;
 import com.cambofreelance.webbackend.dto.response.HardwarePageSettingResponse;
 import com.cambofreelance.webbackend.dto.response.HomepagePageSettingResponse;
+import com.cambofreelance.webbackend.dto.response.PageCtasResponse;
+import com.cambofreelance.webbackend.dto.response.PageHeroesResponse;
+import com.cambofreelance.webbackend.dto.response.PartnerCtaSettingResponse;
 import com.cambofreelance.webbackend.dto.response.IpWhitelistResponse;
 import com.cambofreelance.webbackend.dto.response.SitePublicConfigResponse;
 import com.cambofreelance.webbackend.dto.response.SiteStatsResponse;
@@ -30,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -458,8 +465,146 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         return getHomepagePageSettings();
     }
 
+    // ── Partner CTA ───────────────────────────────────────────────────────────
+
+    @Override
+    public PartnerCtaSettingResponse getPartnerCtaSettings() {
+        Map<String, String> m = loadGroup(SettingGroup.PARTNER_CTA);
+        return PartnerCtaSettingResponse.builder()
+            .title(m.getOrDefault("partner_cta_title", ""))
+            .titleKh(m.getOrDefault("partner_cta_title_kh", ""))
+            .body(m.getOrDefault("partner_cta_body", ""))
+            .bodyKh(m.getOrDefault("partner_cta_body_kh", ""))
+            .label(m.getOrDefault("partner_cta_label", ""))
+            .labelKh(m.getOrDefault("partner_cta_label_kh", ""))
+            .link(m.getOrDefault("partner_cta_link", ""))
+            .build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated Partner CTA settings")
+    public PartnerCtaSettingResponse updatePartnerCtaSettings(PartnerCtaSettingRequest req) {
+        upsert("partner_cta_title",    req.getTitle(),    SettingGroup.PARTNER_CTA);
+        upsert("partner_cta_title_kh", req.getTitleKh(),  SettingGroup.PARTNER_CTA);
+        upsert("partner_cta_body",     req.getBody(),     SettingGroup.PARTNER_CTA);
+        upsert("partner_cta_body_kh",  req.getBodyKh(),   SettingGroup.PARTNER_CTA);
+        upsert("partner_cta_label",    req.getLabel(),    SettingGroup.PARTNER_CTA);
+        upsert("partner_cta_label_kh", req.getLabelKh(),  SettingGroup.PARTNER_CTA);
+        upsert("partner_cta_link",     req.getLink(),     SettingGroup.PARTNER_CTA);
+        return getPartnerCtaSettings();
+    }
+
     private int parseInt(String value) {
         try { return Integer.parseInt(value.trim()); } catch (Exception e) { return 0; }
+    }
+
+    // ── Page Heroes ───────────────────────────────────────────────────────────
+
+    /**
+     * Slugs of the public pages that have an editable hero. Must match the
+     * frontend slugs used in usePageHero (see admin/settings/HomepagePageHeroes).
+     * Hyphens in slugs are converted to underscores for the DB setting_key.
+     */
+    private static final List<String> PAGE_HERO_SLUGS = Arrays.asList(
+        "articles", "business-types", "contact", "courses", "features",
+        "hardware", "partner", "pricing", "products", "services",
+        "team", "tutorials",
+        // Home page section headings (edited alongside page heroes for convenience).
+        "home-feature-tabs",
+        "home-products",
+        "home-business-types",
+        "home-testimonials",
+        "home-faq"
+    );
+
+    private static String heroKey(String slug, String field) {
+        return "page_hero_" + slug.replace('-', '_') + "_" + field;
+    }
+
+    @Override
+    public PageHeroesResponse getPageHeroes() {
+        Map<String, String> m = loadGroup(SettingGroup.PAGE_HEROES);
+        Map<String, PageHeroesResponse.PageHero> pages = new LinkedHashMap<>();
+        for (String slug : PAGE_HERO_SLUGS) {
+            pages.put(slug, PageHeroesResponse.PageHero.builder()
+                .heading(m.getOrDefault(heroKey(slug, "heading"), ""))
+                .headingKh(m.getOrDefault(heroKey(slug, "heading_kh"), ""))
+                .subheading(m.getOrDefault(heroKey(slug, "subheading"), ""))
+                .subheadingKh(m.getOrDefault(heroKey(slug, "subheading_kh"), ""))
+                .build());
+        }
+        return PageHeroesResponse.builder().pages(pages).build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated page heroes")
+    public PageHeroesResponse updatePageHeroes(PageHeroesRequest req) {
+        if (req.getPages() != null) {
+            for (Map.Entry<String, PageHeroesRequest.PageHero> entry : req.getPages().entrySet()) {
+                String slug = entry.getKey();
+                if (!PAGE_HERO_SLUGS.contains(slug)) continue;
+                PageHeroesRequest.PageHero hero = entry.getValue();
+                if (hero == null) continue;
+                upsert(heroKey(slug, "heading"),       hero.getHeading(),      SettingGroup.PAGE_HEROES);
+                upsert(heroKey(slug, "heading_kh"),    hero.getHeadingKh(),    SettingGroup.PAGE_HEROES);
+                upsert(heroKey(slug, "subheading"),    hero.getSubheading(),   SettingGroup.PAGE_HEROES);
+                upsert(heroKey(slug, "subheading_kh"), hero.getSubheadingKh(), SettingGroup.PAGE_HEROES);
+            }
+        }
+        return getPageHeroes();
+    }
+
+    // ── Page CTAs (bottom "Ready to get started?" blocks) ─────────────────────
+
+    private static final List<String> PAGE_CTA_SLUGS = Arrays.asList(
+        "business-types", "partner", "features", "hardware", "products",
+        "pricing", "courses", "team", "tutorials", "services", "articles", "contact"
+    );
+
+    private static String ctaKey(String slug, String field) {
+        return "page_cta_" + slug.replace('-', '_') + "_" + field;
+    }
+
+    @Override
+    public PageCtasResponse getPageCtas() {
+        Map<String, String> m = loadGroup(SettingGroup.PAGE_CTAS);
+        Map<String, PageCtasResponse.PageCta> pages = new LinkedHashMap<>();
+        for (String slug : PAGE_CTA_SLUGS) {
+            pages.put(slug, PageCtasResponse.PageCta.builder()
+                .heading(m.getOrDefault(ctaKey(slug, "heading"), ""))
+                .headingKh(m.getOrDefault(ctaKey(slug, "heading_kh"), ""))
+                .subheading(m.getOrDefault(ctaKey(slug, "subheading"), ""))
+                .subheadingKh(m.getOrDefault(ctaKey(slug, "subheading_kh"), ""))
+                .buttonLabel(m.getOrDefault(ctaKey(slug, "button_label"), ""))
+                .buttonLabelKh(m.getOrDefault(ctaKey(slug, "button_label_kh"), ""))
+                .buttonLink(m.getOrDefault(ctaKey(slug, "button_link"), ""))
+                .build());
+        }
+        return PageCtasResponse.builder().pages(pages).build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated page CTAs")
+    public PageCtasResponse updatePageCtas(PageCtasRequest req) {
+        if (req.getPages() != null) {
+            for (Map.Entry<String, PageCtasRequest.PageCta> entry : req.getPages().entrySet()) {
+                String slug = entry.getKey();
+                if (!PAGE_CTA_SLUGS.contains(slug)) continue;
+                PageCtasRequest.PageCta cta = entry.getValue();
+                if (cta == null) continue;
+                upsert(ctaKey(slug, "heading"),         cta.getHeading(),        SettingGroup.PAGE_CTAS);
+                upsert(ctaKey(slug, "heading_kh"),      cta.getHeadingKh(),      SettingGroup.PAGE_CTAS);
+                upsert(ctaKey(slug, "subheading"),      cta.getSubheading(),     SettingGroup.PAGE_CTAS);
+                upsert(ctaKey(slug, "subheading_kh"),   cta.getSubheadingKh(),   SettingGroup.PAGE_CTAS);
+                upsert(ctaKey(slug, "button_label"),    cta.getButtonLabel(),    SettingGroup.PAGE_CTAS);
+                upsert(ctaKey(slug, "button_label_kh"), cta.getButtonLabelKh(),  SettingGroup.PAGE_CTAS);
+                upsert(ctaKey(slug, "button_link"),     cta.getButtonLink(),     SettingGroup.PAGE_CTAS);
+            }
+        }
+        return getPageCtas();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

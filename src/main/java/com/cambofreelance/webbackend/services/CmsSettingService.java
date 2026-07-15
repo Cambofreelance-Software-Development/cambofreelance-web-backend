@@ -7,12 +7,18 @@ import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HardwarePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
+import com.cambofreelance.webbackend.dto.request.PageCtasRequest;
+import com.cambofreelance.webbackend.dto.request.PageHeroesRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCtaSettingRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsSeoSettingResponse;
 import com.cambofreelance.webbackend.dto.response.HardwarePageSettingResponse;
 import com.cambofreelance.webbackend.dto.response.HomepagePageSettingResponse;
+import com.cambofreelance.webbackend.dto.response.PageCtasResponse;
+import com.cambofreelance.webbackend.dto.response.PageHeroesResponse;
+import com.cambofreelance.webbackend.dto.response.PartnerCtaSettingResponse;
 import com.cambofreelance.webbackend.dto.response.IpWhitelistResponse;
 import com.cambofreelance.webbackend.dto.response.SitePublicConfigResponse;
 import com.cambofreelance.webbackend.dto.response.SiteStatsResponse;
@@ -50,4 +56,13 @@ public interface CmsSettingService {
 
     HomepagePageSettingResponse getHomepagePageSettings();
     HomepagePageSettingResponse updateHomepagePageSettings(HomepagePageSettingRequest request);
+
+    PartnerCtaSettingResponse getPartnerCtaSettings();
+    PartnerCtaSettingResponse updatePartnerCtaSettings(PartnerCtaSettingRequest request);
+
+    PageHeroesResponse getPageHeroes();
+    PageHeroesResponse updatePageHeroes(PageHeroesRequest request);
+
+    PageCtasResponse getPageCtas();
+    PageCtasResponse updatePageCtas(PageCtasRequest request);
 }
