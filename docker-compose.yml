@@ -5,14 +5,9 @@ services:
   authentication-service:
     container_name: authentication-service
     build:
-      context: ../cm-backend
       dockerfile: Dockerfile
     ports:
       - "26022:26022"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-authentication-service:5432/uat_authentication_302B_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: BBU@2026
     networks:
       - cm-network
     restart: always
