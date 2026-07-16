@@ -16,9 +16,11 @@ public final class ArticleType {
     public static final String FEATURE       = "FEATURE";
     public static final String BUSINESS_TYPES = "BUSINESS-TYPES";
     public static final String PARTNER       = "PARTNER";
+    public static final String CONTACT       = "CONTACT";
+    public static final String ABOUT_US      = "ABOUT-US";
 
     private static final String[] ALL = {
-        NEWS, PROMOTIONS, BLOGS, ANNOUNCEMENTS, SERVICE, TEAM, COURSE, PRODUCTS, TUTORIAL, STATS, REVIEW, FEATURE, BUSINESS_TYPES, PARTNER
+        NEWS, PROMOTIONS, BLOGS, ANNOUNCEMENTS, SERVICE, TEAM, COURSE, PRODUCTS, TUTORIAL, STATS, REVIEW, FEATURE, BUSINESS_TYPES, PARTNER, CONTACT, ABOUT_US
     };
 
     public static boolean isValid(String value) {

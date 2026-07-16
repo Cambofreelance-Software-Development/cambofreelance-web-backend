@@ -5,6 +5,7 @@ import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
 import java.util.List;
 import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
+import com.cambofreelance.webbackend.dto.request.CmsSocialSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HardwarePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.PageCtasRequest;
@@ -14,6 +15,7 @@ import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsSeoSettingResponse;
+import com.cambofreelance.webbackend.dto.response.CmsSocialSettingResponse;
 import com.cambofreelance.webbackend.dto.response.HardwarePageSettingResponse;
 import com.cambofreelance.webbackend.dto.response.HomepagePageSettingResponse;
 import com.cambofreelance.webbackend.dto.response.PageCtasResponse;
@@ -33,6 +35,9 @@ public interface CmsSettingService {
 
     CmsSeoSettingResponse getSeoSettings();
     CmsSeoSettingResponse updateSeoSettings(CmsSeoSettingRequest request);
+
+    CmsSocialSettingResponse getSocialSettings();
+    CmsSocialSettingResponse updateSocialSettings(CmsSocialSettingRequest request);
 
     CdnSettingResponse getCdnSettings();
     CdnSettingResponse updateCdnSettings(CdnSettingRequest request);

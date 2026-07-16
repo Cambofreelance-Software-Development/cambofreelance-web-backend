@@ -5,6 +5,7 @@ import com.cambofreelance.webbackend.dto.request.CdnSettingRequest;
 import com.cambofreelance.webbackend.dto.request.SiteStatsRequest;
 import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
+import com.cambofreelance.webbackend.dto.request.CmsSocialSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HardwarePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
@@ -53,6 +54,24 @@ public class CmsSettingController {
         @Valid @RequestBody CmsGeneralSettingRequest request
     ) {
         var result = cmsSettingService.updateGeneralSettings(request);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── Social ────────────────────────────────────────────────────────────────
+
+    @GetMapping("/social")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getSocialSettings() {
+        var result = cmsSettingService.getSocialSettings();
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/social")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updateSocialSettings(
+        @Valid @RequestBody CmsSocialSettingRequest request
+    ) {
+        var result = cmsSettingService.updateSocialSettings(request);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 

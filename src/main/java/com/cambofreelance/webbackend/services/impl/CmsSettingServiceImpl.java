@@ -5,6 +5,7 @@ import com.cambofreelance.webbackend.constants.SettingGroup;
 import com.cambofreelance.webbackend.dto.request.CdnSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsGeneralSettingRequest;
 import com.cambofreelance.webbackend.dto.request.CmsSeoSettingRequest;
+import com.cambofreelance.webbackend.dto.request.CmsSocialSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HardwarePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
@@ -15,6 +16,7 @@ import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsSeoSettingResponse;
+import com.cambofreelance.webbackend.dto.response.CmsSocialSettingResponse;
 import com.cambofreelance.webbackend.dto.response.HardwarePageSettingResponse;
 import com.cambofreelance.webbackend.dto.response.HomepagePageSettingResponse;
 import com.cambofreelance.webbackend.dto.response.PageCtasResponse;
@@ -147,6 +149,29 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         upsert("seo_og_description", req.getOgDescription(),  SettingGroup.SEO);
         upsert("seo_og_image",       req.getOgImage(),        SettingGroup.SEO);
         return getSeoSettings();
+    }
+
+    // ── Social ────────────────────────────────────────────────────────────────
+
+    @Override
+    public CmsSocialSettingResponse getSocialSettings() {
+        Map<String, String> m = loadGroup(SettingGroup.SOCIAL);
+        return CmsSocialSettingResponse.builder()
+            .socialTwitter(m.getOrDefault("social_twitter", ""))
+            .socialLinkedin(m.getOrDefault("social_linkedin", ""))
+            .socialInstagram(m.getOrDefault("social_instagram", ""))
+            .socialFacebook(m.getOrDefault("social_facebook", ""))
+            .build();
+    }
+
+    @Override
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated social settings")
+    public CmsSocialSettingResponse updateSocialSettings(CmsSocialSettingRequest req) {
+        upsert("social_twitter",   req.getSocialTwitter()   != null ? req.getSocialTwitter()   : "", SettingGroup.SOCIAL);
+        upsert("social_linkedin",  req.getSocialLinkedin()  != null ? req.getSocialLinkedin()  : "", SettingGroup.SOCIAL);
+        upsert("social_instagram", req.getSocialInstagram() != null ? req.getSocialInstagram() : "", SettingGroup.SOCIAL);
+        upsert("social_facebook",  req.getSocialFacebook()  != null ? req.getSocialFacebook()  : "", SettingGroup.SOCIAL);
+        return getSocialSettings();
     }
 
     // ── CDN ───────────────────────────────────────────────────────────────────
