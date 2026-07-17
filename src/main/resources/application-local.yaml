@@ -90,8 +90,14 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,refresh
-
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  # disable health check for mail server config
+  health:
+    mail:
+      enabled: false
 logging:
   enable: true
   includeRequest: true

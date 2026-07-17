@@ -1,46 +1,51 @@
-# Stage 1: Build the application
+# ─── Stage 1: Build ───
 FROM gradle:8.5-jdk21 AS builder
 
-# Set the working directory
 WORKDIR /app
 
-# Copy Gradle wrapper and build files
+# 1. Copy build config + wrapper first (layer caching)
 COPY gradle gradle
-COPY gradlew .
-COPY build.gradle .
-COPY settings.gradle .
+COPY gradlew build.gradle settings.gradle ./
 
-# Copy source code
+# 2. Fix line endings & pre-download dependencies (cached unless build files change)
+RUN sed -i 's/\r$//' ./gradlew && \
+    chmod +x ./gradlew && \
+    ./gradlew dependencies --no-daemon || true
+
+# 3. Copy source and build
 COPY src ./src
+RUN ./gradlew bootJar --no-daemon
 
-# Set timezone explicitly
+# ─── Stage 2: Runtime ───
+FROM eclipse-temurin:21-jre-alpine
+
 ENV TZ=Asia/Phnom_Penh
 
-# Configure the timezone in the container
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+# Alpine needs tzdata installed; set timezone
+RUN apk add --no-cache tzdata && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     echo $TZ > /etc/timezone
 
-# Make the wrapper executable and build the application
-RUN chmod +x ./gradlew && ./gradlew bootJar --no-daemon
+# Create a non-root user and group
+RUN addgroup -S spring && adduser -S spring -G spring
 
-
-# Stage 2: Run the application
-FROM eclipse-temurin:21-jdk
-
-# Set timezone in the runtime container too
-ENV TZ=Asia/Phnom_Penh
-
-# Set the working directory
 WORKDIR /app
 
-# Copy the packaged JAR file from the build stage
-COPY --from=builder /app/build/libs/*.jar app.jar
+# Copy jar and give ownership to the non-root user
+COPY --from=builder --chown=spring:spring /app/build/libs/*.jar app.jar
 
-# Expose application port (adjust if necessary)
-EXPOSE 26010
+USER spring
 
-# Print timezone information before starting the app
-RUN echo "Container timezone set to: $(date)"
+# Port Configuration Default is: 8080
+ARG APP_PORT=8080
+ENV SERVER_PORT=${APP_PORT}
+EXPOSE ${APP_PORT}
 
-# Run the Spring Boot application
-ENTRYPOINT ["java","-Duser.timezone=Asia/Phnom_Penh","-jar", "/app/app.jar"]
+# Optional: lets Docker/K8s know if the app is alive (needs spring-boot-actuator)
+#HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+#    CMD wget -qO- http://localhost:26010/actuator/health | grep -q '"UP"' || exit 1
+
+ENTRYPOINT ["java", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Duser.timezone=Asia/Phnom_Penh", \
+  "-jar", "/app/app.jar"]
