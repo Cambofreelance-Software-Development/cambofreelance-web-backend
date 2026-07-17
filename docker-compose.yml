@@ -7,9 +7,9 @@ services:
       dockerfile: Dockerfile
     image: cm-backend:v1.0.0
     ports:
-      - "26022:8080"
+      - "26022:26022"
     environment:
-      - SERVER_PORT=8080
+      - SERVER_PORT=26022
     networks:
       - cm-network
     restart: unless-stopped
