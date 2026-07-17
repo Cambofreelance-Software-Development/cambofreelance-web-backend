@@ -33,4 +33,4 @@ services:
 
 networks:
   cm-network:
-    driver: bridge
+    external: true
