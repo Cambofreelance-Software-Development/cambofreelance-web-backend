@@ -5,6 +5,7 @@ import com.cambofreelance.webbackend.constants.MediaType;
 import com.cambofreelance.webbackend.dto.request.MediaPresignRequest;
 import com.cambofreelance.webbackend.dto.response.MediaFileResponse;
 import com.cambofreelance.webbackend.dto.response.MediaPresignResponse;
+import com.cambofreelance.webbackend.entities.CmsSettingEntity;
 import com.cambofreelance.webbackend.entities.MediaFileEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.CmsSettingRepository;
@@ -194,7 +195,7 @@ public class MediaServiceImpl implements MediaService {
     private Map<String, String> loadStorageConfig() {
         return settingRepository.findAllBySettingGroup("STORAGE").stream()
             .collect(Collectors.toMap(
-                e -> e.getSettingKey(),
+                CmsSettingEntity::getSettingKey,
                 e -> e.getSettingValue() != null ? e.getSettingValue() : ""
             ));
     }
