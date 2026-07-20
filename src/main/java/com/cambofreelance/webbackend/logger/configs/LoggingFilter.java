@@ -74,11 +74,14 @@ public class LoggingFilter extends OncePerRequestFilter {
         Instant start = Instant.now();
 
         try {
-            String requestBody = truncate(StringUtils.trim(requestWrapper.getBody()));
+            // Mask before truncating — truncating first hands maskSensitiveData a
+            // syntactically broken JSON string, which warned on every large payload.
+            String requestBody = truncate(
+                LoggerUtils.maskSensitiveData(StringUtils.trim(requestWrapper.getBody())));
 
             appLogger.setUrl(request.getRequestURI());
             appLogger.setHttpMethod(request.getMethod());
-            appLogger.setRequest(LoggerUtils.maskSensitiveData(requestBody));
+            appLogger.setRequest(requestBody);
             appLogger.setServiceName(LoggerUtils.getServiceName(request));
             appLogger.setRemoteAddress(request.getRemoteAddr());
 
@@ -103,11 +106,10 @@ public class LoggingFilter extends OncePerRequestFilter {
                 int size = responseWrapper.getContentAsByteArray().length;
                 responseBody = "[binary: " + response.getContentType() + ", " + size + " bytes]";
             } else {
-                responseBody = truncate(getStringValue(
+                responseBody = truncate(LoggerUtils.maskSensitiveData(getStringValue(
                     responseWrapper.getContentAsByteArray(),
                     response.getCharacterEncoding()
-                ));
-                responseBody = LoggerUtils.maskSensitiveData(responseBody);
+                )));
             }
 
             appLogger.setResponse(responseBody);

@@ -86,16 +86,18 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Transactional
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated general settings")
     public CmsGeneralSettingResponse updateGeneralSettings(CmsGeneralSettingRequest req) {
-        upsert("site_name",        req.getSiteName(),        SettingGroup.GENERAL);
-        upsert("environment",      req.getEnvironment(),     SettingGroup.GENERAL);
-        upsert("default_language", req.getDefaultLanguage(), SettingGroup.GENERAL);
-        upsert("time_zone",        req.getTimeZone(),        SettingGroup.GENERAL);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("site_name",        req.getSiteName());
+        values.put("environment",      req.getEnvironment());
+        values.put("default_language", req.getDefaultLanguage());
+        values.put("time_zone",        req.getTimeZone());
         if (req.getSiteLogo() != null) {
-            upsert("site_logo", req.getSiteLogo(), SettingGroup.GENERAL);
+            values.put("site_logo", req.getSiteLogo());
         }
         if (req.getSiteDescription() != null) {
-            upsert("site_description", req.getSiteDescription(), SettingGroup.GENERAL);
+            values.put("site_description", req.getSiteDescription());
         }
+        batchUpsert(SettingGroup.GENERAL, values);
         return getGeneralSettings();
     }
 
@@ -140,14 +142,16 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Transactional
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated SEO settings")
     public CmsSeoSettingResponse updateSeoSettings(CmsSeoSettingRequest req) {
-        upsert("seo_title",          req.getTitle(),          SettingGroup.SEO);
-        upsert("seo_description",    req.getDescription(),    SettingGroup.SEO);
-        upsert("seo_keywords",       req.getKeywords(),       SettingGroup.SEO);
-        upsert("seo_canonical_url",  req.getCanonicalUrl(),   SettingGroup.SEO);
-        upsert("seo_robots",         req.getRobots(),         SettingGroup.SEO);
-        upsert("seo_og_title",       req.getOgTitle(),        SettingGroup.SEO);
-        upsert("seo_og_description", req.getOgDescription(),  SettingGroup.SEO);
-        upsert("seo_og_image",       req.getOgImage(),        SettingGroup.SEO);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("seo_title",          req.getTitle());
+        values.put("seo_description",    req.getDescription());
+        values.put("seo_keywords",       req.getKeywords());
+        values.put("seo_canonical_url",  req.getCanonicalUrl());
+        values.put("seo_robots",         req.getRobots());
+        values.put("seo_og_title",       req.getOgTitle());
+        values.put("seo_og_description", req.getOgDescription());
+        values.put("seo_og_image",       req.getOgImage());
+        batchUpsert(SettingGroup.SEO, values);
         return getSeoSettings();
     }
 
@@ -167,10 +171,12 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Override
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated social settings")
     public CmsSocialSettingResponse updateSocialSettings(CmsSocialSettingRequest req) {
-        upsert("social_twitter",   req.getSocialTwitter()   != null ? req.getSocialTwitter()   : "", SettingGroup.SOCIAL);
-        upsert("social_linkedin",  req.getSocialLinkedin()  != null ? req.getSocialLinkedin()  : "", SettingGroup.SOCIAL);
-        upsert("social_instagram", req.getSocialInstagram() != null ? req.getSocialInstagram() : "", SettingGroup.SOCIAL);
-        upsert("social_facebook",  req.getSocialFacebook()  != null ? req.getSocialFacebook()  : "", SettingGroup.SOCIAL);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("social_twitter",   req.getSocialTwitter()   != null ? req.getSocialTwitter()   : "");
+        values.put("social_linkedin",  req.getSocialLinkedin()  != null ? req.getSocialLinkedin()  : "");
+        values.put("social_instagram", req.getSocialInstagram() != null ? req.getSocialInstagram() : "");
+        values.put("social_facebook",  req.getSocialFacebook()  != null ? req.getSocialFacebook()  : "");
+        batchUpsert(SettingGroup.SOCIAL, values);
         return getSocialSettings();
     }
 
@@ -191,10 +197,12 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Transactional
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated CDN settings")
     public CdnSettingResponse updateCdnSettings(CdnSettingRequest req) {
-        upsert("cdn_enabled",       String.valueOf(req.isEnabled()), SettingGroup.CDN);
-        upsert("cdn_provider",      req.getProvider(),               SettingGroup.CDN);
-        upsert("cdn_base_url",      req.getBaseUrl(),                SettingGroup.CDN);
-        upsert("cdn_custom_domain", req.getCustomDomain(),           SettingGroup.CDN);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("cdn_enabled",       String.valueOf(req.isEnabled()));
+        values.put("cdn_provider",      req.getProvider());
+        values.put("cdn_base_url",      req.getBaseUrl());
+        values.put("cdn_custom_domain", req.getCustomDomain());
+        batchUpsert(SettingGroup.CDN, values);
         return getCdnSettings();
     }
 
@@ -217,16 +225,18 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Transactional
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated storage settings")
     public StorageSettingResponse updateStorageSettings(StorageSettingRequest req) {
-        upsert("storage_provider",   req.getProvider(),   SettingGroup.STORAGE);
-        upsert("storage_bucket",     req.getBucket(),     SettingGroup.STORAGE);
-        upsert("storage_access_key", req.getAccessKey(),  SettingGroup.STORAGE);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("storage_provider",   req.getProvider());
+        values.put("storage_bucket",     req.getBucket());
+        values.put("storage_access_key", req.getAccessKey());
         // Blank secretKey means "keep existing" — do not overwrite
         if (StringUtils.hasText(req.getSecretKey())) {
-            upsert("storage_secret_key", req.getSecretKey(), SettingGroup.STORAGE);
+            values.put("storage_secret_key", req.getSecretKey());
         }
-        upsert("storage_endpoint",   req.getEndpoint(),   SettingGroup.STORAGE);
-        upsert("storage_region",     req.getRegion(),     SettingGroup.STORAGE);
-        upsert("storage_public_url", req.getPublicUrl(),  SettingGroup.STORAGE);
+        values.put("storage_endpoint",   req.getEndpoint());
+        values.put("storage_region",     req.getRegion());
+        values.put("storage_public_url", req.getPublicUrl());
+        batchUpsert(SettingGroup.STORAGE, values);
 
         // Auto-apply CORS after transaction commits so the DB lock is released before the network call
         if (StringUtils.hasText(req.getEndpoint()) && StringUtils.hasText(req.getBucket())) {
@@ -290,11 +300,12 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Transactional
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated IP whitelist settings")
     public IpWhitelistResponse updateIpWhitelistSettings(IpWhitelistRequest request) {
-        upsert("ip_whitelist_enabled", String.valueOf(request.isEnabled()), SettingGroup.IP_WHITELIST);
-        String rulesValue = (request.getRules() != null)
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("ip_whitelist_enabled", String.valueOf(request.isEnabled()));
+        values.put("ip_whitelist_rules", (request.getRules() != null)
             ? String.join(",", request.getRules())
-            : "";
-        upsert("ip_whitelist_rules", rulesValue, SettingGroup.IP_WHITELIST);
+            : "");
+        batchUpsert(SettingGroup.IP_WHITELIST, values);
         ipWhitelistCache.refresh();
         return getIpWhitelistSettings();
     }
@@ -314,9 +325,11 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Override
     @Transactional
     public SiteStatsResponse updateStatsSettings(int projectsCompleted, int happyClients, int clientSatisfaction) {
-        upsert("stat_projects_completed", String.valueOf(projectsCompleted), SettingGroup.STATS);
-        upsert("stat_happy_clients",      String.valueOf(happyClients),      SettingGroup.STATS);
-        upsert("stat_client_satisfaction",String.valueOf(clientSatisfaction), SettingGroup.STATS);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("stat_projects_completed",  String.valueOf(projectsCompleted));
+        values.put("stat_happy_clients",       String.valueOf(happyClients));
+        values.put("stat_client_satisfaction", String.valueOf(clientSatisfaction));
+        batchUpsert(SettingGroup.STATS, values);
         return getStatsSettings();
     }
 
@@ -365,15 +378,17 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Transactional
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated hardware page settings")
     public HardwarePageSettingResponse updateHardwarePageSettings(HardwarePageSettingRequest req) {
-        upsert("hardware_hero_title",           req.getHeroTitle(),          SettingGroup.HARDWARE);
-        upsert("hardware_hero_title_kh",        req.getHeroTitleKh(),        SettingGroup.HARDWARE);
-        upsert("hardware_hero_subtitle",        req.getHeroSubtitle(),       SettingGroup.HARDWARE);
-        upsert("hardware_hero_subtitle_kh",     req.getHeroSubtitleKh(),     SettingGroup.HARDWARE);
-        upsert("hardware_hero_cta_label",       req.getHeroCtaLabel(),       SettingGroup.HARDWARE);
-        upsert("hardware_hero_cta_label_kh",    req.getHeroCtaLabelKh(),     SettingGroup.HARDWARE);
-        upsert("hardware_hero_cta_link",        req.getHeroCtaLink(),        SettingGroup.HARDWARE);
-        upsert("hardware_download_android_url", req.getDownloadAndroidUrl(), SettingGroup.HARDWARE);
-        upsert("hardware_download_ios_url",     req.getDownloadIosUrl(),     SettingGroup.HARDWARE);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("hardware_hero_title",           req.getHeroTitle());
+        values.put("hardware_hero_title_kh",        req.getHeroTitleKh());
+        values.put("hardware_hero_subtitle",        req.getHeroSubtitle());
+        values.put("hardware_hero_subtitle_kh",     req.getHeroSubtitleKh());
+        values.put("hardware_hero_cta_label",       req.getHeroCtaLabel());
+        values.put("hardware_hero_cta_label_kh",    req.getHeroCtaLabelKh());
+        values.put("hardware_hero_cta_link",        req.getHeroCtaLink());
+        values.put("hardware_download_android_url", req.getDownloadAndroidUrl());
+        values.put("hardware_download_ios_url",     req.getDownloadIosUrl());
+        batchUpsert(SettingGroup.HARDWARE, values);
         return getHardwarePageSettings();
     }
 
@@ -438,61 +453,63 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Transactional
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated homepage settings")
     public HomepagePageSettingResponse updateHomepagePageSettings(HomepagePageSettingRequest req) {
-        upsert("home_hero_title",              req.getHeroTitle(),              SettingGroup.HOMEPAGE);
-        upsert("home_hero_title_kh",           req.getHeroTitleKh(),            SettingGroup.HOMEPAGE);
-        upsert("home_hero_subtitle",           req.getHeroSubtitle(),           SettingGroup.HOMEPAGE);
-        upsert("home_hero_subtitle_kh",        req.getHeroSubtitleKh(),         SettingGroup.HOMEPAGE);
-        upsert("home_hero_cta_label",          req.getHeroCtaLabel(),           SettingGroup.HOMEPAGE);
-        upsert("home_hero_cta_label_kh",       req.getHeroCtaLabelKh(),         SettingGroup.HOMEPAGE);
-        upsert("home_hero_cta_link",           req.getHeroCtaLink(),            SettingGroup.HOMEPAGE);
-        upsert("home_hero_video_label",        req.getHeroVideoLabel(),         SettingGroup.HOMEPAGE);
-        upsert("home_hero_video_label_kh",     req.getHeroVideoLabelKh(),       SettingGroup.HOMEPAGE);
-        upsert("home_hero_video_url",          req.getHeroVideoUrl(),           SettingGroup.HOMEPAGE);
-        upsert("home_hero_image_url",          req.getHeroImageUrl(),           SettingGroup.HOMEPAGE);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("home_hero_title",              req.getHeroTitle());
+        values.put("home_hero_title_kh",           req.getHeroTitleKh());
+        values.put("home_hero_subtitle",           req.getHeroSubtitle());
+        values.put("home_hero_subtitle_kh",        req.getHeroSubtitleKh());
+        values.put("home_hero_cta_label",          req.getHeroCtaLabel());
+        values.put("home_hero_cta_label_kh",       req.getHeroCtaLabelKh());
+        values.put("home_hero_cta_link",           req.getHeroCtaLink());
+        values.put("home_hero_video_label",        req.getHeroVideoLabel());
+        values.put("home_hero_video_label_kh",     req.getHeroVideoLabelKh());
+        values.put("home_hero_video_url",          req.getHeroVideoUrl());
+        values.put("home_hero_image_url",          req.getHeroImageUrl());
 
-        upsert("home_metrics_title",           req.getMetricsTitle(),           SettingGroup.HOMEPAGE);
-        upsert("home_metrics_title_kh",        req.getMetricsTitleKh(),         SettingGroup.HOMEPAGE);
-        upsert("home_metrics_subtitle",        req.getMetricsSubtitle(),        SettingGroup.HOMEPAGE);
-        upsert("home_metrics_subtitle_kh",     req.getMetricsSubtitleKh(),      SettingGroup.HOMEPAGE);
-        upsert("home_lifestyle_image_1_url",   req.getLifestyleImage1Url(),     SettingGroup.HOMEPAGE);
-        upsert("home_lifestyle_image_2_url",   req.getLifestyleImage2Url(),     SettingGroup.HOMEPAGE);
-        upsert("home_lifestyle_image_3_url",   req.getLifestyleImage3Url(),     SettingGroup.HOMEPAGE);
+        values.put("home_metrics_title",           req.getMetricsTitle());
+        values.put("home_metrics_title_kh",        req.getMetricsTitleKh());
+        values.put("home_metrics_subtitle",        req.getMetricsSubtitle());
+        values.put("home_metrics_subtitle_kh",     req.getMetricsSubtitleKh());
+        values.put("home_lifestyle_image_1_url",   req.getLifestyleImage1Url());
+        values.put("home_lifestyle_image_2_url",   req.getLifestyleImage2Url());
+        values.put("home_lifestyle_image_3_url",   req.getLifestyleImage3Url());
 
-        upsert("home_help_title",              req.getHelpTitle(),              SettingGroup.HOMEPAGE);
-        upsert("home_help_title_kh",           req.getHelpTitleKh(),            SettingGroup.HOMEPAGE);
+        values.put("home_help_title",              req.getHelpTitle());
+        values.put("home_help_title_kh",           req.getHelpTitleKh());
 
-        upsert("home_help_livechat_title",            req.getHelpLivechatTitle(),          SettingGroup.HOMEPAGE);
-        upsert("home_help_livechat_title_kh",         req.getHelpLivechatTitleKh(),        SettingGroup.HOMEPAGE);
-        upsert("home_help_livechat_description",      req.getHelpLivechatDescription(),    SettingGroup.HOMEPAGE);
-        upsert("home_help_livechat_description_kh",   req.getHelpLivechatDescriptionKh(),  SettingGroup.HOMEPAGE);
-        upsert("home_help_livechat_cta_label",        req.getHelpLivechatCtaLabel(),       SettingGroup.HOMEPAGE);
-        upsert("home_help_livechat_cta_label_kh",     req.getHelpLivechatCtaLabelKh(),     SettingGroup.HOMEPAGE);
-        upsert("home_help_livechat_cta_link",         req.getHelpLivechatCtaLink(),        SettingGroup.HOMEPAGE);
+        values.put("home_help_livechat_title",          req.getHelpLivechatTitle());
+        values.put("home_help_livechat_title_kh",       req.getHelpLivechatTitleKh());
+        values.put("home_help_livechat_description",    req.getHelpLivechatDescription());
+        values.put("home_help_livechat_description_kh", req.getHelpLivechatDescriptionKh());
+        values.put("home_help_livechat_cta_label",      req.getHelpLivechatCtaLabel());
+        values.put("home_help_livechat_cta_label_kh",   req.getHelpLivechatCtaLabelKh());
+        values.put("home_help_livechat_cta_link",       req.getHelpLivechatCtaLink());
 
-        upsert("home_help_center_title",            req.getHelpCenterTitle(),          SettingGroup.HOMEPAGE);
-        upsert("home_help_center_title_kh",         req.getHelpCenterTitleKh(),        SettingGroup.HOMEPAGE);
-        upsert("home_help_center_description",      req.getHelpCenterDescription(),    SettingGroup.HOMEPAGE);
-        upsert("home_help_center_description_kh",   req.getHelpCenterDescriptionKh(),  SettingGroup.HOMEPAGE);
-        upsert("home_help_center_cta_label",        req.getHelpCenterCtaLabel(),       SettingGroup.HOMEPAGE);
-        upsert("home_help_center_cta_label_kh",     req.getHelpCenterCtaLabelKh(),     SettingGroup.HOMEPAGE);
-        upsert("home_help_center_cta_link",         req.getHelpCenterCtaLink(),        SettingGroup.HOMEPAGE);
+        values.put("home_help_center_title",          req.getHelpCenterTitle());
+        values.put("home_help_center_title_kh",       req.getHelpCenterTitleKh());
+        values.put("home_help_center_description",    req.getHelpCenterDescription());
+        values.put("home_help_center_description_kh", req.getHelpCenterDescriptionKh());
+        values.put("home_help_center_cta_label",      req.getHelpCenterCtaLabel());
+        values.put("home_help_center_cta_label_kh",   req.getHelpCenterCtaLabelKh());
+        values.put("home_help_center_cta_link",       req.getHelpCenterCtaLink());
 
-        upsert("home_help_community_title",            req.getHelpCommunityTitle(),          SettingGroup.HOMEPAGE);
-        upsert("home_help_community_title_kh",         req.getHelpCommunityTitleKh(),        SettingGroup.HOMEPAGE);
-        upsert("home_help_community_description",      req.getHelpCommunityDescription(),    SettingGroup.HOMEPAGE);
-        upsert("home_help_community_description_kh",   req.getHelpCommunityDescriptionKh(),  SettingGroup.HOMEPAGE);
-        upsert("home_help_community_cta_label",        req.getHelpCommunityCtaLabel(),       SettingGroup.HOMEPAGE);
-        upsert("home_help_community_cta_label_kh",     req.getHelpCommunityCtaLabelKh(),     SettingGroup.HOMEPAGE);
-        upsert("home_help_community_cta_link",         req.getHelpCommunityCtaLink(),        SettingGroup.HOMEPAGE);
+        values.put("home_help_community_title",          req.getHelpCommunityTitle());
+        values.put("home_help_community_title_kh",       req.getHelpCommunityTitleKh());
+        values.put("home_help_community_description",    req.getHelpCommunityDescription());
+        values.put("home_help_community_description_kh", req.getHelpCommunityDescriptionKh());
+        values.put("home_help_community_cta_label",      req.getHelpCommunityCtaLabel());
+        values.put("home_help_community_cta_label_kh",   req.getHelpCommunityCtaLabelKh());
+        values.put("home_help_community_cta_link",       req.getHelpCommunityCtaLink());
 
-        upsert("home_partner_title",           req.getPartnerTitle(),           SettingGroup.HOMEPAGE);
-        upsert("home_partner_title_kh",        req.getPartnerTitleKh(),         SettingGroup.HOMEPAGE);
-        upsert("home_partner_description",     req.getPartnerDescription(),     SettingGroup.HOMEPAGE);
-        upsert("home_partner_description_kh",  req.getPartnerDescriptionKh(),   SettingGroup.HOMEPAGE);
-        upsert("home_partner_cta_label",       req.getPartnerCtaLabel(),        SettingGroup.HOMEPAGE);
-        upsert("home_partner_cta_label_kh",    req.getPartnerCtaLabelKh(),      SettingGroup.HOMEPAGE);
-        upsert("home_partner_cta_link",        req.getPartnerCtaLink(),         SettingGroup.HOMEPAGE);
+        values.put("home_partner_title",           req.getPartnerTitle());
+        values.put("home_partner_title_kh",        req.getPartnerTitleKh());
+        values.put("home_partner_description",     req.getPartnerDescription());
+        values.put("home_partner_description_kh",  req.getPartnerDescriptionKh());
+        values.put("home_partner_cta_label",       req.getPartnerCtaLabel());
+        values.put("home_partner_cta_label_kh",    req.getPartnerCtaLabelKh());
+        values.put("home_partner_cta_link",        req.getPartnerCtaLink());
 
+        batchUpsert(SettingGroup.HOMEPAGE, values);
         return getHomepagePageSettings();
     }
 
@@ -516,13 +533,15 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Transactional
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated Partner CTA settings")
     public PartnerCtaSettingResponse updatePartnerCtaSettings(PartnerCtaSettingRequest req) {
-        upsert("partner_cta_title",    req.getTitle(),    SettingGroup.PARTNER_CTA);
-        upsert("partner_cta_title_kh", req.getTitleKh(),  SettingGroup.PARTNER_CTA);
-        upsert("partner_cta_body",     req.getBody(),     SettingGroup.PARTNER_CTA);
-        upsert("partner_cta_body_kh",  req.getBodyKh(),   SettingGroup.PARTNER_CTA);
-        upsert("partner_cta_label",    req.getLabel(),    SettingGroup.PARTNER_CTA);
-        upsert("partner_cta_label_kh", req.getLabelKh(),  SettingGroup.PARTNER_CTA);
-        upsert("partner_cta_link",     req.getLink(),     SettingGroup.PARTNER_CTA);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("partner_cta_title",    req.getTitle());
+        values.put("partner_cta_title_kh", req.getTitleKh());
+        values.put("partner_cta_body",     req.getBody());
+        values.put("partner_cta_body_kh",  req.getBodyKh());
+        values.put("partner_cta_label",    req.getLabel());
+        values.put("partner_cta_label_kh", req.getLabelKh());
+        values.put("partner_cta_link",     req.getLink());
+        batchUpsert(SettingGroup.PARTNER_CTA, values);
         return getPartnerCtaSettings();
     }
 
@@ -573,16 +592,18 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated page heroes")
     public PageHeroesResponse updatePageHeroes(PageHeroesRequest req) {
         if (req.getPages() != null) {
+            Map<String, String> values = new LinkedHashMap<>();
             for (Map.Entry<String, PageHeroesRequest.PageHero> entry : req.getPages().entrySet()) {
                 String slug = entry.getKey();
                 if (!PAGE_HERO_SLUGS.contains(slug)) continue;
                 PageHeroesRequest.PageHero hero = entry.getValue();
                 if (hero == null) continue;
-                upsert(heroKey(slug, "heading"),       hero.getHeading(),      SettingGroup.PAGE_HEROES);
-                upsert(heroKey(slug, "heading_kh"),    hero.getHeadingKh(),    SettingGroup.PAGE_HEROES);
-                upsert(heroKey(slug, "subheading"),    hero.getSubheading(),   SettingGroup.PAGE_HEROES);
-                upsert(heroKey(slug, "subheading_kh"), hero.getSubheadingKh(), SettingGroup.PAGE_HEROES);
+                values.put(heroKey(slug, "heading"),       hero.getHeading());
+                values.put(heroKey(slug, "heading_kh"),    hero.getHeadingKh());
+                values.put(heroKey(slug, "subheading"),    hero.getSubheading());
+                values.put(heroKey(slug, "subheading_kh"), hero.getSubheadingKh());
             }
+            batchUpsert(SettingGroup.PAGE_HEROES, values);
         }
         return getPageHeroes();
     }
@@ -621,19 +642,21 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated page CTAs")
     public PageCtasResponse updatePageCtas(PageCtasRequest req) {
         if (req.getPages() != null) {
+            Map<String, String> values = new LinkedHashMap<>();
             for (Map.Entry<String, PageCtasRequest.PageCta> entry : req.getPages().entrySet()) {
                 String slug = entry.getKey();
                 if (!PAGE_CTA_SLUGS.contains(slug)) continue;
                 PageCtasRequest.PageCta cta = entry.getValue();
                 if (cta == null) continue;
-                upsert(ctaKey(slug, "heading"),         cta.getHeading(),        SettingGroup.PAGE_CTAS);
-                upsert(ctaKey(slug, "heading_kh"),      cta.getHeadingKh(),      SettingGroup.PAGE_CTAS);
-                upsert(ctaKey(slug, "subheading"),      cta.getSubheading(),     SettingGroup.PAGE_CTAS);
-                upsert(ctaKey(slug, "subheading_kh"),   cta.getSubheadingKh(),   SettingGroup.PAGE_CTAS);
-                upsert(ctaKey(slug, "button_label"),    cta.getButtonLabel(),    SettingGroup.PAGE_CTAS);
-                upsert(ctaKey(slug, "button_label_kh"), cta.getButtonLabelKh(),  SettingGroup.PAGE_CTAS);
-                upsert(ctaKey(slug, "button_link"),     cta.getButtonLink(),     SettingGroup.PAGE_CTAS);
+                values.put(ctaKey(slug, "heading"),         cta.getHeading());
+                values.put(ctaKey(slug, "heading_kh"),      cta.getHeadingKh());
+                values.put(ctaKey(slug, "subheading"),      cta.getSubheading());
+                values.put(ctaKey(slug, "subheading_kh"),   cta.getSubheadingKh());
+                values.put(ctaKey(slug, "button_label"),    cta.getButtonLabel());
+                values.put(ctaKey(slug, "button_label_kh"), cta.getButtonLabelKh());
+                values.put(ctaKey(slug, "button_link"),     cta.getButtonLink());
             }
+            batchUpsert(SettingGroup.PAGE_CTAS, values);
         }
         return getPageCtas();
     }
@@ -645,6 +668,38 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         return rows.stream()
             .collect(Collectors.toMap(CmsSettingEntity::getSettingKey, e ->
                 e.getSettingValue() != null ? e.getSettingValue() : ""));
+    }
+
+    /**
+     * Upserts a whole settings group in one round trip: a single SELECT loads the
+     * existing rows, updates ride on JPA dirty checking at commit, and only new
+     * keys are inserted via saveAll. The per-key upsert() below issues 2 queries
+     * per field, which for large groups (homepage = 46 fields) exceeded the
+     * frontend's 10s timeout on a slow DB link.
+     */
+    private void batchUpsert(String group, Map<String, String> values) {
+        Map<String, CmsSettingEntity> existing = repository.findAllBySettingGroup(group).stream()
+            .collect(Collectors.toMap(CmsSettingEntity::getSettingKey, e -> e, (a, b) -> a));
+        Date now = new Date();
+        List<CmsSettingEntity> created = new java.util.ArrayList<>();
+        values.forEach((key, value) -> {
+            CmsSettingEntity entity = existing.get(key);
+            if (entity == null) {
+                entity = new CmsSettingEntity();
+                entity.setSettingId(UUID.randomUUID().toString());
+                entity.setSettingKey(key);
+                entity.setSettingGroup(group);
+                entity.setSettingValue(value);
+                entity.setUpdatedAt(now);
+                created.add(entity);
+            } else {
+                entity.setSettingValue(value);
+                entity.setUpdatedAt(now);
+            }
+        });
+        if (!created.isEmpty()) {
+            repository.saveAll(created);
+        }
     }
 
     private void upsert(String key, String value, String group) {
