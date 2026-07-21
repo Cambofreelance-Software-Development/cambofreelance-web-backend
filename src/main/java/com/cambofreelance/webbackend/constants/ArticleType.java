@@ -18,9 +18,10 @@ public final class ArticleType {
     public static final String PARTNER       = "PARTNER";
     public static final String CONTACT       = "CONTACT";
     public static final String ABOUT_US      = "ABOUT-US";
+    public static final String ARTICLE_HERO_SECTION = "ARTICLE-HERO-SECTION";
 
     private static final String[] ALL = {
-        NEWS, PROMOTIONS, BLOGS, ANNOUNCEMENTS, SERVICE, TEAM, COURSE, PRODUCTS, TUTORIAL, STATS, REVIEW, FEATURE, BUSINESS_TYPES, PARTNER, CONTACT, ABOUT_US
+        NEWS, PROMOTIONS, BLOGS, ANNOUNCEMENTS, SERVICE, TEAM, COURSE, PRODUCTS, TUTORIAL, STATS, REVIEW, FEATURE, BUSINESS_TYPES, PARTNER, CONTACT, ABOUT_US, ARTICLE_HERO_SECTION
     };
 
     public static boolean isValid(String value) {
