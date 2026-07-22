@@ -53,6 +53,16 @@ public class UserEntity extends BaseEntity implements Serializable {
     @Column(name = "REGISTER_CHANNEL")
     private String registerChannel;
 
+    @Column(name = "APPROVAL_STATUS")
+    private String approvalStatus;
+
+    @Column(name = "APPROVED_BY")
+    private String approvedBy;
+
+    @Column(name = "APPROVED_AT")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date approvedAt;
+
     @Column(name = "IS_FORCE_CHANGE_PASSWORD")
     private String isForceChangePassword;
 

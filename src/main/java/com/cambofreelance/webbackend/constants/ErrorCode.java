@@ -29,4 +29,10 @@ public final class ErrorCode {
     public static final String LOGIN_SUCCESS = "ERR-00007";
     public static final String INVALID_OTP   = "ERR-0011";
     public static final String OTP_EXPIRED   = "ERR-0012";
+
+    public static final String ACCOUNT_NOT_APPROVED         = "ERR-0013";
+    public static final String SUBSCRIPTION_ALREADY_ACTIVE  = "ERR-0014";
+    public static final String PAYMENT_NOT_FOUND            = "ERR-0015";
+    public static final String PAYMENT_NOT_COMPLETED        = "ERR-0016";
+    public static final String PLAN_NOT_AVAILABLE           = "ERR-0017";
 }

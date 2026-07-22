@@ -64,7 +64,9 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/app-releases/latest"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/forgot-password"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/reset-password"),
-                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/contact")
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/contact"),
+                    // ABA PayWay server-to-server pushback (verified against PayWay before any state change)
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/payway/callback")
                 ).permitAll()
                 .anyRequest().authenticated()
             )

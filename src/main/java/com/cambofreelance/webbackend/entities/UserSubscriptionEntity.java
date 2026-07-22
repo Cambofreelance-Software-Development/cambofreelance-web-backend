@@ -1,0 +1,56 @@
+package com.cambofreelance.webbackend.entities;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import java.io.Serial;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Date;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.DynamicUpdate;
+
+@Entity
+@Table(name = "user_subscription")
+@Data
+@DynamicUpdate
+@EqualsAndHashCode(callSuper = false)
+public class UserSubscriptionEntity extends BaseEntity implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @Column(name = "id")
+    private String id;
+
+    @Column(name = "user_id")
+    private String userId;
+
+    @Column(name = "plan_id")
+    private String planId;
+
+    @Column(name = "billing_cycle")
+    private String billingCycle;
+
+    @Column(name = "price")
+    private BigDecimal price;
+
+    @Column(name = "currency")
+    private String currency;
+
+    @Column(name = "sub_status")
+    private String subStatus;
+
+    @Column(name = "start_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date startAt;
+
+    @Column(name = "expires_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date expiresAt;
+}

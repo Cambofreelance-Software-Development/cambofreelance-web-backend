@@ -6,6 +6,7 @@ import com.cambofreelance.webbackend.dto.request.AdminUserCreateRequest;
 import com.cambofreelance.webbackend.dto.request.AdminUserUpdateRequest;
 import com.cambofreelance.webbackend.dto.request.ChangePasswordRequest;
 import com.cambofreelance.webbackend.dto.request.UpdateProfileRequest;
+import com.cambofreelance.webbackend.dto.request.UserApprovalRequest;
 import com.cambofreelance.webbackend.dto.request.UserStatusRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
@@ -95,6 +96,17 @@ public class UserController {
         @Valid @RequestBody UserStatusRequest request
     ) {
         var result = userService.adminUpdateUserStatus(userId, request.getStatus());
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/users/{userId}/approval")
+    @PreAuthorize("hasAuthority('users.approve')")
+    public ResponseEntity<Object> updateUserApproval(
+        @PathVariable String userId,
+        @Valid @RequestBody UserApprovalRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = userService.adminUpdateUserApproval(userId, request.getApprovalStatus(), adminId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
