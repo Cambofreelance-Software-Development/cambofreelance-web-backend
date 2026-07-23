@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.Data;
 
 @Data
@@ -18,6 +19,10 @@ public class HardwareRequest {
 
     private String descriptionKh;
 
+    private String content;
+
+    private String contentKh;
+
     private String connectivity;
 
     private String price;
@@ -29,6 +34,8 @@ public class HardwareRequest {
     private String categoryId;
 
     private String imageId;
+
+    private List<String> imageIds;
 
     private String icon;
 

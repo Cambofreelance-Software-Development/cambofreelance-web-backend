@@ -9,6 +9,8 @@ public interface HardwareService {
 
     List<HardwareResponse> listAll();
 
+    List<HardwareResponse> listPublic();
+
     Page<HardwareResponse> search(String search, int page, int size);
 
     HardwareResponse getById(String id);

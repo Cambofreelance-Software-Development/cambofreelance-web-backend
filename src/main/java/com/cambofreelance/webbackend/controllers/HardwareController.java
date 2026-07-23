@@ -30,7 +30,13 @@ public class HardwareController {
 
     @GetMapping("/hardware")
     public ResponseEntity<Object> publicList() {
-        var result = hardwareService.listAll();
+        var result = hardwareService.listPublic();
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/hardware/{id}")
+    public ResponseEntity<Object> publicGetById(@PathVariable String id) {
+        var result = hardwareService.getById(id);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 

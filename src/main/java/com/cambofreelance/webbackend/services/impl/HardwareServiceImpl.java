@@ -15,6 +15,7 @@ import com.cambofreelance.webbackend.services.HardwareService;
 import jakarta.transaction.Transactional;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,14 @@ public class HardwareServiceImpl implements HardwareService {
         return hardwareRepository.findByStatusOrderBySortOrderAsc(Constants.STATUS_ACTIVE)
             .stream()
             .map(HardwareResponse::from)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<HardwareResponse> listPublic() {
+        return hardwareRepository.findByStatusOrderBySortOrderAsc(Constants.STATUS_ACTIVE)
+            .stream()
+            .map(HardwareResponse::fromSummary)
             .collect(Collectors.toList());
     }
 
@@ -96,6 +105,8 @@ public class HardwareServiceImpl implements HardwareService {
         entity.setBrand(request.getBrand());
         entity.setDescription(request.getDescription());
         entity.setDescriptionKh(request.getDescriptionKh());
+        entity.setContent(request.getContent());
+        entity.setContentKh(request.getContentKh());
         entity.setConnectivity(request.getConnectivity());
         entity.setPrice(request.getPrice());
         entity.setPlatform(request.getPlatform());
@@ -104,7 +115,24 @@ public class HardwareServiceImpl implements HardwareService {
         entity.setLink(request.getLink());
         entity.setReleaseDate(request.getReleaseDate());
         resolveImage(entity, request.getImageId());
+        resolveImages(entity, request.getImageIds());
         resolveCategory(entity, request.getCategoryId());
+    }
+
+    private void resolveImages(HardwareEntity entity, List<String> imageIds) {
+        if (imageIds == null || imageIds.isEmpty()) {
+            entity.getImages().clear();
+            return;
+        }
+        // Resolve in the exact order supplied so the gallery keeps its arrangement.
+        List<MediaFileEntity> ordered = imageIds.stream()
+            .map(id -> mediaRepository.findById(id)
+                .filter(m -> Constants.STATUS_ACTIVE.equals(m.getStatus()))
+                .orElse(null))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+        entity.getImages().clear();
+        entity.getImages().addAll(ordered);
     }
 
     private void resolveCategory(HardwareEntity entity, String categoryId) {

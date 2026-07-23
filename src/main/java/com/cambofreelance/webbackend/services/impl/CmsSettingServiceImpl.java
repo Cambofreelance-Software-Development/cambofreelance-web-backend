@@ -78,6 +78,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
             .defaultLanguage(m.getOrDefault("default_language", "en"))
             .timeZone(m.getOrDefault("time_zone", "Asia/Phnom_Penh"))
             .siteLogo(m.getOrDefault("site_logo", ""))
+            .siteLogoFooter(m.getOrDefault("site_logo_footer", ""))
             .siteDescription(m.getOrDefault("site_description", ""))
             .build();
     }
@@ -93,6 +94,9 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         values.put("time_zone",        req.getTimeZone());
         if (req.getSiteLogo() != null) {
             values.put("site_logo", req.getSiteLogo());
+        }
+        if (req.getSiteLogoFooter() != null) {
+            values.put("site_logo_footer", req.getSiteLogoFooter());
         }
         if (req.getSiteDescription() != null) {
             values.put("site_description", req.getSiteDescription());
@@ -346,6 +350,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
                     + "We're preparing to launch advanced Point-of-Sale (POS) management platforms "
                     + "and retail solutions very soon."))
             .siteLogo(general.getOrDefault("site_logo", ""))
+            .siteLogoFooter(general.getOrDefault("site_logo_footer", ""))
             .siteAddress(general.getOrDefault("site_address", "Street 123, BKK1, Phnom Penh, Cambodia"))
             .siteEmail(general.getOrDefault("site_email", "hello@cambofreelance.com"))
             .sitePhone(general.getOrDefault("site_phone", "+855 (0) 12 345 678"))

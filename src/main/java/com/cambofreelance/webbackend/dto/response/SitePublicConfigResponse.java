@@ -10,6 +10,7 @@ public class SitePublicConfigResponse {
     private String siteName;
     private String siteDescription;
     private String siteLogo;
+    private String siteLogoFooter;
     private String siteAddress;
     private String siteEmail;
     private String sitePhone;

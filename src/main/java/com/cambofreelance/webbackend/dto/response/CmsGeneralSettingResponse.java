@@ -12,5 +12,6 @@ public class CmsGeneralSettingResponse {
     private String defaultLanguage;
     private String timeZone;
     private String siteLogo;
+    private String siteLogoFooter;
     private String siteDescription;
 }

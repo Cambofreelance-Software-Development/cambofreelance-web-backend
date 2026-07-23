@@ -5,11 +5,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.DynamicUpdate;
@@ -43,6 +48,12 @@ public class HardwareEntity extends BaseEntity implements Serializable {
     @Column(name = "description_kh", columnDefinition = "TEXT")
     private String descriptionKh;
 
+    @Column(name = "content", columnDefinition = "TEXT")
+    private String content;
+
+    @Column(name = "content_kh", columnDefinition = "TEXT")
+    private String contentKh;
+
     @Column(name = "connectivity", length = 255)
     private String connectivity;
 
@@ -62,6 +73,15 @@ public class HardwareEntity extends BaseEntity implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
     private MediaFileEntity image;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "hardware_images",
+        joinColumns = @JoinColumn(name = "hardware_id"),
+        inverseJoinColumns = @JoinColumn(name = "media_file_id")
+    )
+    @OrderColumn(name = "position")
+    private List<MediaFileEntity> images = new ArrayList<>();
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;

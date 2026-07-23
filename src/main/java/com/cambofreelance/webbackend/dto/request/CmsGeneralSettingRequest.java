@@ -22,5 +22,7 @@ public class CmsGeneralSettingRequest {
 
     private String siteLogo;
 
+    private String siteLogoFooter;
+
     private String siteDescription;
 }
