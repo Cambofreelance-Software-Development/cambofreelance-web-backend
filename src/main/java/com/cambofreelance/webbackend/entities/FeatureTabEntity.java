@@ -21,8 +21,8 @@ import org.hibernate.annotations.DynamicUpdate;
 @Table(name = "cms_feature_tabs")
 @Data
 @DynamicUpdate
-@EqualsAndHashCode(callSuper = false, exclude = "bullets")
-@ToString(exclude = "bullets")
+@EqualsAndHashCode(callSuper = false, exclude = "items")
+@ToString(exclude = "items")
 public class FeatureTabEntity extends BaseEntity implements Serializable {
 
     @Serial
@@ -38,40 +38,10 @@ public class FeatureTabEntity extends BaseEntity implements Serializable {
     @Column(name = "tab_label_kh", length = 255)
     private String tabLabelKh;
 
-    @Column(name = "title", nullable = false, length = 255)
-    private String title;
-
-    @Column(name = "title_kh", length = 255)
-    private String titleKh;
-
-    @Column(name = "subtitle", columnDefinition = "TEXT")
-    private String subtitle;
-
-    @Column(name = "subtitle_kh", columnDefinition = "TEXT")
-    private String subtitleKh;
-
-    @Column(name = "cta_label", length = 255)
-    private String ctaLabel;
-
-    @Column(name = "cta_label_kh", length = 255)
-    private String ctaLabelKh;
-
-    @Column(name = "cta_href", length = 500)
-    private String ctaHref;
-
-    @Column(name = "cta_button", nullable = false)
-    private Boolean ctaButton = false;
-
-    @Column(name = "image_url", length = 500)
-    private String imageUrl;
-
-    @Column(name = "image_side", length = 10, nullable = false)
-    private String imageSide = "right";
-
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
 
     @OneToMany(mappedBy = "tab", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sortOrder ASC")
-    private List<FeatureTabBulletEntity> bullets = new ArrayList<>();
+    private List<FeatureTabItemEntity> items = new ArrayList<>();
 }

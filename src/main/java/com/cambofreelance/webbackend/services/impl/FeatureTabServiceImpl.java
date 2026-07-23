@@ -4,9 +4,11 @@ import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.dto.request.FeatureTabRequest;
 import com.cambofreelance.webbackend.dto.request.FeatureTabRequest.FeatureTabBulletRequest;
+import com.cambofreelance.webbackend.dto.request.FeatureTabRequest.FeatureTabItemRequest;
 import com.cambofreelance.webbackend.dto.response.FeatureTabResponse;
 import com.cambofreelance.webbackend.entities.FeatureTabBulletEntity;
 import com.cambofreelance.webbackend.entities.FeatureTabEntity;
+import com.cambofreelance.webbackend.entities.FeatureTabItemEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.FeatureTabRepository;
 import com.cambofreelance.webbackend.services.FeatureTabService;
@@ -53,7 +55,7 @@ public class FeatureTabServiceImpl implements FeatureTabService {
         applyTab(tab, request);
         tab.setCreatedBy(StringUtils.hasText(createdBy) ? createdBy : Constants.SYSTEM);
         tab.setStatus(Constants.STATUS_ACTIVE);
-        syncBullets(tab, request.getBullets(), createdBy);
+        syncItems(tab, request.getItems(), createdBy);
         return FeatureTabResponse.from(repository.save(tab));
     }
 
@@ -65,7 +67,7 @@ public class FeatureTabServiceImpl implements FeatureTabService {
         applyTab(tab, request);
         tab.setUpdatedBy(updatedBy);
         tab.setUpdatedAt(new Date());
-        syncBullets(tab, request.getBullets(), updatedBy);
+        syncItems(tab, request.getItems(), updatedBy);
         return FeatureTabResponse.from(repository.save(tab));
     }
 
@@ -81,24 +83,57 @@ public class FeatureTabServiceImpl implements FeatureTabService {
     private void applyTab(FeatureTabEntity tab, FeatureTabRequest request) {
         tab.setTabLabel(request.getTabLabel().trim());
         tab.setTabLabelKh(request.getTabLabelKh());
-        tab.setTitle(request.getTitle().trim());
-        tab.setTitleKh(request.getTitleKh());
-        tab.setSubtitle(request.getSubtitle());
-        tab.setSubtitleKh(request.getSubtitleKh());
-        tab.setCtaLabel(request.getCtaLabel());
-        tab.setCtaLabelKh(request.getCtaLabelKh());
-        tab.setCtaHref(request.getCtaHref());
-        tab.setCtaButton(Boolean.TRUE.equals(request.getCtaButton()));
-        tab.setImageUrl(request.getImageUrl());
-        tab.setImageSide(StringUtils.hasText(request.getImageSide()) ? request.getImageSide() : "right");
         tab.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
     }
 
-    private void syncBullets(FeatureTabEntity tab, List<FeatureTabBulletRequest> incoming, String actor) {
+    private void syncItems(FeatureTabEntity tab, List<FeatureTabItemRequest> incoming, String actor) {
+        List<FeatureTabItemRequest> safeIncoming = incoming != null ? incoming : new ArrayList<>();
+
+        Map<String, FeatureTabItemEntity> existingById = new HashMap<>();
+        for (FeatureTabItemEntity existing : new ArrayList<>(tab.getItems())) {
+            if (existing.getId() != null) {
+                existingById.put(existing.getId(), existing);
+            }
+        }
+
+        List<FeatureTabItemEntity> nextItems = new ArrayList<>();
+        for (FeatureTabItemRequest itemReq : safeIncoming) {
+            FeatureTabItemEntity item;
+            if (StringUtils.hasText(itemReq.getId()) && existingById.containsKey(itemReq.getId())) {
+                item = existingById.remove(itemReq.getId());
+                item.setUpdatedBy(actor);
+                item.setUpdatedAt(new Date());
+            } else {
+                item = new FeatureTabItemEntity();
+                item.setId(UUID.randomUUID().toString());
+                item.setTab(tab);
+                item.setCreatedBy(StringUtils.hasText(actor) ? actor : Constants.SYSTEM);
+                item.setStatus(Constants.STATUS_ACTIVE);
+            }
+            item.setTitle(itemReq.getTitle().trim());
+            item.setTitleKh(itemReq.getTitleKh());
+            item.setSubtitle(itemReq.getSubtitle());
+            item.setSubtitleKh(itemReq.getSubtitleKh());
+            item.setCtaLabel(itemReq.getCtaLabel());
+            item.setCtaLabelKh(itemReq.getCtaLabelKh());
+            item.setCtaHref(itemReq.getCtaHref());
+            item.setCtaButton(Boolean.TRUE.equals(itemReq.getCtaButton()));
+            item.setImageUrl(itemReq.getImageUrl());
+            item.setImageSide(StringUtils.hasText(itemReq.getImageSide()) ? itemReq.getImageSide() : "right");
+            item.setSortOrder(itemReq.getSortOrder() != null ? itemReq.getSortOrder() : 0);
+            syncBullets(item, itemReq.getBullets(), actor);
+            nextItems.add(item);
+        }
+
+        tab.getItems().clear();
+        tab.getItems().addAll(nextItems);
+    }
+
+    private void syncBullets(FeatureTabItemEntity item, List<FeatureTabBulletRequest> incoming, String actor) {
         List<FeatureTabBulletRequest> safeIncoming = incoming != null ? incoming : new ArrayList<>();
 
         Map<String, FeatureTabBulletEntity> existingById = new HashMap<>();
-        for (FeatureTabBulletEntity existing : new ArrayList<>(tab.getBullets())) {
+        for (FeatureTabBulletEntity existing : new ArrayList<>(item.getBullets())) {
             if (existing.getId() != null) {
                 existingById.put(existing.getId(), existing);
             }
@@ -114,7 +149,7 @@ public class FeatureTabServiceImpl implements FeatureTabService {
             } else {
                 bullet = new FeatureTabBulletEntity();
                 bullet.setId(UUID.randomUUID().toString());
-                bullet.setTab(tab);
+                bullet.setItem(item);
                 bullet.setCreatedBy(StringUtils.hasText(actor) ? actor : Constants.SYSTEM);
                 bullet.setStatus(Constants.STATUS_ACTIVE);
             }
@@ -127,8 +162,8 @@ public class FeatureTabServiceImpl implements FeatureTabService {
             nextBullets.add(bullet);
         }
 
-        tab.getBullets().clear();
-        tab.getBullets().addAll(nextBullets);
+        item.getBullets().clear();
+        item.getBullets().addAll(nextBullets);
     }
 
     private FeatureTabEntity requireById(String id) {

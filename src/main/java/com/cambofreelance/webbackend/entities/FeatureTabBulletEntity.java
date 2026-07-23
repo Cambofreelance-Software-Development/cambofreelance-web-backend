@@ -18,8 +18,8 @@ import org.hibernate.annotations.DynamicUpdate;
 @Table(name = "cms_feature_tab_bullets")
 @Data
 @DynamicUpdate
-@EqualsAndHashCode(callSuper = false, exclude = "tab")
-@ToString(exclude = "tab")
+@EqualsAndHashCode(callSuper = false, exclude = "item")
+@ToString(exclude = "item")
 public class FeatureTabBulletEntity extends BaseEntity implements Serializable {
 
     @Serial
@@ -30,8 +30,8 @@ public class FeatureTabBulletEntity extends BaseEntity implements Serializable {
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tab_id", nullable = false)
-    private FeatureTabEntity tab;
+    @JoinColumn(name = "item_id", nullable = false)
+    private FeatureTabItemEntity item;
 
     @Column(name = "icon", nullable = false, length = 20)
     private String icon = "check";

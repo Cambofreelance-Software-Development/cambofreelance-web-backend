@@ -14,31 +14,41 @@ public class FeatureTabRequest {
 
     private String tabLabelKh;
 
-    @NotBlank
-    private String title;
-
-    private String titleKh;
-
-    private String subtitle;
-
-    private String subtitleKh;
-
-    private String ctaLabel;
-
-    private String ctaLabelKh;
-
-    private String ctaHref;
-
-    private Boolean ctaButton = false;
-
-    private String imageUrl;
-
-    private String imageSide = "right";
-
     private Integer sortOrder = 0;
 
     @Valid
-    private List<FeatureTabBulletRequest> bullets = new ArrayList<>();
+    private List<FeatureTabItemRequest> items = new ArrayList<>();
+
+    @Data
+    public static class FeatureTabItemRequest {
+        private String id; // present on update, null on create
+
+        @NotBlank
+        private String title;
+
+        private String titleKh;
+
+        private String subtitle;
+
+        private String subtitleKh;
+
+        private String ctaLabel;
+
+        private String ctaLabelKh;
+
+        private String ctaHref;
+
+        private Boolean ctaButton = false;
+
+        private String imageUrl;
+
+        private String imageSide = "right";
+
+        private Integer sortOrder = 0;
+
+        @Valid
+        private List<FeatureTabBulletRequest> bullets = new ArrayList<>();
+    }
 
     @Data
     public static class FeatureTabBulletRequest {
