@@ -1,29 +1,36 @@
 version: "3.9"
 
 services:
-  postgres-bbu-service-local:
-    image: postgres:17
-    container_name: postgres-bbu-service-local
-    restart: always
+  postgres:
+    image: postgres:17.4
+    container_name: postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: BBU@2026
-      POSTGRES_DB: dev_authentication_db
+      POSTGRES_PASSWORD: CMS@2026
+      POSTGRES_DB: dev_softpoint
     ports:
-      - "26030:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - bbu-network
+      - cm-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'
+          memory: 1500M
+        reservations:
+          cpus: '0.50'
+          memory: 500M
 networks:
-  bbu-network:
-    driver: bridge
+  cm-network:
+    external: true
 
 volumes:
   postgres_data:

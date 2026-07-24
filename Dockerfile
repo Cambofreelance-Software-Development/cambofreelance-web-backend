@@ -37,7 +37,7 @@ COPY --from=builder --chown=spring:spring /app/build/libs/*.jar app.jar
 USER spring
 
 # Port Configuration Default is: 8080
-ARG APP_PORT=8080
+ARG APP_PORT=26022
 ENV SERVER_PORT=${APP_PORT}
 EXPOSE ${APP_PORT}
 
