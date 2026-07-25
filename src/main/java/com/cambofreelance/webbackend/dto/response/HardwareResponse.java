@@ -22,6 +22,8 @@ public class HardwareResponse {
     private String descriptionKh;
     private String content;
     private String contentKh;
+    private String overview;
+    private String overviewKh;
     private String connectivity;
     private String price;
     private String platform;
@@ -76,6 +78,8 @@ public class HardwareResponse {
             .descriptionKh(e.getDescriptionKh())
             .content(e.getContent())
             .contentKh(e.getContentKh())
+            .overview(e.getOverview())
+            .overviewKh(e.getOverviewKh())
             .connectivity(e.getConnectivity())
             .price(e.getPrice())
             .platform(e.getPlatform())

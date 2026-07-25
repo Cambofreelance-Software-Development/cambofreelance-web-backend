@@ -54,6 +54,12 @@ public class HardwareEntity extends BaseEntity implements Serializable {
     @Column(name = "content_kh", columnDefinition = "TEXT")
     private String contentKh;
 
+    @Column(name = "overview", columnDefinition = "TEXT")
+    private String overview;
+
+    @Column(name = "overview_kh", columnDefinition = "TEXT")
+    private String overviewKh;
+
     @Column(name = "connectivity", length = 255)
     private String connectivity;
 

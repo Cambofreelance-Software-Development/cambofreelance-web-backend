@@ -23,6 +23,10 @@ public class HardwareRequest {
 
     private String contentKh;
 
+    private String overview;
+
+    private String overviewKh;
+
     private String connectivity;
 
     private String price;
