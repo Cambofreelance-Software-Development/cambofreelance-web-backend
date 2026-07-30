@@ -72,8 +72,10 @@ public class MediaServiceImpl implements MediaService {
         String mimeType   = StringUtils.hasText(request.getMimeType()) ? request.getMimeType() : "application/octet-stream";
         String filePublicUrl = buildPublicUrl(publicUrl, actualBucket, region, endpoint, objectKey);
 
+        String presignEndpoint = StringUtils.hasText(publicUrl) ? publicUrl : endpoint;
+
         String presignedUrl = spacesService.presignPut(
-            endpoint, region, actualBucket, accessKey, secretKey, objectKey, mimeType, PRESIGN_EXPIRY
+            presignEndpoint, region, actualBucket, accessKey, secretKey, objectKey, mimeType, PRESIGN_EXPIRY
         );
 
         String mediaId = UUID.randomUUID().toString();
