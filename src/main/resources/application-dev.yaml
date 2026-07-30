@@ -7,9 +7,9 @@ spring:
   session:
     store-type: none
   datasource:
-    url: jdbc:postgresql://postgres:4010/dev_softpoint_auto_id
+    url: jdbc:postgresql://postgres:5432/softpoint_db
     username: superuser
-    password: CF_SUPERUSER@@2026
+    password: SUPERUSER@@2026#
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -44,7 +44,7 @@ spring:
       port: 6379
       timeout: 30000
       user: default
-      password: CMS@2026
+      password: SUPERUSER@@2026#
       ssl:
         enabled: false
       repositories:

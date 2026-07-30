@@ -1,6 +1,92 @@
 services:
+  # ── PostgreSQL Database ──────────────────────────────────────────
+  postgres:
+    image: postgres:17.4-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: softpoint_db
+      POSTGRES_USER: superuser
+      POSTGRES_PASSWORD: SUPERUSER@@2026#
+    ports:
+      - "26010:5432"
+    networks:
+      - cm-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superuser -d softpoint_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '50'
+          memory: 50M
+
+  # ── Redis Cache ──────────────────────────────────────────────────
+  redis:
+    image: redis:8.4-alpine
+    container_name: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "26020:6379"
+    networks:
+      - cm-network
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 20M
+
+  minio:
+    image: minio/minio:RELEASE.2024-01-28T22-35-53Z
+    container_name: minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+    ports:
+      - "26090:9000"
+      - "26091:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - cm-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1000M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
   # ── Backend Service ──────────────────────────────────────────────
-  authentication-service:
+  backend-service:
     container_name: cm-backend
     build:
       context: .
@@ -10,11 +96,12 @@ services:
       - "26022:26022"
     environment:
       - SERVER_PORT=26022
+      - SPRING_PROFILES_ACTIVE=dev
     networks:
       - cm-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:26022/actuator/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -22,7 +109,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1500M
+          cpus: '1'
+          memory: 1000M
+        reservations:
+          cpus: '100'
+          memory: 350M
     security_opt:
       - no-new-privileges:true
     logging:
@@ -30,6 +121,11 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
 
 networks:
   cm-network:
