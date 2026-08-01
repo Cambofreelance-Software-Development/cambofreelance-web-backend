@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.constants.Constants;
+import com.cambofreelance.webbackend.dto.request.PricingFaqRequest;
 import com.cambofreelance.webbackend.dto.request.PricingFeatureRequest;
 import com.cambofreelance.webbackend.dto.request.PricingPlanRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
@@ -111,6 +112,46 @@ public class PricingController {
     @PreAuthorize("hasAuthority('pricing.delete')")
     public ResponseEntity<Object> deleteFeature(@PathVariable String id) {
         pricingService.deleteFeature(id);
+        return new ResponseEntity<>(new MessageResponse("Deleted successfully", ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── Admin: FAQs ──────────────────────────────────────────────────────────────
+
+    @GetMapping("/cms/pricing/faqs")
+    @PreAuthorize("hasAuthority('pricing.view')")
+    public ResponseEntity<Object> listFaqs() {
+        return new ResponseEntity<>(new MessageResponse(pricingService.listFaqs(), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/cms/pricing/faqs/{id}")
+    @PreAuthorize("hasAuthority('pricing.view')")
+    public ResponseEntity<Object> getFaq(@PathVariable String id) {
+        return new ResponseEntity<>(new MessageResponse(pricingService.getFaq(id), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PostMapping("/cms/pricing/faqs")
+    @PreAuthorize("hasAuthority('pricing.create')")
+    public ResponseEntity<Object> createFaq(
+        @Valid @RequestBody PricingFaqRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String userId
+    ) {
+        return new ResponseEntity<>(new MessageResponse(pricingService.createFaq(request, userId), ErrorCode.SUCCESS), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/cms/pricing/faqs/{id}")
+    @PreAuthorize("hasAuthority('pricing.update')")
+    public ResponseEntity<Object> updateFaq(
+        @PathVariable String id,
+        @Valid @RequestBody PricingFaqRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String userId
+    ) {
+        return new ResponseEntity<>(new MessageResponse(pricingService.updateFaq(id, request, userId), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/cms/pricing/faqs/{id}")
+    @PreAuthorize("hasAuthority('pricing.delete')")
+    public ResponseEntity<Object> deleteFaq(@PathVariable String id) {
+        pricingService.deleteFaq(id);
         return new ResponseEntity<>(new MessageResponse("Deleted successfully", ErrorCode.SUCCESS), HttpStatus.OK);
     }
 }

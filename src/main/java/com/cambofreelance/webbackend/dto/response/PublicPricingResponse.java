@@ -10,4 +10,5 @@ public class PublicPricingResponse {
 
     private List<PricingPlanResponse> plans;
     private List<PricingFeatureResponse> comparison;
+    private List<PricingFaqResponse> faqs;
 }

@@ -2,16 +2,20 @@ package com.cambofreelance.webbackend.services.impl;
 
 import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.constants.Constants;
+import com.cambofreelance.webbackend.dto.request.PricingFaqRequest;
 import com.cambofreelance.webbackend.dto.request.PricingFeatureRequest;
 import com.cambofreelance.webbackend.dto.request.PricingPlanRequest;
+import com.cambofreelance.webbackend.dto.response.PricingFaqResponse;
 import com.cambofreelance.webbackend.dto.response.PricingFeatureResponse;
 import com.cambofreelance.webbackend.dto.response.PricingPlanResponse;
 import com.cambofreelance.webbackend.dto.response.PublicPricingResponse;
+import com.cambofreelance.webbackend.entities.PricingFaqEntity;
 import com.cambofreelance.webbackend.entities.PricingFeatureEntity;
 import com.cambofreelance.webbackend.entities.PricingPlanEntity;
 import com.cambofreelance.webbackend.entities.PricingPlanFeatureEntity;
 import com.cambofreelance.webbackend.entities.PricingPlanValueEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
+import com.cambofreelance.webbackend.repository.PricingFaqRepository;
 import com.cambofreelance.webbackend.repository.PricingFeatureRepository;
 import com.cambofreelance.webbackend.repository.PricingPlanFeatureRepository;
 import com.cambofreelance.webbackend.repository.PricingPlanRepository;
@@ -35,6 +39,7 @@ public class PricingServiceImpl implements PricingService {
     private final PricingPlanFeatureRepository planFeatureRepository;
     private final PricingFeatureRepository     featureRepository;
     private final PricingPlanValueRepository   valueRepository;
+    private final PricingFaqRepository         faqRepository;
 
     // ── Public ──────────────────────────────────────────────────────────────
 
@@ -43,6 +48,7 @@ public class PricingServiceImpl implements PricingService {
         return PublicPricingResponse.builder()
             .plans(listPlans())
             .comparison(listFeatures())
+            .faqs(listFaqs())
             .build();
     }
 
@@ -156,6 +162,68 @@ public class PricingServiceImpl implements PricingService {
         PricingFeatureEntity feature = requireFeature(id);
         feature.setStatus(Constants.STATUS_DELETE);
         featureRepository.save(feature);
+    }
+
+    // ── FAQs ────────────────────────────────────────────────────────────────
+
+    @Override
+    public List<PricingFaqResponse> listFaqs() {
+        return faqRepository.findByStatusOrderBySortOrderAsc(Constants.STATUS_ACTIVE)
+            .stream()
+            .map(PricingFaqResponse::from)
+            .toList();
+    }
+
+    @Override
+    public PricingFaqResponse getFaq(String id) {
+        return PricingFaqResponse.from(requireFaq(id));
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "CREATE", module = "PRICING")
+    public PricingFaqResponse createFaq(PricingFaqRequest request, String createdBy) {
+        PricingFaqEntity entity = new PricingFaqEntity();
+        entity.setId(UUID.randomUUID().toString());
+        applyFaq(entity, request);
+        entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
+        entity.setCreatedBy(StringUtils.hasText(createdBy) ? createdBy : Constants.SYSTEM);
+        entity.setStatus(Constants.STATUS_ACTIVE);
+        return PricingFaqResponse.from(faqRepository.save(entity));
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "PRICING", entityClass = PricingFaqEntity.class)
+    public PricingFaqResponse updateFaq(String id, PricingFaqRequest request, String updatedBy) {
+        PricingFaqEntity entity = requireFaq(id);
+        applyFaq(entity, request);
+        entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : entity.getSortOrder());
+        entity.setUpdatedBy(updatedBy);
+        entity.setUpdatedAt(new Date());
+        return PricingFaqResponse.from(faqRepository.save(entity));
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "DELETE", module = "PRICING", entityClass = PricingFaqEntity.class)
+    public void deleteFaq(String id) {
+        PricingFaqEntity entity = requireFaq(id);
+        entity.setStatus(Constants.STATUS_DELETE);
+        faqRepository.save(entity);
+    }
+
+    private void applyFaq(PricingFaqEntity entity, PricingFaqRequest request) {
+        entity.setQuestion(request.getQuestion().trim());
+        entity.setQuestionKh(request.getQuestionKh());
+        entity.setAnswer(request.getAnswer().trim());
+        entity.setAnswerKh(request.getAnswerKh());
+    }
+
+    private PricingFaqEntity requireFaq(String id) {
+        return faqRepository.findById(id)
+            .filter(e -> !Constants.STATUS_DELETE.equals(e.getStatus()))
+            .orElseThrow(() -> notFound("PRICING_FAQ_NOT_FOUND", "FAQ not found: " + id));
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
