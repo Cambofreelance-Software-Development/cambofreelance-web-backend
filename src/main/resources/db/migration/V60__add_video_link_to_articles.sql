@@ -1,0 +1,1 @@
+ALTER TABLE articles ADD COLUMN video_link VARCHAR(500);

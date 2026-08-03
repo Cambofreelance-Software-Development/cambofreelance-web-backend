@@ -72,6 +72,10 @@ public class ArticleEntity extends BaseEntity implements Serializable {
     )
     private List<MediaFileEntity> attachments = new ArrayList<>();
 
+    /** Optional external video URL (YouTube/Vimeo/mp4) shown by the "Watch video" button. */
+    @Column(name = "video_link", length = 500)
+    private String videoLink;
+
     @Column(name = "author_id")
     private String authorId;
 

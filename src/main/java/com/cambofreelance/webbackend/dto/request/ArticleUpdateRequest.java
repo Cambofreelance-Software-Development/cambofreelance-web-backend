@@ -33,6 +33,8 @@ public class ArticleUpdateRequest {
 
     private List<String> attachmentIds = new ArrayList<>();
 
+    private String videoLink;
+
     private String authorId;
 
     private String authorName;

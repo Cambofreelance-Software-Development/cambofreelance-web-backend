@@ -27,6 +27,7 @@ public class ArticleResponse {
     private String type;
     private MediaFileResponse featuredImage;
     private List<MediaFileResponse> attachments;
+    private String videoLink;
     private String authorId;
     private String authorName;
     private List<String> tags;
@@ -60,6 +61,7 @@ public class ArticleResponse {
             .type(e.getType())
             .featuredImage(e.getFeaturedImage() != null ? MediaFileResponse.from(e.getFeaturedImage()) : null)
             .attachments(attachmentList)
+            .videoLink(e.getVideoLink())
             .authorId(e.getAuthorId())
             .authorName(e.getAuthorName())
             .tags(tagList)

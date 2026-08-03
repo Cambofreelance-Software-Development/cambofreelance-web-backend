@@ -55,6 +55,7 @@ public class ArticleServiceImpl implements ArticleService {
         entity.setAuthorId(authorId);
         entity.setAuthorName(resolveAuthorName(authorId, request.getAuthorName()));
         entity.setTags(tagsToString(request.getTags()));
+        entity.setVideoLink(request.getVideoLink());
         entity.setPublishedAt(request.getPublishedAt());
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         entity.setViewCount(0);
@@ -96,6 +97,7 @@ public class ArticleServiceImpl implements ArticleService {
         entity.setAuthorId(request.getAuthorId());
         entity.setAuthorName(resolveAuthorName(request.getAuthorId(), request.getAuthorName()));
         entity.setTags(tagsToString(request.getTags()));
+        entity.setVideoLink(request.getVideoLink());
         entity.setPublishedAt(request.getPublishedAt());
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         entity.setUpdatedBy(updatedBy);
@@ -204,6 +206,7 @@ public class ArticleServiceImpl implements ArticleService {
         copy.setAuthorId(source.getAuthorId());
         copy.setAuthorName(source.getAuthorName());
         copy.setTags(source.getTags());
+        copy.setVideoLink(source.getVideoLink());
         copy.setSortOrder(source.getSortOrder());
         copy.setViewCount(0);
         copy.setPublishedAt(null);
