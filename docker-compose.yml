@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: superuser
       POSTGRES_PASSWORD: SUPERUSER@@2026#
     ports:
-      - "26010:5432"
+      - "5432:5432"
     networks:
       - cm-network
     volumes:
@@ -34,7 +34,7 @@ services:
     container_name: redis
     command: redis-server /usr/local/etc/redis/redis.conf
     ports:
-      - "26020:6379"
+      - "6379:6379"
     networks:
       - cm-network
     volumes:
@@ -65,8 +65,8 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_API_CORS_ALLOW_ORIGIN: "*"
     ports:
-      - "26090:9000"
-      - "26091:9001"
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -121,6 +121,35 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # ── Frontend Service (Prod) ───────────────────────────────────────────────────
+  frontend-prod:
+    container_name: cm-frontend
+    image: cm-frontend:v1.0.0
+    build:
+      context: ./cms-frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_EXTERNAL_API_BASE_URL: https://soppossytem.api.cambofreelance.com
+        NEXT_PUBLIC_EXTERNAL_API_TEAM_MEMBER_LIST_ENDPOINT: /team-members
+        NEXT_PUBLIC_EXTERNAL_API_HERO_SECTION_LIST_ENDPOINT: /hero-sections
+        NEXT_PUBLIC_EXTERNAL_API_COURSE_LIST_ENDPOINT: /courses
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      EXTERNAL_API_BASE_URL: https://soppossytem.api.cambofreelance.com # internal endpoint
+    networks:
+      - cm-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 800M
+        reservations:
+          cpus: '0.50'
+          memory: 100M
 
 volumes:
   postgres_data:
