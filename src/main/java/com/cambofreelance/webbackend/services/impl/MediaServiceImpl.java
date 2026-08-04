@@ -222,9 +222,6 @@ public class MediaServiceImpl implements MediaService {
     private String buildPublicUrl(String publicUrl, String bucket, String region, String endpoint, String objectKey) {
         if (StringUtils.hasText(publicUrl)) {
             String base = publicUrl.endsWith("/") ? publicUrl : publicUrl + "/";
-            if (!publicUrl.contains("/" + bucket)) {
-                return base + bucket + "/" + objectKey;
-            }
             return base + objectKey;
         }
         // Use path-style fallback — virtual-hosted style (bucket.host) fails SSL when bucket name contains dots
