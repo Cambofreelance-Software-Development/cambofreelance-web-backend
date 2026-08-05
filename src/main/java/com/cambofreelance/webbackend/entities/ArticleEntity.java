@@ -99,4 +99,29 @@ public class ArticleEntity extends BaseEntity implements Serializable {
     /** Editorial workflow state: DRAFT → REVIEW → APPROVAL → PUBLISHED → ARCHIVED */
     @Column(name = "workflow_status", nullable = false, length = 20)
     private String workflowStatus = ArticleWorkflowStatus.DRAFT;
+
+    /** Self-reference for unlimited sub-articles (e.g. Help Center "Details" pages). */
+    @Column(name = "parent_article_id")
+    private String parentArticleId;
+
+    @Column(name = "meta_title", length = 255)
+    private String metaTitle;
+
+    @Column(name = "meta_description", length = 500)
+    private String metaDescription;
+
+    @Column(name = "meta_keywords", length = 500)
+    private String metaKeywords;
+
+    @Column(name = "canonical_url", length = 500)
+    private String canonicalUrl;
+
+    /** Help Center topics this article is filed under — one article can belong to several. */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "article_categories",
+        joinColumns = @JoinColumn(name = "article_id"),
+        inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private List<HelpCenterCategoryEntity> categories = new ArrayList<>();
 }

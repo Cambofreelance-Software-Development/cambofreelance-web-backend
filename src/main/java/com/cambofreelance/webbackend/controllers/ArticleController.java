@@ -88,10 +88,11 @@ public class ArticleController {
         @RequestParam(required = false) String workflowStatus,
         @RequestParam(required = false) String authorId,
         @RequestParam(required = false) String search,
+        @RequestParam(required = false) String categoryId,
         @RequestParam(defaultValue = "0")  int page,
         @RequestParam(defaultValue = "20") int size
     ) {
-        var result = articleService.list(type, workflowStatus, authorId, search, page, size);
+        var result = articleService.list(type, workflowStatus, authorId, search, null, categoryId, page, size);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
@@ -108,10 +109,11 @@ public class ArticleController {
     public ResponseEntity<Object> publicList(
         @RequestParam(required = false) String type,
         @RequestParam(required = false) String search,
+        @RequestParam(required = false) String categorySlug,
         @RequestParam(defaultValue = "0")  int page,
         @RequestParam(defaultValue = "20") int size
     ) {
-        var result = articleService.list(type, ArticleWorkflowStatus.PUBLISHED, null, search, page, size);
+        var result = articleService.list(type, ArticleWorkflowStatus.PUBLISHED, null, search, categorySlug, null, page, size);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 

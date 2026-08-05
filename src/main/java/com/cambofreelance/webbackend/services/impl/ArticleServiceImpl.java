@@ -10,6 +10,7 @@ import com.cambofreelance.webbackend.entities.MediaFileEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.ArticleRepository;
 import com.cambofreelance.webbackend.repository.AuthorRepository;
+import com.cambofreelance.webbackend.repository.HelpCenterCategoryRepository;
 import com.cambofreelance.webbackend.repository.MediaRepository;
 import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.services.ArticleService;
@@ -33,6 +34,7 @@ public class ArticleServiceImpl implements ArticleService {
     private final ArticleRepository articleRepository;
     private final MediaRepository   mediaRepository;
     private final AuthorRepository  authorRepository;
+    private final HelpCenterCategoryRepository categoryRepository;
 
     @Override
     @Transactional
@@ -61,6 +63,12 @@ public class ArticleServiceImpl implements ArticleService {
         entity.setViewCount(0);
         entity.setCreatedBy(StringUtils.hasText(createdBy) ? createdBy : Constants.SYSTEM);
         entity.setStatus(Constants.STATUS_ACTIVE);
+        entity.setParentArticleId(StringUtils.hasText(request.getParentArticleId()) ? request.getParentArticleId() : null);
+        entity.setMetaTitle(request.getMetaTitle());
+        entity.setMetaDescription(request.getMetaDescription());
+        entity.setMetaKeywords(request.getMetaKeywords());
+        entity.setCanonicalUrl(request.getCanonicalUrl());
+        resolveCategories(entity, request.getCategoryIds());
         String requestedWorkflow = request.getWorkflowStatus();
         String workflowStatus = (requestedWorkflow != null && ArticleWorkflowStatus.isValid(requestedWorkflow))
             ? requestedWorkflow.toUpperCase()
@@ -102,6 +110,14 @@ public class ArticleServiceImpl implements ArticleService {
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         entity.setUpdatedBy(updatedBy);
         entity.setUpdatedAt(new Date());
+        entity.setParentArticleId(
+            StringUtils.hasText(request.getParentArticleId()) && !request.getParentArticleId().equals(id)
+                ? request.getParentArticleId() : null);
+        entity.setMetaTitle(request.getMetaTitle());
+        entity.setMetaDescription(request.getMetaDescription());
+        entity.setMetaKeywords(request.getMetaKeywords());
+        entity.setCanonicalUrl(request.getCanonicalUrl());
+        resolveCategories(entity, request.getCategoryIds());
 
         if (request.getWorkflowStatus() != null && ArticleWorkflowStatus.isValid(request.getWorkflowStatus())) {
             String newWorkflow = request.getWorkflowStatus().toUpperCase();
@@ -156,14 +172,16 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public Page<ArticleResponse> list(String type, String workflowStatus, String authorId, String search, int page, int size) {
+    public Page<ArticleResponse> list(String type, String workflowStatus, String authorId, String search, String categorySlug, String categoryId, int page, int size) {
         String typeFilter           = StringUtils.hasText(type)           ? type.toUpperCase()                       : null;
         String workflowStatusFilter = StringUtils.hasText(workflowStatus) ? workflowStatus.toUpperCase()             : null;
         String authorIdFilter       = StringUtils.hasText(authorId)       ? authorId.trim()                          : null;
         String searchFilter         = StringUtils.hasText(search)         ? "%" + search.trim().toLowerCase() + "%" : null;
+        String categorySlugFilter   = StringUtils.hasText(categorySlug)   ? categorySlug.trim()                      : null;
+        String categoryIdFilter     = StringUtils.hasText(categoryId)     ? categoryId.trim()                        : null;
 
         return articleRepository
-            .findFiltered(typeFilter, workflowStatusFilter, authorIdFilter, searchFilter, PageRequest.of(page, size))
+            .findFiltered(typeFilter, workflowStatusFilter, authorIdFilter, searchFilter, categorySlugFilter, categoryIdFilter, PageRequest.of(page, size))
             .map(ArticleResponse::from);
     }
 
@@ -209,6 +227,12 @@ public class ArticleServiceImpl implements ArticleService {
         copy.setVideoLink(source.getVideoLink());
         copy.setSortOrder(source.getSortOrder());
         copy.setViewCount(0);
+        copy.setParentArticleId(source.getParentArticleId());
+        copy.setCategories(new ArrayList<>(source.getCategories()));
+        copy.setMetaTitle(source.getMetaTitle());
+        copy.setMetaDescription(source.getMetaDescription());
+        copy.setMetaKeywords(source.getMetaKeywords());
+        copy.setCanonicalUrl(source.getCanonicalUrl());
         copy.setPublishedAt(null);
         copy.setWorkflowStatus(ArticleWorkflowStatus.DRAFT);
         copy.setStatus(Constants.STATUS_ACTIVE);
@@ -248,6 +272,14 @@ public class ArticleServiceImpl implements ArticleService {
             return;
         }
         entity.setAttachments(mediaRepository.findAllById(ids));
+    }
+
+    private void resolveCategories(ArticleEntity entity, List<String> categoryIds) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            entity.setCategories(Collections.emptyList());
+            return;
+        }
+        entity.setCategories(categoryRepository.findAllById(categoryIds));
     }
 
     private String generateSlug(String title) {

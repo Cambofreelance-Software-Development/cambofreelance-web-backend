@@ -49,6 +49,7 @@ public class ArticleTypeServiceImpl implements ArticleTypeService {
         entity.setCode(code);
         entity.setLabel(request.getLabel().trim());
         entity.setLabelKh(request.getLabelKh());
+        entity.setIcon(request.getIcon());
         entity.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         entity.setCreatedBy(Constants.SYSTEM);
 
@@ -78,6 +79,7 @@ public class ArticleTypeServiceImpl implements ArticleTypeService {
         entity.setCode(code);
         entity.setLabel(request.getLabel().trim());
         entity.setLabelKh(request.getLabelKh());
+        entity.setIcon(request.getIcon());
         if (request.getSortOrder() != null) entity.setSortOrder(request.getSortOrder());
         entity.setUpdatedAt(new Date());
 

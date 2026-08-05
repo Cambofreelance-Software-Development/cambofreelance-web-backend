@@ -47,6 +47,7 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/hardware"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/hardware/*"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/hardware-categories"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/help-center-categories"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/pricing"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/media/*/view"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/cms/settings/stats"),

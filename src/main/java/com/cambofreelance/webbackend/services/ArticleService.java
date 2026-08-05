@@ -15,7 +15,7 @@ public interface ArticleService {
 
     ArticleResponse updateStatus(String id, String status, String updatedBy);
 
-    Page<ArticleResponse> list(String type, String workflowStatus, String authorId, String search, int page, int size);
+    Page<ArticleResponse> list(String type, String workflowStatus, String authorId, String search, String categorySlug, String categoryId, int page, int size);
 
     ArticleResponse getById(String id);
 

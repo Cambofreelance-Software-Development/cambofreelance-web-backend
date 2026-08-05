@@ -22,13 +22,16 @@ public interface ArticleRepository extends JpaRepository<ArticleEntity, String> 
         String slug, String workflowStatus, String status);
 
     @Query("""
-        SELECT a FROM ArticleEntity a
+        SELECT DISTINCT a FROM ArticleEntity a
+        LEFT JOIN a.categories c
         WHERE a.status != 'DEL'
           AND (:type           IS NULL OR a.type           = :type)
           AND (:workflowStatus IS NULL OR a.workflowStatus = :workflowStatus)
           AND (:authorId       IS NULL OR a.authorId       = :authorId)
           AND (:search         IS NULL OR LOWER(a.title)   LIKE :search
                                        OR LOWER(a.excerpt) LIKE :search)
+          AND (:categorySlug   IS NULL OR c.slug           = :categorySlug)
+          AND (:categoryId     IS NULL OR c.id             = :categoryId)
         ORDER BY a.sortOrder ASC, a.createdAt DESC
         """)
     Page<ArticleEntity> findFiltered(
@@ -36,6 +39,8 @@ public interface ArticleRepository extends JpaRepository<ArticleEntity, String> 
         @Param("workflowStatus") String workflowStatus,
         @Param("authorId")       String authorId,
         @Param("search")         String search,
+        @Param("categorySlug")   String categorySlug,
+        @Param("categoryId")     String categoryId,
         Pageable pageable
     );
 }

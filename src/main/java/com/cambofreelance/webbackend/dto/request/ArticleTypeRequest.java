@@ -14,5 +14,7 @@ public class ArticleTypeRequest {
 
     private String labelKh;
 
+    private String icon;
+
     private Integer sortOrder = 0;
 }

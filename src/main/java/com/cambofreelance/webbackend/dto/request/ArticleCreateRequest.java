@@ -44,4 +44,18 @@ public class ArticleCreateRequest {
     private Date publishedAt;
 
     private Integer sortOrder = 0;
+
+    /** Parent article this is a sub-article of (e.g. Help Center "Details" pages). */
+    private String parentArticleId;
+
+    /** Help Center category ids this article should be filed under (many-to-many). */
+    private List<String> categoryIds = new ArrayList<>();
+
+    private String metaTitle;
+
+    private String metaDescription;
+
+    private String metaKeywords;
+
+    private String canonicalUrl;
 }

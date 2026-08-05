@@ -1,4 +1,42 @@
-- up database postgres
+I already have the following database structure:
 
+Article Type
+    └── Article
 
-docker network create bbu-network
+I want to redesign it into a scalable Help Center (similar to Loyverse Help Center).
+
+Target hierarchy:
+
+Article Type
+    └── Category (Topic)
+            ├── Getting Started
+            ├── Sales
+            ├── Items
+            ├── Inventory
+            ├── Employees
+            ├── Customers
+            ├── Settings
+            ├── Hardware
+            └── Payments
+                    └── Article
+                            └── Sub Article
+                                    └── Details
+
+Requirements:
+
+1. Keep the existing Article Type and Article tables.
+2. Add only the necessary new tables.
+3. Categories should support unlimited nesting using parent_id.
+4. Articles should support unlimited sub-articles using parent_article_id.
+5. One article can belong to multiple categories (many-to-many).
+6. Support display_order, slug, status, icon, and description for categories.
+7. Support SEO fields, summary, content, published_at, and status for articles.
+8. Provide:
+   - ER Diagram
+   - Database schema
+   - PostgreSQL DDL
+   - Relationships
+   - Sample data based on the Loyverse Help Center
+   - Recommended indexes
+9. Follow database normalization (3NF) and enterprise best practices.
+10. Preserve backward compatibility with the existing Article Type → Article design as much as possible.

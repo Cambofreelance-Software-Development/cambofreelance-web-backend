@@ -13,6 +13,7 @@ public class ArticleTypeResponse {
     private String code;
     private String label;
     private String labelKh;
+    private String icon;
     private Integer sortOrder;
     private String status;
     private Date createdAt;
@@ -23,6 +24,7 @@ public class ArticleTypeResponse {
             .code(e.getCode())
             .label(e.getLabel())
             .labelKh(e.getLabelKh())
+            .icon(e.getIcon())
             .sortOrder(e.getSortOrder())
             .status(e.getStatus())
             .createdAt(e.getCreatedAt())

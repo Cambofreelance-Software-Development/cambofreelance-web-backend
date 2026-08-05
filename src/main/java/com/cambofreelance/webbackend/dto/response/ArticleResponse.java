@@ -39,6 +39,12 @@ public class ArticleResponse {
     private Date createdAt;
     private Date updatedAt;
     private String createdBy;
+    private String parentArticleId;
+    private List<HelpCenterCategoryResponse> categories;
+    private String metaTitle;
+    private String metaDescription;
+    private String metaKeywords;
+    private String canonicalUrl;
 
     public static ArticleResponse from(ArticleEntity e) {
         List<String> tagList = StringUtils.hasText(e.getTags())
@@ -48,6 +54,10 @@ public class ArticleResponse {
         List<MediaFileResponse> attachmentList = e.getAttachments() == null
             ? Collections.emptyList()
             : e.getAttachments().stream().map(MediaFileResponse::from).collect(Collectors.toList());
+
+        List<HelpCenterCategoryResponse> categoryList = e.getCategories() == null
+            ? Collections.emptyList()
+            : e.getCategories().stream().map(HelpCenterCategoryResponse::from).collect(Collectors.toList());
 
         return ArticleResponse.builder()
             .id(e.getId())
@@ -73,6 +83,12 @@ public class ArticleResponse {
             .createdAt(e.getCreatedAt())
             .updatedAt(e.getUpdatedAt())
             .createdBy(e.getCreatedBy())
+            .parentArticleId(e.getParentArticleId())
+            .categories(categoryList)
+            .metaTitle(e.getMetaTitle())
+            .metaDescription(e.getMetaDescription())
+            .metaKeywords(e.getMetaKeywords())
+            .canonicalUrl(e.getCanonicalUrl())
             .build();
     }
 }

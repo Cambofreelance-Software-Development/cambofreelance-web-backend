@@ -33,6 +33,9 @@ public class ArticleTypeEntity extends BaseEntity implements Serializable {
     @Column(name = "label_kh")
     private String labelKh;
 
+    @Column(name = "icon", length = 100)
+    private String icon;
+
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
 }
