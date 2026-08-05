@@ -8,6 +8,7 @@ import com.cambofreelance.webbackend.services.MediaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -64,10 +65,16 @@ public class MediaController {
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
-    /** Streams raw file bytes — whitelisted in SecurityConfig so no auth required. */
+    /**
+     * Streams raw file bytes — whitelisted in SecurityConfig so no auth required.
+     * Honors the {@code Range} header so browsers can seek/stream video playback.
+     */
     @GetMapping("/{id}/view")
-    public ResponseEntity<byte[]> view(@PathVariable String id) {
-        return mediaService.viewFile(id);
+    public ResponseEntity<byte[]> view(
+        @PathVariable String id,
+        @RequestHeader(value = HttpHeaders.RANGE, required = false) String range
+    ) {
+        return mediaService.viewFile(id, range);
     }
 
     @DeleteMapping("/{id}")

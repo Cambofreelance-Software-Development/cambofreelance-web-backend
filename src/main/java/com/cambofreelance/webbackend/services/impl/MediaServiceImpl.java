@@ -12,6 +12,7 @@ import com.cambofreelance.webbackend.repository.CmsSettingRepository;
 import com.cambofreelance.webbackend.repository.MediaRepository;
 import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.services.MediaService;
+import com.cambofreelance.webbackend.services.SpacesObject;
 import com.cambofreelance.webbackend.services.SpacesService;
 import jakarta.transaction.Transactional;
 import java.time.Duration;
@@ -162,7 +163,7 @@ public class MediaServiceImpl implements MediaService {
     // ── View (proxy) ──────────────────────────────────────────────────────────
 
     @Override
-    public ResponseEntity<byte[]> viewFile(String id) {
+    public ResponseEntity<byte[]> viewFile(String id, String rangeHeader) {
         MediaFileEntity entity = mediaRepository.findById(id)
             .filter(e -> Constants.STATUS_ACTIVE.equals(e.getStatus()))
             .orElseThrow(() -> {
@@ -181,15 +182,24 @@ public class MediaServiceImpl implements MediaService {
         String region     = cfg.get("storage_region");
         String actualBucket = rawBucket.contains("/") ? rawBucket.substring(0, rawBucket.indexOf('/')) : rawBucket;
 
-        byte[] data = spacesService.getObject(endpoint, region, actualBucket, accessKey, secretKey, entity.getFilePath());
+        SpacesObject object = spacesService.getObject(
+            endpoint, region, actualBucket, accessKey, secretKey, entity.getFilePath(), rangeHeader
+        );
 
         String contentType = StringUtils.hasText(entity.getMimeType()) ? entity.getMimeType() : "application/octet-stream";
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.CONTENT_TYPE, contentType);
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + entity.getOriginalName() + "\"");
-        headers.setContentLength(data.length);
+        headers.set(HttpHeaders.ACCEPT_RANGES, "bytes");
+        headers.setContentLength(object.getData().length);
 
-        return new ResponseEntity<>(data, headers, HttpStatus.OK);
+        if (object.isPartial()) {
+            headers.set(HttpHeaders.CONTENT_RANGE,
+                "bytes " + object.getRangeStart() + "-" + object.getRangeEnd() + "/" + object.getTotalSize());
+            return new ResponseEntity<>(object.getData(), headers, HttpStatus.PARTIAL_CONTENT);
+        }
+
+        return new ResponseEntity<>(object.getData(), headers, HttpStatus.OK);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
