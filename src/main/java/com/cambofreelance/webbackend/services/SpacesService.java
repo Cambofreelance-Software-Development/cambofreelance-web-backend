@@ -16,13 +16,18 @@ public interface SpacesService {
         Duration expiry
     );
 
-    byte[] getObject(
+    /**
+     * Fetches an object, honoring an optional HTTP {@code Range} header value
+     * (e.g. "bytes=0-1023"). Pass {@code null} to fetch the whole object.
+     */
+    SpacesObject getObject(
         String endpoint,
         String region,
         String bucket,
         String accessKey,
         String secretKey,
-        String objectKey
+        String objectKey,
+        String rangeHeader
     );
 
     /**

@@ -20,6 +20,9 @@ public interface MediaService {
 
     void delete(String id);
 
-    /** Proxy the raw file bytes from Spaces back to the HTTP client. */
-    ResponseEntity<byte[]> viewFile(String id);
+    /**
+     * Proxy the raw file bytes from Spaces back to the HTTP client, honoring an
+     * optional incoming {@code Range} header (needed for video seeking/streaming).
+     */
+    ResponseEntity<byte[]> viewFile(String id, String rangeHeader);
 }
