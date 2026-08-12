@@ -74,4 +74,51 @@ public final class Constants {
 
     public static final String REDIS_ACCESS_TOKEN_PREFIX = "AUTH:ACCESS:";
     public static final String REDIS_REFRESH_TOKEN_PREFIX = "AUTH:REFRESH:";
+
+    // Account approval workflow
+    public static final String APPROVAL_PENDING = "PEN";
+    public static final String APPROVAL_APPROVED = "APR";
+    public static final String APPROVAL_REJECTED = "REJ";
+
+    // Subscription billing cycles / statuses
+    public static final String BILLING_MONTHLY = "MONTHLY";
+    public static final String BILLING_YEARLY = "YEARLY";
+    public static final String SUB_PENDING_PAYMENT = "PENDING_PAYMENT";
+    public static final String SUB_ACTIVE = "ACTIVE";
+    public static final String SUB_EXPIRED = "EXPIRED";
+    public static final String SUB_CANCELLED = "CANCELLED";
+
+    // Payment transaction statuses
+    public static final String PAY_PENDING = "PENDING";
+    public static final String PAY_APPROVED = "APPROVED";
+    public static final String PAY_DECLINED = "DECLINED";
+    public static final String PAY_CANCELLED = "CANCELLED";
+    public static final String PAY_REFUNDED = "REFUNDED";
+    public static final String PAY_EXPIRED = "EXPIRED";
+
+    // Payment event sources
+    public static final String PAY_SRC_CHECKOUT = "CHECKOUT";
+    public static final String PAY_SRC_CALLBACK = "CALLBACK";
+    public static final String PAY_SRC_POLL = "POLL";
+    public static final String PAY_SRC_JOB = "JOB";
+    public static final String PAY_SRC_MANUAL = "MANUAL";
+
+    // Client statuses
+    public static final String CLIENT_PENDING = "PENDING";
+    public static final String CLIENT_ACTIVE = "ACTIVE";
+    public static final String CLIENT_SUSPENDED = "SUSPENDED";
+    public static final String CLIENT_CLOSED = "CLOSED";
+
+    // Client onboarding steps
+    public static final String STEP_VERIFY_EMAIL = "VERIFY_EMAIL";
+    public static final String STEP_COMPANY_INFO = "COMPANY_INFO";
+    public static final String STEP_SELECT_PACKAGE = "SELECT_PACKAGE";
+    public static final String STEP_PAYMENT = "PAYMENT";
+    public static final String STEP_DONE = "DONE";
+
+    // Invoice statuses
+    public static final String INV_ISSUED = "ISSUED";
+    public static final String INV_PAID = "PAID";
+    public static final String INV_REFUNDED = "REFUNDED";
+    public static final String INV_CANCELLED = "CANCELLED";
 }

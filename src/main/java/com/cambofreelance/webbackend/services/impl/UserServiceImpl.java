@@ -33,6 +33,7 @@ import com.cambofreelance.webbackend.services.RefreshTokenService;
 import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.services.UserService;
 import java.security.SecureRandom;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -196,6 +197,8 @@ public class UserServiceImpl implements UserService {
         userEntity.setPassword(Strings.isBlank(request.getPassword()) ? Constants.PASSWORD : bCryptPasswordEncoder.encode(request.getPassword()));
         userEntity.setPhoneNumber(request.getPhoneNumber());
         userEntity.setUserType(Constants.USER);
+        // Self-registered accounts must be approved by an admin before they can subscribe
+        userEntity.setApprovalStatus(Constants.APPROVAL_PENDING);
 
         // Assign PUBLIC_USER role automatically on self-registration
         roleRepository.findByCode("PUBLIC_USER").ifPresent(role -> {
@@ -231,6 +234,7 @@ public class UserServiceImpl implements UserService {
             .phoneNumber(user.getPhoneNumber())
             .userType(user.getUserType())
             .status(user.getStatus())
+            .approvalStatus(user.getApprovalStatus())
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -303,6 +307,7 @@ public class UserServiceImpl implements UserService {
             .phoneNumber(user.getPhoneNumber())
             .userType(user.getUserType())
             .status(user.getStatus())
+            .approvalStatus(user.getApprovalStatus())
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -386,6 +391,8 @@ public class UserServiceImpl implements UserService {
         ));
         user.setUserType(StringUtils.hasText(request.getUserType()) ? request.getUserType() : Constants.USER);
         user.setStatus(Constants.STATUS_ACTIVE);
+        // Admin-created accounts are trusted, no separate approval step needed
+        user.setApprovalStatus(Constants.APPROVAL_APPROVED);
 
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
             Set<RoleEntity> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
@@ -459,6 +466,22 @@ public class UserServiceImpl implements UserService {
         if (!Constants.STATUS_ACTIVE.equals(status)) {
             refreshTokenService.revokeAllByUserId(userId);
         }
+        return toProfileResponse(user);
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "APPROVAL_CHANGE", module = "USER", entityClass = UserEntity.class)
+    public UserProfileResponse adminUpdateUserApproval(String userId, String approvalStatus, String adminId) throws AppException {
+        if (!List.of(Constants.APPROVAL_APPROVED, Constants.APPROVAL_REJECTED, Constants.APPROVAL_PENDING).contains(approvalStatus)) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Invalid approval status value");
+        }
+        UserEntity user = userRepository.findById(userId)
+            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "User not found"));
+        user.setApprovalStatus(approvalStatus);
+        user.setApprovedBy(adminId);
+        user.setApprovedAt(new Date());
+        userRepository.save(user);
         return toProfileResponse(user);
     }
 

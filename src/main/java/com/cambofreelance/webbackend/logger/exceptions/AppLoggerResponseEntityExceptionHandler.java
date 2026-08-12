@@ -171,9 +171,17 @@ public class AppLoggerResponseEntityExceptionHandler extends ResponseEntityExcep
         // Only registered response codes carry an explicit httpStatus; ad-hoc AppException
         // codes (the common case) must fall back to the exception's own status (default 400),
         // never silently to 200 — otherwise the client treats a failed request as a success.
-        HttpStatus httpStatus = Strings.isEmpty(errorResponse.getHttpStatus())
-                ? ex.getHttpStatus()
-                : HttpStatus.valueOf(Integer.parseInt(errorResponse.getHttpStatus()));
+        // A malformed catalog value must also fall back rather than blow up the handler:
+        // an exception here rethrows the original and surfaces as a misleading 401 via /error.
+        HttpStatus httpStatus = ex.getHttpStatus();
+        String catalogStatus = errorResponse.getHttpStatus();
+        if (!Strings.isEmpty(catalogStatus)) {
+            try {
+                httpStatus = HttpStatus.valueOf(Integer.parseInt(catalogStatus.trim()));
+            } catch (IllegalArgumentException ignored) {
+                // keep the exception's own status
+            }
+        }
         return ResponseEntity.status(httpStatus).body(baseResponse);
     }
 

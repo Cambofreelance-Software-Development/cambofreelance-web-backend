@@ -35,6 +35,9 @@ public class UserProfileResponse {
     @JsonProperty("status")
     private String status;
 
+    @JsonProperty("approvalStatus")
+    private String approvalStatus;
+
     @JsonProperty("createdAt")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date createdAt;

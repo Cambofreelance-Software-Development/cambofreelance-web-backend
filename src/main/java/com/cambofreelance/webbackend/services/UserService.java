@@ -51,6 +51,8 @@ public interface UserService {
 
     UserProfileResponse adminUpdateUserStatus(String userId, String status) throws AppException;
 
+    UserProfileResponse adminUpdateUserApproval(String userId, String approvalStatus, String adminId) throws AppException;
+
     Set<String> getPermissionCodes(String userId);
 
     UserProfileResponse toProfileResponse(UserEntity user);
