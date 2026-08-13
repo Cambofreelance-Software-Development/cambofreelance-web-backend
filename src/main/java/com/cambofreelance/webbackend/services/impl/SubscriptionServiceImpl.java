@@ -14,6 +14,7 @@ import com.cambofreelance.webbackend.entities.UserEntity;
 import com.cambofreelance.webbackend.entities.UserSubscriptionEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.payway.PaywayClient;
+import com.cambofreelance.webbackend.payway.PaywayPurchaseResult;
 import com.cambofreelance.webbackend.payway.PaywayTransactionStatus;
 import com.cambofreelance.webbackend.repository.PaymentTransactionRepository;
 import com.cambofreelance.webbackend.repository.PricingPlanRepository;
@@ -162,7 +163,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             + " (" + cycle.toLowerCase() + ")\",\"quantity\":1,\"price\":"
             + amount.setScale(2, RoundingMode.HALF_UP).toPlainString() + "}]";
 
-        Map<String, String> fields = paywayClient.buildPurchaseFields(
+        PaywayPurchaseResult qr = paywayClient.purchase(
             tx.getTranId(), amount, "USD",
             user.getUsername(), null, user.getEmail(), user.getPhoneNumber(),
             itemsJson, request.getPaymentOption(),
@@ -171,11 +172,23 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             StringUtils.hasText(successUrl) ? successUrl : null,
             tx.getTranId());
 
+        if (!qr.isSuccess()) {
+            log.error("[PayWay] purchase failed for tran_id={} code={} message={}",
+                tx.getTranId(), qr.getStatusCode(), qr.getStatusMessage());
+            AppException ex = new AppException(ErrorCode.GENERAL_ERROR,
+                "Payment gateway rejected the request: " + qr.getStatusMessage());
+            ex.setHttpStatus(HttpStatus.BAD_GATEWAY);
+            throw ex;
+        }
+
         return SubscriptionCheckoutResponse.builder()
             .tranId(tx.getTranId())
             .subscriptionId(sub.getId())
-            .checkoutUrl(paywayClient.checkoutUrl())
-            .formFields(fields)
+            .amount(amount)
+            .currency("USD")
+            .qrImage(qr.getQrImage())
+            .qrString(qr.getQrString())
+            .abapayDeeplink(qr.getAbapayDeeplink())
             .build();
     }
 

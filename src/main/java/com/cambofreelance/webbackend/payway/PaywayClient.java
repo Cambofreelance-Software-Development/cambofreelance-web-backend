@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -26,10 +28,12 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 /**
  * Thin client for ABA PayWay.
  *
- * The purchase is NOT called server-to-server: we sign the field set here and the
- * frontend form-posts it to PayWay's hosted checkout, so the API key never leaves
- * the backend and PayWay renders its own payment page. Status verification
- * (transaction-detail) IS server-to-server and is the only source of truth.
+ * The `sopposstore` merchant profile is provisioned for the QR/Payment-Gateway flow: even
+ * with view_type=hosted_view / payment_gate=0, ABA's purchase API never redirects to a hosted
+ * page for this account — it always answers synchronously with a KHQR payload. So the purchase
+ * call IS server-to-server here (unlike a typical hosted-checkout integration) and the backend
+ * hands the frontend a QR image to render in-page. Status verification (transaction-detail)
+ * is separately server-to-server and remains the only source of truth for settlement.
  */
 @Component
 @Slf4j
@@ -38,6 +42,9 @@ public class PaywayClient {
 
     public static final String PURCHASE_PATH           = "/api/payment-gateway/v1/payments/purchase";
     public static final String TRANSACTION_DETAIL_PATH = "/api/payment-gateway/v1/payments/transaction-detail";
+
+    /** Bounds how long a checkout request waits on PayWay before failing fast with a clear error. */
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
@@ -51,10 +58,6 @@ public class PaywayClient {
     @Value("${payway.api-key:}")
     private String apiKey;
 
-    public String checkoutUrl() {
-        return baseUrl + PURCHASE_PATH;
-    }
-
     /** Fails fast with a clear message when PayWay credentials are not configured. */
     private void requireConfig() {
         if (merchantId == null || merchantId.isBlank() || apiKey == null || apiKey.isBlank()) {
@@ -66,11 +69,73 @@ public class PaywayClient {
     }
 
     /**
-     * Builds the signed multipart/form field set for PayWay's purchase API.
-     * The frontend submits these verbatim as a form POST to {@link #checkoutUrl()}.
+     * Calls PayWay's purchase API server-to-server and returns the embedded KHQR payload.
      * Field order in the hash is fixed by PayWay's spec — do not reorder.
      */
-    public Map<String, String> buildPurchaseFields(String tranId, BigDecimal amount, String currency,
+    public PaywayPurchaseResult purchase(String tranId, BigDecimal amount, String currency,
+                                          String firstname, String lastname, String email, String phone,
+                                          String itemsJson, String paymentOption,
+                                          String returnUrl, String cancelUrl, String continueSuccessUrl,
+                                          String returnParams) {
+        Map<String, String> fields = buildPurchaseFields(tranId, amount, currency, firstname, lastname, email, phone,
+            itemsJson, paymentOption, returnUrl, cancelUrl, continueSuccessUrl, returnParams);
+
+        MultipartBodyBuilder body = new MultipartBodyBuilder();
+        fields.forEach(body::part);
+
+        String response;
+        try {
+            response = webClient.post()
+                .uri(baseUrl + PURCHASE_PATH)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(body.build())
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(REQUEST_TIMEOUT)
+                .block();
+        } catch (WebClientResponseException e) {
+            log.warn("[PayWay] purchase HTTP {} for tran_id={}: {}",
+                e.getStatusCode(), tranId, e.getResponseBodyAsString());
+            response = e.getResponseBodyAsString();
+        } catch (Exception e) {
+            boolean isTimeout = e instanceof java.util.concurrent.TimeoutException
+                || e.getCause() instanceof java.util.concurrent.TimeoutException;
+            log.error("[PayWay] purchase call failed for tran_id={}", tranId, e);
+            AppException ex = new AppException(ErrorCode.GENERAL_ERROR,
+                isTimeout ? "Payment gateway did not respond in time — please try again" : "Payment gateway is unreachable");
+            ex.setHttpStatus(isTimeout ? HttpStatus.GATEWAY_TIMEOUT : HttpStatus.SERVICE_UNAVAILABLE);
+            throw ex;
+        }
+
+        log.info("[PayWay] purchase tran_id={} response={}", tranId,
+            response != null && response.length() > 300 ? response.substring(0, 300) + "..." : response);
+        return parsePurchaseResponse(response);
+    }
+
+    private PaywayPurchaseResult parsePurchaseResponse(String response) {
+        try {
+            JsonNode root = objectMapper.readTree(response);
+            JsonNode status = root.path("status");
+            return PaywayPurchaseResult.builder()
+                .qrString(root.path("qrString").asText(null))
+                .qrImage(root.path("qrImage").asText(null))
+                .abapayDeeplink(root.path("abapay_deeplink").asText(null))
+                .statusCode(status.path("code").asText(null))
+                .statusMessage(status.path("message").asText(null))
+                .raw(response)
+                .build();
+        } catch (Exception e) {
+            log.error("[PayWay] failed to parse purchase response", e);
+            return PaywayPurchaseResult.builder().statusCode("-1").statusMessage("Unparseable response").raw(response).build();
+        }
+    }
+
+    /**
+     * Builds the signed field set for PayWay's purchase API.
+     * Field order in the hash is fixed by PayWay's spec — do not reorder.
+     */
+    private Map<String, String> buildPurchaseFields(String tranId, BigDecimal amount, String currency,
                                                    String firstname, String lastname, String email, String phone,
                                                    String itemsJson, String paymentOption,
                                                    String returnUrl, String cancelUrl, String continueSuccessUrl,
@@ -139,6 +204,7 @@ public class PaywayClient {
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(REQUEST_TIMEOUT)
                 .block();
         } catch (WebClientResponseException e) {
             log.warn("[PayWay] transaction-detail HTTP {} for tran_id={}: {}",

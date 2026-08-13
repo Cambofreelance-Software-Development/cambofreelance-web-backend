@@ -1,12 +1,12 @@
 package com.cambofreelance.webbackend.dto.response;
 
-import java.util.Map;
+import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * Everything the frontend needs to open the ABA PayWay checkout:
- * form-POST the {@code formFields} to {@code checkoutUrl} (hosted view/popup).
+ * Everything the frontend needs to render the ABA PayWay KHQR checkout in-page:
+ * show {@code qrImage}, then poll {@code /subscriptions/transactions/{tranId}/status}.
  */
 @Data
 @Builder
@@ -14,6 +14,11 @@ public class SubscriptionCheckoutResponse {
 
     private String tranId;
     private String subscriptionId;
-    private String checkoutUrl;
-    private Map<String, String> formFields;
+    private BigDecimal amount;
+    private String currency;
+    /** data:image/png;base64,... ready to render directly */
+    private String qrImage;
+    private String qrString;
+    /** Deep link to open the QR in the ABA Mobile app, when provided */
+    private String abapayDeeplink;
 }
