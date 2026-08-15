@@ -138,3 +138,12 @@ authentication:
 
 session:
   max-concurrent: 5
+
+payway:
+  base-url: https://checkout-sandbox.payway.com.kh
+  merchant-id: sopposstore
+  api-key: fd5607aa-06d6-4ccf-a977-ea754b4c73fb
+  # ABA sandbox can't reach localhost; verification still works via /subscriptions/transactions/{tranId}/status polling.
+  callback-url: http://localhost:26022/payway/callback
+  success-url: http://localhost:3000/en/payment/result
+  cancel-url: http://localhost:3000/en/payment/result
