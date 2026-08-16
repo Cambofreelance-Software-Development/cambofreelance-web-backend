@@ -190,6 +190,30 @@ public class ClientServiceImpl implements ClientService {
         return toResponse(c);
     }
 
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "CLIENT", entityClass = ClientEntity.class)
+    public ClientResponse adminUpdateCompanyInfo(String clientId, CompanyInfoRequest r, String adminId) {
+        ClientEntity c = clientRepository.findById(clientId)
+            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Client not found"));
+        c.setCompanyName(r.getCompanyName());
+        c.setCompanyEmail(r.getCompanyEmail());
+        c.setCompanyPhone(r.getCompanyPhone());
+        c.setAddress(r.getAddress());
+        c.setCity(r.getCity());
+        c.setCountry(r.getCountry());
+        c.setBusinessType(r.getBusinessType());
+        if (StringUtils.hasText(r.getLogoUrl())) {
+            c.setLogoUrl(r.getLogoUrl());
+        }
+        // Admin edits are a correction/maintenance action, not an onboarding step —
+        // unlike the client's own updateCompanyInfo(), this never advances onboardingStep.
+        c.setUpdatedBy(adminId);
+        c.setUpdatedAt(new Date());
+        clientRepository.save(c);
+        return toResponse(c);
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     private ClientEntity getOrCreate(String userId) {

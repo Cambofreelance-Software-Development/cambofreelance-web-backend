@@ -86,4 +86,15 @@ public class ClientController {
         var result = clientService.adminUpdateStatus(id, body.getOrDefault("clientStatus", ""), adminId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
+
+    @PutMapping("/cms/clients/{id}/company")
+    @PreAuthorize("hasAuthority('client.update')")
+    public ResponseEntity<Object> updateClientCompany(
+        @PathVariable String id,
+        @Valid @RequestBody CompanyInfoRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = clientService.adminUpdateCompanyInfo(id, request, adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
 }

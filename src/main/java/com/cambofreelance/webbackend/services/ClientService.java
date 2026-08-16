@@ -25,4 +25,7 @@ public interface ClientService {
     ClientDetailResponse adminDetail(String clientId);
 
     ClientResponse adminUpdateStatus(String clientId, String clientStatus, String adminId);
+
+    /** Admin edits a client's company profile directly (no onboarding-step side effects). */
+    ClientResponse adminUpdateCompanyInfo(String clientId, CompanyInfoRequest request, String adminId);
 }
