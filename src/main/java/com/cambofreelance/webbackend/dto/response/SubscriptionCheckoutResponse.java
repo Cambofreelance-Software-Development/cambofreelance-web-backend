@@ -21,4 +21,11 @@ public class SubscriptionCheckoutResponse {
     private String qrString;
     /** Deep link to open the QR in the ABA Mobile app, when provided */
     private String abapayDeeplink;
+
+    /** True when {@code amount} is a mid-cycle prorated upgrade charge, not the plan's full price */
+    private boolean prorated;
+    /** Credit from the unused remainder of the current plan, already netted into {@code amount} */
+    private BigDecimal creditApplied;
+    /** Days left in the current billing period used to compute the proration */
+    private Long remainingDays;
 }

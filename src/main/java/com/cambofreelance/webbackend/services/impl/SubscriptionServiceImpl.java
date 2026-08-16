@@ -95,8 +95,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new AppException(ErrorCode.SUBSCRIPTION_ALREADY_ACTIVE, "An active subscription already exists");
         }
 
-        PricingPlanEntity plan = planRepository.findById(
-                renew && activeSub != null ? activeSub.getPlanId() : request.getPlanId())
+        PricingPlanEntity plan = planRepository.findById(request.getPlanId())
             .filter(p -> Constants.STATUS_ACTIVE.equals(p.getStatus()))
             .orElseThrow(() -> {
                 AppException ex = new AppException(ErrorCode.PLAN_NOT_AVAILABLE, "Pricing plan not available");
@@ -104,11 +103,25 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 return ex;
             });
 
-        String cycle = renew && activeSub != null
+        String cycle = activeSub != null
             ? activeSub.getBillingCycle()
             : (Constants.BILLING_YEARLY.equalsIgnoreCase(request.getBillingCycle())
                 ? Constants.BILLING_YEARLY : Constants.BILLING_MONTHLY);
-        BigDecimal amount = priceFor(plan, cycle);
+
+        // Switching to a different (higher) plan while still active is a mid-cycle upgrade:
+        // charge only the prorated difference and keep the current expiry — don't extend it.
+        boolean planChange = activeSub != null && !activeSub.getPlanId().equals(plan.getId());
+        BigDecimal amount;
+        BigDecimal creditApplied = BigDecimal.ZERO;
+        Long remainingDays = null;
+        if (planChange) {
+            ProrationResult proration = computeUpgradeProration(activeSub, plan, cycle);
+            amount = proration.amount();
+            creditApplied = proration.credit();
+            remainingDays = proration.remainingDays();
+        } else {
+            amount = priceFor(plan, cycle);
+        }
 
         // Abandon any previous unpaid checkout attempts
         subscriptionRepository.findByUserIdAndSubStatus(userId, Constants.SUB_PENDING_PAYMENT)
@@ -120,8 +133,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             });
 
         UserSubscriptionEntity sub;
-        if (renew && activeSub != null) {
-            // Renewal pays onto the existing subscription; activation extends expires_at.
+        if (activeSub != null) {
+            // Renewal/upgrade pays onto the existing subscription; activation applies the change.
             sub = activeSub;
         } else {
             sub = new UserSubscriptionEntity();
@@ -145,10 +158,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         tx.setCurrency("USD");
         tx.setPaymentOption(request.getPaymentOption());
         tx.setPaymentStatus(Constants.PAY_PENDING);
+        tx.setTargetPlanId(plan.getId());
+        tx.setProrated(planChange);
         tx.setCreatedBy(userId);
         transactionRepository.save(tx);
         logEvent(tx, null, Constants.PAY_PENDING, Constants.PAY_SRC_CHECKOUT,
-            (renew ? "Renewal checkout" : "New checkout") + " for plan " + plan.getName(), userId);
+            (planChange ? "Prorated upgrade checkout" : renew ? "Renewal checkout" : "New checkout")
+                + " for plan " + plan.getName(), userId);
 
         // Onboarding: client is now at the payment step
         clientRepository.findByUserId(userId).ifPresent(c -> {
@@ -160,7 +176,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         });
 
         String itemsJson = "[{\"name\":\"" + plan.getName().replace("\"", "")
-            + " (" + cycle.toLowerCase() + ")\",\"quantity\":1,\"price\":"
+            + " (" + cycle.toLowerCase() + (planChange ? ", prorated upgrade" : "") + ")\",\"quantity\":1,\"price\":"
             + amount.setScale(2, RoundingMode.HALF_UP).toPlainString() + "}]";
 
         PaywayPurchaseResult qr = paywayClient.purchase(
@@ -189,6 +205,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .qrImage(qr.getQrImage())
             .qrString(qr.getQrString())
             .abapayDeeplink(qr.getAbapayDeeplink())
+            .prorated(planChange)
+            .creditApplied(creditApplied)
+            .remainingDays(remainingDays)
             .build();
     }
 
@@ -345,18 +364,41 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             return;
         }
         Date now = new Date();
-        Calendar cal = Calendar.getInstance();
         // Renewal on a still-active subscription extends from its current expiry;
         // everything else (first activation, reactivation after expiry) starts now.
-        boolean extend = Constants.SUB_ACTIVE.equals(sub.getSubStatus())
+        boolean stillActive = Constants.SUB_ACTIVE.equals(sub.getSubStatus())
             && sub.getExpiresAt() != null && sub.getExpiresAt().after(now);
-        cal.setTime(extend ? sub.getExpiresAt() : now);
+
+        // Apply the target plan regardless of branch below — if the sub is still active this
+        // is a prorated in-place switch; if it lapsed before the payment settled, it still
+        // belongs on the new plan, just via a normal full-cycle (re)activation.
+        boolean planChange = tx.getTargetPlanId() != null && !tx.getTargetPlanId().equals(sub.getPlanId());
+        if (planChange) {
+            sub.setPlanId(tx.getTargetPlanId());
+            planRepository.findById(tx.getTargetPlanId())
+                .ifPresent(newPlan -> sub.setPrice(priceFor(newPlan, sub.getBillingCycle())));
+        }
+
+        if (planChange && stillActive) {
+            // Already paid the prorated difference for the remainder of this cycle —
+            // switch plans in place and leave expires_at untouched.
+            sub.setSubStatus(Constants.SUB_ACTIVE);
+            sub.setUpdatedAt(now);
+            sub.setUpdatedBy(Constants.SYSTEM);
+            subscriptionRepository.save(sub);
+            log.info("[Subscription] upgraded sub={} user={} to plan={} (prorated), still expires {}",
+                sub.getId(), sub.getUserId(), tx.getTargetPlanId(), sub.getExpiresAt());
+            return;
+        }
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(stillActive ? sub.getExpiresAt() : now);
         if (Constants.BILLING_YEARLY.equals(sub.getBillingCycle())) {
             cal.add(Calendar.YEAR, 1);
         } else {
             cal.add(Calendar.MONTH, 1);
         }
-        if (!extend) {
+        if (!stillActive) {
             sub.setStartAt(now);
         }
         sub.setSubStatus(Constants.SUB_ACTIVE);
@@ -365,7 +407,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         sub.setUpdatedBy(Constants.SYSTEM);
         subscriptionRepository.save(sub);
         log.info("[Subscription] {} sub={} user={} until {}",
-            extend ? "renewed" : "activated", sub.getId(), sub.getUserId(), sub.getExpiresAt());
+            stillActive ? "renewed" : "activated", sub.getId(), sub.getUserId(), sub.getExpiresAt());
     }
 
     private void completeClientOnboarding(String userId) {
@@ -441,6 +483,54 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
+
+    private record ProrationResult(BigDecimal amount, BigDecimal credit, long remainingDays) {}
+
+    /**
+     * Prorates a mid-cycle plan switch: credits the unused remainder of what's already paid
+     * on the current plan against the new plan's price for that same remainder, so the client
+     * only pays the difference and expires_at doesn't move. Rejects same-or-cheaper plans —
+     * those aren't "upgrades" and there's no self-serve downgrade/cancel flow yet.
+     */
+    private ProrationResult computeUpgradeProration(UserSubscriptionEntity activeSub, PricingPlanEntity newPlan, String cycle) {
+        BigDecimal oldPrice = activeSub.getPrice();
+        BigDecimal newPrice = priceFor(newPlan, cycle);
+        if (newPrice.compareTo(oldPrice) <= 0) {
+            AppException ex = new AppException(ErrorCode.PLAN_CHANGE_NOT_UPGRADE,
+                "The selected plan must cost more than your current plan to upgrade");
+            ex.setHttpStatus(HttpStatus.BAD_REQUEST);
+            throw ex;
+        }
+
+        Date expiresAt = activeSub.getExpiresAt();
+        Calendar periodStart = Calendar.getInstance();
+        periodStart.setTime(expiresAt);
+        if (Constants.BILLING_YEARLY.equals(cycle)) {
+            periodStart.add(Calendar.YEAR, -1);
+        } else {
+            periodStart.add(Calendar.MONTH, -1);
+        }
+
+        long totalDays = Math.max(1, daysBetween(periodStart.getTime(), expiresAt));
+        long remainingDays = Math.min(totalDays, Math.max(0, daysBetween(new Date(), expiresAt)));
+        BigDecimal remainingFraction = BigDecimal.valueOf(remainingDays)
+            .divide(BigDecimal.valueOf(totalDays), 6, RoundingMode.HALF_UP);
+
+        BigDecimal newPortion = newPrice.multiply(remainingFraction).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal credit = oldPrice.multiply(remainingFraction).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal amount = newPortion.subtract(credit);
+        // Rounding/near-zero remainder can floor the delta to $0 even for a genuine upgrade —
+        // PayWay needs a positive amount, so charge a token minimum instead of nothing.
+        BigDecimal minCharge = BigDecimal.valueOf(0.01);
+        if (amount.compareTo(minCharge) < 0) {
+            amount = minCharge;
+        }
+        return new ProrationResult(amount, credit, remainingDays);
+    }
+
+    private long daysBetween(Date from, Date to) {
+        return Math.round((to.getTime() - from.getTime()) / 86_400_000.0);
+    }
 
     private BigDecimal priceFor(PricingPlanEntity plan, String cycle) {
         if (Constants.BILLING_YEARLY.equals(cycle)) {

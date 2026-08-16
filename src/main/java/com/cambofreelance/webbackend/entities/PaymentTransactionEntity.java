@@ -74,4 +74,13 @@ public class PaymentTransactionEntity extends BaseEntity implements Serializable
 
     @Column(name = "verify_note")
     private String verifyNote;
+
+    /** Plan this transaction activates onto — same as the subscription's current plan for a
+     *  plain renewal, different for a prorated upgrade. */
+    @Column(name = "target_plan_id")
+    private String targetPlanId;
+
+    /** True when {@code amount} was computed as a mid-cycle prorated upgrade charge. */
+    @Column(name = "prorated")
+    private Boolean prorated = false;
 }
