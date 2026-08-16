@@ -224,6 +224,7 @@ public class UserServiceImpl implements UserService {
             .map(r -> UserProfileResponse.RoleItem.builder()
                 .roleId(r.getId())
                 .roleName(r.getName())
+                .roleCode(r.getCode())
                 .build())
             .collect(Collectors.toList());
 
@@ -297,6 +298,7 @@ public class UserServiceImpl implements UserService {
             .map(r -> UserProfileResponse.RoleItem.builder()
                 .roleId(r.getId())
                 .roleName(r.getName())
+                .roleCode(r.getCode())
                 .build())
             .collect(Collectors.toList());
 

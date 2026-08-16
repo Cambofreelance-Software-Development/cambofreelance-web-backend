@@ -56,5 +56,8 @@ public class UserProfileResponse {
 
         @JsonProperty("roleName")
         private String roleName;
+
+        @JsonProperty("roleCode")
+        private String roleCode;
     }
 }
