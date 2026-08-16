@@ -12,4 +12,8 @@ public class CmsSocialSettingRequest {
     private String socialInstagram;
 
     private String socialFacebook;
+
+    private String socialTelegram;
+
+    private String socialWhatsapp;
 }

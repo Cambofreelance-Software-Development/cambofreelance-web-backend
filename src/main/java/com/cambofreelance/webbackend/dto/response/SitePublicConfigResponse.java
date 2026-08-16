@@ -18,4 +18,6 @@ public class SitePublicConfigResponse {
     private String socialLinkedin;
     private String socialInstagram;
     private String socialFacebook;
+    private String socialTelegram;
+    private String socialWhatsapp;
 }
