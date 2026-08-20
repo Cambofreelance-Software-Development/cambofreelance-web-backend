@@ -112,7 +112,7 @@ services:
           cpus: '1'
           memory: 1000M
         reservations:
-          cpus: '100'
+          cpus: '500'
           memory: 350M
     security_opt:
       - no-new-privileges:true
