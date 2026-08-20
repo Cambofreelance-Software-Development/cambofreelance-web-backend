@@ -96,7 +96,7 @@ services:
       - "26022:26022"
     environment:
       - SERVER_PORT=26022
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=local
     networks:
       - cm-network
     restart: unless-stopped
