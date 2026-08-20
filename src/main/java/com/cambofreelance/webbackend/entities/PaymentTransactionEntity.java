@@ -83,4 +83,8 @@ public class PaymentTransactionEntity extends BaseEntity implements Serializable
     /** True when {@code amount} was computed as a mid-cycle prorated upgrade charge. */
     @Column(name = "prorated")
     private Boolean prorated = false;
+
+    /** USER (checkout/renewal by the customer) or AUTO_RENEW (unattended Card-on-File charge). */
+    @Column(name = "initiated_by")
+    private String initiatedBy = com.cambofreelance.webbackend.constants.Constants.PAY_INITIATED_USER;
 }

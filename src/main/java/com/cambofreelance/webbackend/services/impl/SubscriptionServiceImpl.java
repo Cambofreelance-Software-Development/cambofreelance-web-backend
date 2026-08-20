@@ -20,6 +20,7 @@ import com.cambofreelance.webbackend.repository.PaymentTransactionRepository;
 import com.cambofreelance.webbackend.repository.PricingPlanRepository;
 import com.cambofreelance.webbackend.repository.UserRepository;
 import com.cambofreelance.webbackend.repository.UserSubscriptionRepository;
+import com.cambofreelance.webbackend.services.EmailService;
 import com.cambofreelance.webbackend.services.SubscriptionService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
@@ -47,6 +48,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     private static final String TRAN_ID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+    /** How many days before expiry the auto-renew job starts attempting a stored-token charge. */
+    private static final int AUTO_RENEW_LEAD_DAYS = 3;
+
+    /** Consecutive auto-renew failures before giving up and turning auto_renew off. */
+    private static final int AUTO_RENEW_MAX_FAILURES = 3;
+
+    /** Don't re-attempt a subscription the job already tried within this window. */
+    private static final long AUTO_RENEW_RETRY_HOURS = 20;
+
     private final UserRepository userRepository;
     private final PricingPlanRepository planRepository;
     private final UserSubscriptionRepository subscriptionRepository;
@@ -55,7 +65,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final com.cambofreelance.webbackend.repository.ClientRepository clientRepository;
     private final com.cambofreelance.webbackend.services.BillingService billingService;
     private final PaywayClient paywayClient;
+    private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    /** ABA has not enabled Card-on-File for this merchant yet — flip only once confirmed. */
+    @Value("${payway.cof-enabled:false}")
+    private boolean cofEnabled;
 
     /** Public URL of this backend's /payway/callback endpoint (PayWay pushback target) */
     @Value("${payway.callback-url:}")
@@ -132,6 +147,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 subscriptionRepository.save(s);
             });
 
+        // Auto-renew opt-in only makes sense when starting a brand-new subscription — renewals
+        // and upgrades pay onto an existing sub whose auto-renew state (if any) is unchanged
+        // here and managed instead via setAutoRenew()/adminSetAutoRenew().
+        boolean requestLifetimeToken = activeSub == null && Boolean.TRUE.equals(request.getAutoRenew());
+        if (requestLifetimeToken) {
+            requireCofEnabled();
+        }
+
         UserSubscriptionEntity sub;
         if (activeSub != null) {
             // Renewal/upgrade pays onto the existing subscription; activation applies the change.
@@ -145,6 +168,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             sub.setPrice(amount);
             sub.setCurrency("USD");
             sub.setSubStatus(Constants.SUB_PENDING_PAYMENT);
+            sub.setAutoRenew(requestLifetimeToken);
             sub.setCreatedBy(userId);
             subscriptionRepository.save(sub);
         }
@@ -160,6 +184,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         tx.setPaymentStatus(Constants.PAY_PENDING);
         tx.setTargetPlanId(plan.getId());
         tx.setProrated(planChange);
+        tx.setInitiatedBy(Constants.PAY_INITIATED_USER);
         tx.setCreatedBy(userId);
         transactionRepository.save(tx);
         logEvent(tx, null, Constants.PAY_PENDING, Constants.PAY_SRC_CHECKOUT,
@@ -186,7 +211,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             StringUtils.hasText(callbackUrl) ? callbackUrl : null,
             StringUtils.hasText(cancelUrl) ? cancelUrl : null,
             StringUtils.hasText(successUrl) ? successUrl : null,
-            tx.getTranId());
+            tx.getTranId(), requestLifetimeToken);
 
         if (!qr.isSuccess()) {
             log.error("[PayWay] purchase failed for tran_id={} code={} message={}",
@@ -301,6 +326,165 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .toList();
     }
 
+    // ── Auto-renew (Card-on-File) ──────────────────────────────────────────
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SUBSCRIPTION")
+    public SubscriptionResponse setAutoRenew(String userId, boolean autoRenew) {
+        UserSubscriptionEntity sub = subscriptionRepository
+            .findFirstByUserIdAndSubStatusAndExpiresAtAfterOrderByExpiresAtDesc(userId, Constants.SUB_ACTIVE, new Date())
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.ACTIVE_SUBSCRIPTION_NOT_FOUND, "No active subscription found");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+        applyAutoRenewToggle(sub, autoRenew, userId);
+        return toSubscriptionResponse(sub);
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SUBSCRIPTION")
+    public SubscriptionResponse adminSetAutoRenew(String subscriptionId, boolean autoRenew, String adminId) {
+        UserSubscriptionEntity sub = subscriptionRepository.findById(subscriptionId)
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.ACTIVE_SUBSCRIPTION_NOT_FOUND, "Subscription not found");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+        applyAutoRenewToggle(sub, autoRenew, adminId);
+        return toSubscriptionResponse(sub);
+    }
+
+    /**
+     * Turning auto-renew OFF is always allowed (safety valve). Turning it ON requires COF to be
+     * enabled and a payment token to already exist — never a silent no-op if either is missing.
+     */
+    private void applyAutoRenewToggle(UserSubscriptionEntity sub, boolean autoRenew, String actorId) {
+        if (autoRenew) {
+            requireCofEnabled();
+            if (!StringUtils.hasText(sub.getPaymentToken())) {
+                AppException ex = new AppException(ErrorCode.AUTO_RENEW_TOKEN_MISSING,
+                    "No card on file yet — opt in during checkout once auto-renew is available");
+                ex.setHttpStatus(HttpStatus.BAD_REQUEST);
+                throw ex;
+            }
+            sub.setAutoRenewFailureCount(0);
+        }
+        sub.setAutoRenew(autoRenew);
+        sub.setUpdatedAt(new Date());
+        sub.setUpdatedBy(actorId);
+        subscriptionRepository.save(sub);
+    }
+
+    private void requireCofEnabled() {
+        if (!cofEnabled) {
+            AppException ex = new AppException(ErrorCode.AUTO_RENEW_NOT_AVAILABLE,
+                "Auto-renewal is not available yet");
+            ex.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);
+            throw ex;
+        }
+    }
+
+    /**
+     * TODO: verify against ABA's real COF spec — once `lifetime` tokenization is confirmed
+     * working, PayWay's transaction-detail/callback payload is expected to carry some token
+     * reference. Confirm the exact JSON field name (inspect status.getRaw()) and wire it into
+     * sub.setPaymentToken(...) / sub.setPaymentTokenCapturedAt(...). Until then this intentionally
+     * does nothing, so an auto_renew subscription never accumulates a token and
+     * attemptAutoRenewals() stays inert for it.
+     */
+    private void captureCofTokenIfRequested(UserSubscriptionEntity sub, PaywayTransactionStatus status) {
+        if (!cofEnabled || !Boolean.TRUE.equals(sub.getAutoRenew()) || sub.getPaymentToken() != null) {
+            return;
+        }
+        log.warn("[Subscription] auto-renew requested for sub={} but COF token capture is not implemented "
+            + "yet (awaiting ABA spec)", sub.getId());
+    }
+
+    @Override
+    @Transactional
+    public void attemptAutoRenewals() {
+        if (!cofEnabled) {
+            return; // feature dark — no query, no log noise
+        }
+        Date now = new Date();
+        Calendar windowEndCal = Calendar.getInstance();
+        windowEndCal.setTime(now);
+        windowEndCal.add(Calendar.DAY_OF_MONTH, AUTO_RENEW_LEAD_DAYS);
+
+        Calendar attemptCutoffCal = Calendar.getInstance();
+        attemptCutoffCal.setTime(now);
+        attemptCutoffCal.add(Calendar.HOUR_OF_DAY, (int) -AUTO_RENEW_RETRY_HOURS);
+
+        List<UserSubscriptionEntity> candidates = subscriptionRepository.findAutoRenewCandidates(
+            Constants.SUB_ACTIVE, now, windowEndCal.getTime(), AUTO_RENEW_MAX_FAILURES, attemptCutoffCal.getTime());
+        for (UserSubscriptionEntity sub : candidates) {
+            try {
+                attemptRenewal(sub, now);
+            } catch (Exception e) {
+                // One candidate's failure must never abort the batch.
+                log.error("[AutoRenew] unexpected error attempting renewal for sub={}", sub.getId(), e);
+            }
+        }
+    }
+
+    private void attemptRenewal(UserSubscriptionEntity sub, Date now) {
+        PricingPlanEntity plan = planRepository.findById(sub.getPlanId()).orElse(null);
+        if (plan == null) {
+            log.error("[AutoRenew] plan {} missing for sub={}", sub.getPlanId(), sub.getId());
+            return;
+        }
+
+        PaymentTransactionEntity tx = new PaymentTransactionEntity();
+        tx.setId(UUID.randomUUID().toString());
+        tx.setTranId(newTranId());
+        tx.setSubscriptionId(sub.getId());
+        tx.setUserId(sub.getUserId());
+        tx.setAmount(priceFor(plan, sub.getBillingCycle()));
+        tx.setCurrency(sub.getCurrency());
+        tx.setPaymentStatus(Constants.PAY_PENDING);
+        tx.setTargetPlanId(sub.getPlanId());
+        tx.setInitiatedBy(Constants.PAY_INITIATED_AUTO_RENEW);
+        tx.setCreatedBy(Constants.SYSTEM);
+        transactionRepository.save(tx);
+        logEvent(tx, null, Constants.PAY_PENDING, Constants.PAY_SRC_AUTO_RENEW, "Auto-renew charge attempt", Constants.SYSTEM);
+
+        sub.setAutoRenewLastAttemptAt(now);
+        UserEntity user = userRepository.findById(sub.getUserId()).orElse(null);
+        try {
+            // TODO: verify against ABA's real COF spec — chargeStoredToken always throws today
+            // (see PaywayClient#chargeStoredToken). Once real, add the success branch here:
+            //   billingService.issueInvoiceForPayment(tx); activateSubscription(tx);
+            //   sub.setAutoRenewFailureCount(0); subscriptionRepository.save(sub);
+            //   if (user != null) emailService.sendAutoRenewSuccess(user.getEmail(), plan.getName(), sub.getExpiresAt());
+            paywayClient.chargeStoredToken(tx.getTranId(), sub.getPaymentToken(), tx.getAmount(), tx.getCurrency());
+        } catch (Exception e) {
+            tx.setPaymentStatus(Constants.PAY_DECLINED);
+            tx.setVerifyMethod("AUTO");
+            tx.setVerifyNote(e.getMessage());
+            tx.setUpdatedAt(now);
+            tx.setUpdatedBy(Constants.SYSTEM);
+            transactionRepository.save(tx);
+            logEvent(tx, Constants.PAY_PENDING, Constants.PAY_DECLINED, Constants.PAY_SRC_AUTO_RENEW, e.getMessage(), Constants.SYSTEM);
+
+            int failures = sub.getAutoRenewFailureCount() + 1;
+            sub.setAutoRenewFailureCount(failures);
+            if (failures >= AUTO_RENEW_MAX_FAILURES) {
+                // Give up — the existing daily expireSubscriptions job naturally reaps this once
+                // expires_at passes; no separate cancel flow is needed here.
+                sub.setAutoRenew(false);
+                if (user != null) {
+                    emailService.sendAutoRenewGaveUp(user.getEmail(), plan.getName(), sub.getExpiresAt());
+                }
+            } else if (user != null) {
+                emailService.sendAutoRenewFailed(user.getEmail(), plan.getName(), sub.getExpiresAt(), failures, AUTO_RENEW_MAX_FAILURES);
+            }
+            subscriptionRepository.save(sub);
+        }
+    }
+
     /** Resolves an event actor (userId or "SYS") to a display name, caching lookups. */
     private String resolveActorName(String actor, java.util.Map<String, String> cache) {
         if (actor == null || actor.isBlank()) return null;
@@ -334,6 +518,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             logEvent(tx, from, Constants.PAY_APPROVED, source, "Confirmed by PayWay (apv " + status.getApv() + ")", actor);
             billingService.issueInvoiceForPayment(tx);
             activateSubscription(tx);
+            subscriptionRepository.findById(tx.getSubscriptionId()).ifPresent(sub -> captureCofTokenIfRequested(sub, status));
             completeClientOnboarding(tx.getUserId());
         } else if (status.isDeclined() || status.isCancelled()) {
             tx.setPaymentStatus(status.isDeclined() ? Constants.PAY_DECLINED : Constants.PAY_CANCELLED);
@@ -460,6 +645,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .canSubscribe(approved && active == null)
             .activeSubscription(active)
             .history(all.stream().map(this::toSubscriptionResponse).toList())
+            .autoRenewAvailable(cofEnabled)
             .build();
     }
 
@@ -574,6 +760,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .startAt(s.getStartAt())
             .expiresAt(s.getExpiresAt())
             .createdAt(s.getCreatedAt())
+            .autoRenew(Boolean.TRUE.equals(s.getAutoRenew()))
+            .hasPaymentToken(StringUtils.hasText(s.getPaymentToken()))
+            .autoRenewFailureCount(s.getAutoRenewFailureCount())
+            .paymentTokenCapturedAt(s.getPaymentTokenCapturedAt())
             .build();
     }
 
@@ -591,6 +781,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .paymentOption(t.getPaymentOption())
             .paymentStatus(t.getPaymentStatus())
             .apv(t.getApv())
+            .initiatedBy(t.getInitiatedBy())
             .createdAt(t.getCreatedAt())
             .verifiedAt(t.getVerifiedAt())
             .build();

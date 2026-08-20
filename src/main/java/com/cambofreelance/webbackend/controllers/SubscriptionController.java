@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.constants.Constants;
+import com.cambofreelance.webbackend.dto.request.AutoRenewToggleRequest;
 import com.cambofreelance.webbackend.dto.request.SubscriptionCheckoutRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
@@ -62,6 +63,16 @@ public class SubscriptionController {
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
+    /** Self-service opt in/out of Card-on-File auto-renewal on the caller's active subscription. */
+    @PutMapping("/subscriptions/me/auto-renew")
+    public ResponseEntity<Object> toggleAutoRenew(
+        @RequestHeader(value = Constants.USER_ID) String userId,
+        @Valid @RequestBody AutoRenewToggleRequest request
+    ) {
+        var result = subscriptionService.setAutoRenew(userId, Boolean.TRUE.equals(request.getAutoRenew()));
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
     // ── Admin ───────────────────────────────────────────────────────────────
 
     @GetMapping("/cms/subscriptions")
@@ -101,5 +112,17 @@ public class SubscriptionController {
     @PreAuthorize("hasAuthority('subscription.view')")
     public ResponseEntity<Object> paymentLogs(@PathVariable String tranId) {
         return new ResponseEntity<>(new MessageResponse(subscriptionService.getPaymentLogs(tranId), ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    /** Admin override — e.g. a support request to turn off auto-renew for a customer. */
+    @PutMapping("/cms/subscriptions/{subscriptionId}/auto-renew")
+    @PreAuthorize("hasAuthority('subscription.manage')")
+    public ResponseEntity<Object> adminToggleAutoRenew(
+        @PathVariable String subscriptionId,
+        @Valid @RequestBody AutoRenewToggleRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = subscriptionService.adminSetAutoRenew(subscriptionId, Boolean.TRUE.equals(request.getAutoRenew()), adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 }

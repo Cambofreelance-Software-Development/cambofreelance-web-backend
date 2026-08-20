@@ -12,8 +12,8 @@ public interface ClientService {
 
     ClientResponse updateCompanyInfo(String userId, CompanyInfoRequest request);
 
-    /** Dev mode: returns the OTP directly (no SMTP configured). */
-    String sendVerifyEmailOtp(String userId);
+    /** Generates a verification OTP, stores it, and emails it to the caller's registered address. */
+    void sendVerifyEmailOtp(String userId);
 
     ClientResponse confirmVerifyEmail(String userId, String otp);
 

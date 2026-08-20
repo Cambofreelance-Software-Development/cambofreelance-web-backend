@@ -21,6 +21,7 @@ import com.cambofreelance.webbackend.repository.UserRepository;
 import com.cambofreelance.webbackend.repository.UserSubscriptionRepository;
 import com.cambofreelance.webbackend.services.BillingService;
 import com.cambofreelance.webbackend.services.ClientService;
+import com.cambofreelance.webbackend.services.EmailService;
 import com.cambofreelance.webbackend.services.SubscriptionService;
 import jakarta.transaction.Transactional;
 import java.security.SecureRandom;
@@ -47,6 +48,7 @@ public class ClientServiceImpl implements ClientService {
     private final PaymentEventLogRepository eventLogRepository;
     private final InvoiceRepository invoiceRepository;
     private final EmailVerifyCache emailVerifyCache;
+    private final EmailService emailService;
     private final SubscriptionService subscriptionService;
     private final BillingService billingService;
     private final SecureRandom secureRandom = new SecureRandom();
@@ -84,13 +86,12 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public String sendVerifyEmailOtp(String userId) {
+    public void sendVerifyEmailOtp(String userId) {
         UserEntity user = requireUser(userId);
         String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
         emailVerifyCache.store(userId, otp);
-        // Dev mode: no SMTP wired for this flow yet — OTP is returned to the caller.
-        log.info("[EmailVerify] OTP generated for {} ({})", user.getUsername(), user.getEmail());
-        return otp;
+        emailService.sendVerificationOtp(user.getEmail(), otp);
+        log.info("[EmailVerify] OTP sent to {} ({})", user.getUsername(), user.getEmail());
     }
 
     @Override

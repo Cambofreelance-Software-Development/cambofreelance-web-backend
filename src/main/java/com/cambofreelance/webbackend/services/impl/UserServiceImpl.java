@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.RoleRepository;
 import com.cambofreelance.webbackend.repository.UserRepository;
+import com.cambofreelance.webbackend.services.EmailService;
 import com.cambofreelance.webbackend.services.RefreshTokenService;
 import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.services.UserService;
@@ -57,6 +58,7 @@ public class UserServiceImpl implements UserService {
     private final RefreshTokenService refreshTokenService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final PasswordResetCache passwordResetCache;
+    private final EmailService emailService;
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -495,21 +497,19 @@ public class UserServiceImpl implements UserService {
     // ── Password reset ────────────────────────────────────────────────────────
 
     @Override
-    public String forgotPassword(ForgotPasswordRequest request) throws AppException {
+    public void forgotPassword(ForgotPasswordRequest request) throws AppException {
         // Always respond the same way to prevent email enumeration.
-        // If the email doesn't exist we still return success, but don't store an OTP.
+        // If the email doesn't exist we still return success, but don't store or send an OTP.
         Optional<UserEntity> userOpt = userRepository.findByEmailAndStatus(
             request.getEmail(), Constants.STATUS_ACTIVE);
 
         if (userOpt.isEmpty()) {
-            // Security: don't reveal that the email doesn't exist
-            return null;
+            return;
         }
 
         String otp = String.format("%06d", RANDOM.nextInt(1_000_000));
         passwordResetCache.store(request.getEmail(), otp);
-        // In production, send otp via email here.
-        return otp;
+        emailService.sendPasswordResetOtp(request.getEmail(), otp);
     }
 
     @Override

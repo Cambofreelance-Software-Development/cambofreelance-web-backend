@@ -36,4 +36,7 @@ public final class ErrorCode {
     public static final String PAYMENT_NOT_COMPLETED        = "ERR-0016";
     public static final String PLAN_NOT_AVAILABLE           = "ERR-0017";
     public static final String PLAN_CHANGE_NOT_UPGRADE      = "ERR-0018";
+    public static final String AUTO_RENEW_NOT_AVAILABLE     = "ERR-0019";
+    public static final String AUTO_RENEW_TOKEN_MISSING     = "ERR-0020";
+    public static final String ACTIVE_SUBSCRIPTION_NOT_FOUND = "ERR-0021";
 }

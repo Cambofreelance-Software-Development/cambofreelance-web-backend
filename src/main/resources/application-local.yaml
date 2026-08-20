@@ -46,8 +46,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:your-email@gmail.com}
-    password: ${MAIL_PASSWORD:your-app-password}
+    username: cambofreelance.dev@gmail.com
+    password: pknuscluaqjwrxun
     properties:
       mail:
         smtp:
@@ -56,11 +56,11 @@ spring:
             enable: true
   data:
     redis:
-      host: 194.233.91.140
-      port: 16379
+      host: localhost
+      port: 6379
       timeout: 30000
       user: default
-      #password: CF@2025
+      password: CF@2025
       ssl:
         enabled: false
       repositories:
@@ -166,3 +166,5 @@ payway:
   callback-url: https://soppossytem.api.cambofreelance.com/payway/callback
   success-url: https://soppossytem.cambofreelance.com/en/en/payment/result
   cancel-url: https://soppossytem.cambofreelance.com/en/en/payment/result
+  # Card-on-File (auto-renew): flip only after ABA confirms COF is live for sopposstore.
+  cof-enabled: false

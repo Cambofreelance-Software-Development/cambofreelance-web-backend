@@ -147,3 +147,5 @@ payway:
   callback-url: http://localhost:26022/payway/callback
   success-url: http://localhost:3000/en/payment/result
   cancel-url: http://localhost:3000/en/payment/result
+  # Card-on-File (auto-renew): flip only after ABA confirms COF is live for sopposstore.
+  cof-enabled: false

@@ -13,4 +13,7 @@ public class MySubscriptionResponse {
     private boolean canSubscribe;
     private SubscriptionResponse activeSubscription;
     private List<SubscriptionResponse> history;
+
+    /** Whether Card-on-File auto-renewal is currently offered (== payway.cof-enabled server-side) */
+    private boolean autoRenewAvailable;
 }

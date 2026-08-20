@@ -102,6 +102,11 @@ public final class Constants {
     public static final String PAY_SRC_POLL = "POLL";
     public static final String PAY_SRC_JOB = "JOB";
     public static final String PAY_SRC_MANUAL = "MANUAL";
+    public static final String PAY_SRC_AUTO_RENEW = "AUTO_RENEW";
+
+    // Payment transaction initiator
+    public static final String PAY_INITIATED_USER = "USER";
+    public static final String PAY_INITIATED_AUTO_RENEW = "AUTO_RENEW";
 
     // Client statuses
     public static final String CLIENT_PENDING = "PENDING";

@@ -17,4 +17,8 @@ public class SubscriptionCheckoutRequest {
 
     /** true = renew/extend the current active subscription instead of starting a new one */
     private Boolean renew;
+
+    /** Opt in to Card-on-File auto-renewal. Only honored on a new subscription, and only when
+     *  payway.cof-enabled=true — otherwise rejected with AUTO_RENEW_NOT_AVAILABLE. */
+    private Boolean autoRenew;
 }

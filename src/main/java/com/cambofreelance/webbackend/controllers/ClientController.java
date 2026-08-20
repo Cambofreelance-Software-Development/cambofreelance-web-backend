@@ -43,9 +43,8 @@ public class ClientController {
 
     @PostMapping("/client/verify-email/send")
     public ResponseEntity<Object> sendVerifyEmail(@RequestHeader(Constants.USER_ID) String userId) {
-        // Dev mode: OTP returned in the response until SMTP delivery is wired up
-        String otp = clientService.sendVerifyEmailOtp(userId);
-        return new ResponseEntity<>(new MessageResponse(Map.of("otp", otp), ErrorCode.SUCCESS), HttpStatus.OK);
+        clientService.sendVerifyEmailOtp(userId);
+        return new ResponseEntity<>(new MessageResponse("Verification code sent", ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
     @PostMapping("/client/verify-email/confirm")

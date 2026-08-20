@@ -30,4 +30,13 @@ public interface SubscriptionService {
     PaymentTransactionResponse manualVerify(String tranId, boolean approve, String note, String adminId);
 
     java.util.List<com.cambofreelance.webbackend.dto.response.PaymentEventResponse> getPaymentLogs(String tranId);
+
+    /** Self-service opt in/out of Card-on-File auto-renewal on the caller's active subscription. */
+    SubscriptionResponse setAutoRenew(String userId, boolean autoRenew);
+
+    /** Admin override — e.g. a support request to turn off auto-renew for a customer. */
+    SubscriptionResponse adminSetAutoRenew(String subscriptionId, boolean autoRenew, String adminId);
+
+    /** Scheduled by SubscriptionJobs — attempts stored-token renewal for subscriptions nearing expiry. */
+    void attemptAutoRenewals();
 }

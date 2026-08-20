@@ -27,4 +27,12 @@ public class SubscriptionResponse {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date createdAt;
+
+    private boolean autoRenew;
+    /** Whether a Card-on-File token is stored — the raw token itself is never serialized. */
+    private boolean hasPaymentToken;
+    private Integer autoRenewFailureCount;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
+    private Date paymentTokenCapturedAt;
 }

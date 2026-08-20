@@ -77,8 +77,23 @@ public class PaywayClient {
                                           String itemsJson, String paymentOption,
                                           String returnUrl, String cancelUrl, String continueSuccessUrl,
                                           String returnParams) {
+        return purchase(tranId, amount, currency, firstname, lastname, email, phone, itemsJson, paymentOption,
+            returnUrl, cancelUrl, continueSuccessUrl, returnParams, false);
+    }
+
+    /**
+     * Same as {@link #purchase(String, BigDecimal, String, String, String, String, String, String, String,
+     * String, String, String, String)} but with the option to ask PayWay to tokenize the card
+     * (Card-on-File) for a future unattended charge. Only meaningful once ABA has enabled COF for
+     * this merchant — see {@link #chargeStoredToken}.
+     */
+    public PaywayPurchaseResult purchase(String tranId, BigDecimal amount, String currency,
+                                          String firstname, String lastname, String email, String phone,
+                                          String itemsJson, String paymentOption,
+                                          String returnUrl, String cancelUrl, String continueSuccessUrl,
+                                          String returnParams, boolean requestLifetimeToken) {
         Map<String, String> fields = buildPurchaseFields(tranId, amount, currency, firstname, lastname, email, phone,
-            itemsJson, paymentOption, returnUrl, cancelUrl, continueSuccessUrl, returnParams);
+            itemsJson, paymentOption, returnUrl, cancelUrl, continueSuccessUrl, returnParams, requestLifetimeToken);
 
         MultipartBodyBuilder body = new MultipartBodyBuilder();
         fields.forEach(body::part);
@@ -139,13 +154,18 @@ public class PaywayClient {
                                                    String firstname, String lastname, String email, String phone,
                                                    String itemsJson, String paymentOption,
                                                    String returnUrl, String cancelUrl, String continueSuccessUrl,
-                                                   String returnParams) {
+                                                   String returnParams, boolean requestLifetimeToken) {
         requireConfig();
         String reqTime   = utcNow();
         String amountStr = amount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
         String items     = itemsJson == null ? "" : b64(itemsJson);
         String returnB64 = returnUrl == null ? "" : b64(returnUrl);
         String type      = "purchase";
+        // TODO: verify against ABA's real COF spec — confirm the expected value/format for
+        // `lifetime` once ABA enables Card-on-File for this merchant. "1" is an unconfirmed
+        // placeholder; only reachable when requestLifetimeToken=true, which today requires
+        // payway.cof-enabled=true (never set in any live environment yet).
+        String lifetime  = requestLifetimeToken ? "1" : "";
 
         String fn  = nz(firstname), ln = nz(lastname), em = nz(email), ph = nz(phone);
         String po  = nz(paymentOption), cu = nz(cancelUrl), csu = nz(continueSuccessUrl), rp = nz(returnParams);
@@ -157,7 +177,7 @@ public class PaywayClient {
         // + payout + lifetime + additional_params + google_pay_token + skip_success_page
         String toSign = reqTime + merchantId + tranId + amountStr + items + /*shipping*/ ""
             + fn + ln + em + ph + type + po + returnB64 + cu + csu + /*return_deeplink*/ ""
-            + cur + /*custom_fields*/ "" + rp + /*payout*/ "" + /*lifetime*/ ""
+            + cur + /*custom_fields*/ "" + rp + /*payout*/ "" + lifetime
             + /*additional_params*/ "" + /*google_pay_token*/ "" + /*skip_success_page*/ "";
 
         Map<String, String> fields = new LinkedHashMap<>();
@@ -177,8 +197,29 @@ public class PaywayClient {
         if (!csu.isEmpty())       fields.put("continue_success_url", csu);
         if (!cur.isEmpty())       fields.put("currency", cur);
         if (!rp.isEmpty())        fields.put("return_params", rp);
+        if (!lifetime.isEmpty())  fields.put("lifetime", lifetime);
         fields.put("hash", hmacSha512B64(toSign));
         return fields;
+    }
+
+    /**
+     * STUB — ABA has NOT enabled Card-on-File / recurring charge on the {@code sopposstore}
+     * merchant account, and no official token-charge field spec has been shared. This method
+     * intentionally makes no HTTP request: guessing at field names for a money-moving API is
+     * worse than failing loudly.
+     *
+     * TODO: verify against ABA's real COF spec once available — replace this body with the
+     * actual server-to-server token-charge request (endpoint path, required fields, hash field
+     * order, response shape) before {@code SubscriptionServiceImpl#attemptAutoRenewals} can ever
+     * succeed.
+     */
+    public PaywayPurchaseResult chargeStoredToken(String tranId, String paymentToken, BigDecimal amount, String currency) {
+        log.error("[PayWay] chargeStoredToken called but ABA Card-on-File is not enabled/spec'd — "
+            + "refusing to guess at field names for tran_id={}", tranId);
+        AppException ex = new AppException(ErrorCode.AUTO_RENEW_NOT_AVAILABLE,
+            "Card-on-file auto-renewal is not available yet (ABA has not enabled recurring charge for this merchant)");
+        ex.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);
+        throw ex;
     }
 
     /** Server-to-server status check — the source of truth for a transaction. */

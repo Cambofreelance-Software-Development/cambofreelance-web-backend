@@ -53,4 +53,24 @@ public class UserSubscriptionEntity extends BaseEntity implements Serializable {
     @Column(name = "expires_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date expiresAt;
+
+    /** Opt-in to Card-on-File auto-charge. Only ever meaningful once payway.cof-enabled=true. */
+    @Column(name = "auto_renew")
+    private Boolean autoRenew = false;
+
+    /** Opaque token PayWay returns once a card is tokenized — never raw card data. */
+    @Column(name = "payment_token")
+    private String paymentToken;
+
+    @Column(name = "payment_token_captured_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date paymentTokenCapturedAt;
+
+    @Column(name = "auto_renew_failure_count")
+    private Integer autoRenewFailureCount = 0;
+
+    /** Guards the renewal job from re-attempting the same subscription twice in one run window. */
+    @Column(name = "auto_renew_last_attempt_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date autoRenewLastAttemptAt;
 }

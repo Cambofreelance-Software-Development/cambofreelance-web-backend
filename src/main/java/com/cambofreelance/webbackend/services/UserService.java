@@ -57,8 +57,8 @@ public interface UserService {
 
     UserProfileResponse toProfileResponse(UserEntity user);
 
-    /** Generates a 6-digit OTP stored in Redis and returns it (dev mode — no email). */
-    String forgotPassword(ForgotPasswordRequest request) throws AppException;
+    /** Generates a 6-digit OTP, stores it in Redis, and emails it to the account's address. */
+    void forgotPassword(ForgotPasswordRequest request) throws AppException;
 
     void resetPassword(ResetPasswordRequest request) throws AppException;
 }

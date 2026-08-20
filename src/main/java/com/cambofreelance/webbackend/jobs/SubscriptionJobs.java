@@ -5,6 +5,7 @@ import com.cambofreelance.webbackend.entities.PaymentEventLogEntity;
 import com.cambofreelance.webbackend.repository.PaymentEventLogRepository;
 import com.cambofreelance.webbackend.repository.PaymentTransactionRepository;
 import com.cambofreelance.webbackend.repository.UserSubscriptionRepository;
+import com.cambofreelance.webbackend.services.SubscriptionService;
 import jakarta.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
@@ -22,6 +23,7 @@ public class SubscriptionJobs {
     private final UserSubscriptionRepository subscriptionRepository;
     private final PaymentTransactionRepository transactionRepository;
     private final PaymentEventLogRepository eventLogRepository;
+    private final SubscriptionService subscriptionService;
 
     /** Daily 00:10 — flip ACTIVE subscriptions past their expiry to EXPIRED. */
     @Scheduled(cron = "0 10 0 * * *")
@@ -67,5 +69,17 @@ public class SubscriptionJobs {
         if (!stale.isEmpty()) {
             log.info("[Jobs] expired {} stale pending payments", stale.size());
         }
+    }
+
+    /**
+     * Daily 00:20 (after expireSubscriptions at 00:10, so a sub that just lapsed tonight isn't
+     * double-processed) — attempt Card-on-File renewal charges for eligible subscriptions.
+     * STUBBED: PaywayClient#chargeStoredToken always fails until ABA enables Card-on-File for
+     * this merchant; this job exercises the opt-in/failure-handling/notification scaffolding
+     * today so only the actual charge needs to change later.
+     */
+    @Scheduled(cron = "0 20 0 * * *")
+    public void attemptAutoRenewals() {
+        subscriptionService.attemptAutoRenewals();
     }
 }

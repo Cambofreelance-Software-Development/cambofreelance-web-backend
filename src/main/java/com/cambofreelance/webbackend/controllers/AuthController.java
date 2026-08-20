@@ -52,10 +52,9 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<Object> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        String otp = userService.forgotPassword(request);
-        // otp is null when email not found — return same response for security
-        Object data = (otp != null) ? java.util.Map.of("otp", otp) : "";
-        return new ResponseEntity<>(new MessageResponse(data, ErrorCode.SUCCESS), HttpStatus.OK);
+        userService.forgotPassword(request);
+        // Same response whether or not the email exists — prevents account enumeration.
+        return new ResponseEntity<>(new MessageResponse("If that email exists, a reset code has been sent.", ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
     @PostMapping("/reset-password")
