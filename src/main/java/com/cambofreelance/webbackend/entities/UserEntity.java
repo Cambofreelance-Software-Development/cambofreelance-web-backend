@@ -53,6 +53,12 @@ public class UserEntity extends BaseEntity implements Serializable {
     @Column(name = "REGISTER_CHANNEL")
     private String registerChannel;
 
+    @Column(name = "PHONE_VERIFIED")
+    private Boolean phoneVerified;
+
+    @Column(name = "EMAIL_VERIFIED")
+    private Boolean emailVerified;
+
     @Column(name = "APPROVAL_STATUS")
     private String approvalStatus;
 

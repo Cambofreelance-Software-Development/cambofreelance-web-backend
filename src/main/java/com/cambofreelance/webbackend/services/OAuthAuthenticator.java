@@ -58,41 +58,10 @@ public class OAuthAuthenticator {
             if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
                 throw new AppException(ErrorCode.UNAUTHORIZED, "Invalid credentials");
             }
-            // New device detection
-            boolean isKnownDevice = refreshTokenRepository.existsByUserIdAndDeviceId(
-                user.getUserId(), request.getDeviceId());
-
-            // Concurrent session control (only for new devices)
-            if (!isKnownDevice) {
-                List<RefreshTokenEntity> activeSessions = refreshTokenRepository
-                    .findAllByUserIdAndStatus(user.getUserId(), Constants.STATUS_ACTIVE);
-                if (activeSessions.size() >= maxConcurrentSessions) {
-                    RefreshTokenEntity oldest = activeSessions.stream()
-                        .min(Comparator.comparing(e -> e.getCreatedAt()))
-                        .orElseThrow();
-                    tokenRedisCache.revokeAccessToken(oldest.getAccessToken());
-                    tokenRedisCache.revokeRefreshToken(oldest.getRefreshToken());
-                    oldest.setStatus(Constants.STATUS_DELETE);
-                    refreshTokenRepository.save(oldest);
-                    log.info("Evicted oldest session for userId={} to enforce max={}", user.getUserId(), maxConcurrentSessions);
-                }
+            if (!Boolean.TRUE.equals(user.getPhoneVerified()) && !Boolean.TRUE.equals(user.getEmailVerified())) {
+                throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED, "Account not verified");
             }
-
-            // Build metadata
-            SessionMetadataDto metadata = buildSessionMetadata(httpRequest, !isKnownDevice);
-
-            String accessToken = jwtUtils.generateJwtToken(user, issuedAt, request.getDeviceId());
-            RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(
-                accessToken, user.getUserId(), request.getDeviceId(), Constants.STATUS_ACTIVE, user, metadata);
-
-            // store access token in Redis with TTL
-            TokenCacheDto dto = buildTokenCacheDto(user, request.getDeviceId());
-            tokenRedisCache.storeAccessToken(accessToken, dto, jwtExpirationMs);
-
-            response.setToken(accessToken);
-            response.setRefreshToken(refreshToken.getRefreshToken());
-            response.setExpiresIn(issuedAt);
-            response.setNewDevice(!isKnownDevice);
+            return issueTokens(user, request.getDeviceId(), httpRequest);
 
         } else if (request.getGrantType().equals(Constants.REFRESH_TOKEN)) {
             log.info("Refreshing token with refresh_token: {}", request.getRefreshToken());
@@ -129,6 +98,53 @@ public class OAuthAuthenticator {
             throw new AppException(ErrorCode.BAD_REQUEST, "Unsupported grant type");
         }
 
+        response.setTokenType(Constants.BEARER);
+        response.setScope(List.of("read", "write"));
+        return response;
+    }
+
+    /**
+     * Mints an access token + refresh token for an already-authenticated user (known-device
+     * check, concurrent-session eviction, Redis caching) — shared by the password grant and
+     * the Google OAuth2 login success handler so every login path behaves identically.
+     */
+    public OAuthResponse issueTokens(UserEntity user, String deviceId, HttpServletRequest httpRequest) {
+        OAuthResponse response = new OAuthResponse();
+        Date issuedAt = new Date();
+
+        // New device detection
+        boolean isKnownDevice = refreshTokenRepository.existsByUserIdAndDeviceId(user.getUserId(), deviceId);
+
+        // Concurrent session control (only for new devices)
+        if (!isKnownDevice) {
+            List<RefreshTokenEntity> activeSessions = refreshTokenRepository
+                .findAllByUserIdAndStatus(user.getUserId(), Constants.STATUS_ACTIVE);
+            if (activeSessions.size() >= maxConcurrentSessions) {
+                RefreshTokenEntity oldest = activeSessions.stream()
+                    .min(Comparator.comparing(e -> e.getCreatedAt()))
+                    .orElseThrow();
+                tokenRedisCache.revokeAccessToken(oldest.getAccessToken());
+                tokenRedisCache.revokeRefreshToken(oldest.getRefreshToken());
+                oldest.setStatus(Constants.STATUS_DELETE);
+                refreshTokenRepository.save(oldest);
+                log.info("Evicted oldest session for userId={} to enforce max={}", user.getUserId(), maxConcurrentSessions);
+            }
+        }
+
+        SessionMetadataDto metadata = buildSessionMetadata(httpRequest, !isKnownDevice);
+
+        String accessToken = jwtUtils.generateJwtToken(user, issuedAt, deviceId);
+        RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(
+            accessToken, user.getUserId(), deviceId, Constants.STATUS_ACTIVE, user, metadata);
+
+        // store access token in Redis with TTL
+        TokenCacheDto dto = buildTokenCacheDto(user, deviceId);
+        tokenRedisCache.storeAccessToken(accessToken, dto, jwtExpirationMs);
+
+        response.setToken(accessToken);
+        response.setRefreshToken(refreshToken.getRefreshToken());
+        response.setExpiresIn(issuedAt);
+        response.setNewDevice(!isKnownDevice);
         response.setTokenType(Constants.BEARER);
         response.setScope(List.of("read", "write"));
         return response;

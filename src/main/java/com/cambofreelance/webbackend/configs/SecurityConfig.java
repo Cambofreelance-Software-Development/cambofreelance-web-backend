@@ -1,5 +1,8 @@
 package com.cambofreelance.webbackend.configs;
 
+import com.cambofreelance.webbackend.configs.oauth2.CookieOAuth2AuthorizationRequestRepository;
+import com.cambofreelance.webbackend.configs.oauth2.OAuth2AuthenticationFailureHandler;
+import com.cambofreelance.webbackend.configs.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.cambofreelance.webbackend.filters.AuthTokenFilter;
 import com.cambofreelance.webbackend.filters.IpWhitelistFilter;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,9 @@ public class SecurityConfig {
     private final AuthTokenFilter authTokenFilter;
     private final IpWhitelistFilter ipWhitelistFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -35,6 +41,9 @@ public class SecurityConfig {
                 .requestMatchers(
                     AntPathRequestMatcher.antMatcher("/oauth/token"),
                     AntPathRequestMatcher.antMatcher("/oauth/register"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/register/resolve"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/register/verify-otp"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/register/send-otp"),
                     AntPathRequestMatcher.antMatcher("/openapi/**"),
                     AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
                     AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
@@ -73,6 +82,9 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/forgot-password"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth/reset-password"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/contact"),
+                    // Google login: initiation + Google's redirect-back callback
+                    AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
+                    AntPathRequestMatcher.antMatcher("/login/oauth2/code/**"),
                     // ABA PayWay server-to-server pushback (verified against PayWay before any state change)
                     AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/payway/callback")
                 ).permitAll()
@@ -82,6 +94,11 @@ public class SecurityConfig {
             .addFilterBefore(ipWhitelistFilter, AuthTokenFilter.class)
             .exceptionHandling(ex ->
                 ex.authenticationEntryPoint(customAuthenticationEntryPoint)
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(a -> a.authorizationRequestRepository(cookieOAuth2AuthorizationRequestRepository))
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                .failureHandler(oAuth2AuthenticationFailureHandler)
             );
 
         return http.build();

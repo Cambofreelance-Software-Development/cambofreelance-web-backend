@@ -5,13 +5,18 @@ import com.cambofreelance.webbackend.constants.ErrorCode;
 import com.cambofreelance.webbackend.dto.request.ForgotPasswordRequest;
 import com.cambofreelance.webbackend.dto.request.OAuthRequest;
 import com.cambofreelance.webbackend.dto.request.ResetPasswordRequest;
+import com.cambofreelance.webbackend.dto.request.ResolveVerificationRequest;
+import com.cambofreelance.webbackend.dto.request.SendRegisterOtpRequest;
 import com.cambofreelance.webbackend.dto.request.UserRegisterRequest;
+import com.cambofreelance.webbackend.dto.request.VerifyRegisterOtpRequest;
 import com.cambofreelance.webbackend.dto.response.OAuthResponse;
+import com.cambofreelance.webbackend.entities.UserEntity;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
 import com.cambofreelance.webbackend.services.OAuthAuthenticator;
 import com.cambofreelance.webbackend.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -45,9 +50,32 @@ public class AuthController {
     public ResponseEntity<Object> register(@Valid @RequestBody UserRegisterRequest request,
         @RequestHeader(value = Constants.CLIENT_LANG, required = false) String userLang) {
         log.info("Request for register user {}", request);
-        userService.registerUser(request);
-        MessageResponse messageResponse = new MessageResponse("", ErrorCode.LOGIN_SUCCESS);
+        UserEntity user = userService.registerUser(request);
+        MessageResponse messageResponse = new MessageResponse(Map.of("userId", user.getUserId()), ErrorCode.LOGIN_SUCCESS);
         return new ResponseEntity<>(messageResponse, HttpStatus.OK);
+    }
+
+    @PostMapping("/register/resolve")
+    public ResponseEntity<Object> resolveAccountForVerification(@Valid @RequestBody ResolveVerificationRequest request) {
+        UserEntity user = userService.resolveAccountForVerification(request.getUsername(), request.getPassword());
+        Map<String, Object> data = Map.of(
+            "userId", user.getUserId(),
+            "phoneNumber", user.getPhoneNumber() == null ? "" : user.getPhoneNumber(),
+            "email", user.getEmail() == null ? "" : user.getEmail()
+        );
+        return new ResponseEntity<>(new MessageResponse(data, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PostMapping("/register/send-otp")
+    public ResponseEntity<Object> sendRegisterOtp(@Valid @RequestBody SendRegisterOtpRequest request) {
+        userService.sendRegisterOtp(request.getUserId(), request.getChannel());
+        return new ResponseEntity<>(new MessageResponse("", ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PostMapping("/register/verify-otp")
+    public ResponseEntity<Object> verifyRegisterOtp(@Valid @RequestBody VerifyRegisterOtpRequest request) {
+        userService.verifyRegisterOtp(request.getUserId(), request.getChannel(), request.getOtp());
+        return new ResponseEntity<>(new MessageResponse("", ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
     @PostMapping("/forgot-password")

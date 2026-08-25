@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.services.impl;
 
 import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.constants.ErrorCode;
+import com.cambofreelance.webbackend.constants.RegisterChannel;
 import com.cambofreelance.webbackend.dto.request.AdminUserCreateRequest;
 import com.cambofreelance.webbackend.dto.request.AdminUserUpdateRequest;
 import com.cambofreelance.webbackend.dto.request.BaseRequest;
@@ -10,6 +11,9 @@ import com.cambofreelance.webbackend.dto.request.OAuthRequest;
 import com.cambofreelance.webbackend.dto.request.UpdateProfileRequest;
 import com.cambofreelance.webbackend.dto.request.UserCreateRequest;
 import com.cambofreelance.webbackend.caches.PasswordResetCache;
+import com.cambofreelance.webbackend.caches.RegisterOtpCache;
+import com.cambofreelance.webbackend.constants.OtpChannel;
+import com.cambofreelance.webbackend.services.SmsService;
 import com.cambofreelance.webbackend.dto.request.ForgotPasswordRequest;
 import com.cambofreelance.webbackend.dto.request.ResetPasswordRequest;
 import com.cambofreelance.webbackend.dto.request.UserRegisterRequest;
@@ -34,6 +38,7 @@ import com.cambofreelance.webbackend.services.RefreshTokenService;
 import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.services.UserService;
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
@@ -58,7 +63,9 @@ public class UserServiceImpl implements UserService {
     private final RefreshTokenService refreshTokenService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final PasswordResetCache passwordResetCache;
+    private final RegisterOtpCache registerOtpCache;
     private final EmailService emailService;
+    private final SmsService smsService;
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -201,6 +208,10 @@ public class UserServiceImpl implements UserService {
         userEntity.setUserType(Constants.USER);
         // Self-registered accounts must be approved by an admin before they can subscribe
         userEntity.setApprovalStatus(Constants.APPROVAL_PENDING);
+        // Must confirm a register OTP (phone or email — user's choice) before this account can
+        // log in — see OAuthAuthenticator.
+        userEntity.setPhoneVerified(false);
+        userEntity.setEmailVerified(false);
 
         // Assign PUBLIC_USER role automatically on self-registration
         roleRepository.findByCode("PUBLIC_USER").ifPresent(role -> {
@@ -209,6 +220,122 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(userEntity);
         return userEntity;
+    }
+
+    @Override
+    public void sendRegisterOtp(String userId, String channel) throws AppException {
+        validateOtpChannel(channel);
+        UserEntity user = userRepository.findById(userId)
+            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
+
+        if (registerOtpCache.isOnCooldown(channel, userId)) {
+            throw new AppException(ErrorCode.OTP_SEND_LIMIT_EXCEEDED, "Please wait before requesting another code.");
+        }
+        if (registerOtpCache.isDailySendLimitExceeded(channel, userId)) {
+            throw new AppException(ErrorCode.OTP_SEND_LIMIT_EXCEEDED, "Daily OTP send limit reached. Please try again tomorrow.");
+        }
+        registerOtpCache.markSent(channel, userId);
+        registerOtpCache.incrementDailySendCount(channel, userId);
+
+        if (OtpChannel.PHONE.equals(channel)) {
+            // Twilio Verify generates and holds the code itself — nothing to cache locally.
+            smsService.sendVerification(user.getPhoneNumber());
+        } else {
+            String otp = String.format("%06d", RANDOM.nextInt(1_000_000));
+            registerOtpCache.store(channel, userId, otp);
+            emailService.sendVerificationOtp(user.getEmail(), otp);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void verifyRegisterOtp(String userId, String channel, String otp) throws AppException {
+        validateOtpChannel(channel);
+        UserEntity user = userRepository.findById(userId)
+            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
+
+        if (OtpChannel.PHONE.equals(channel)) {
+            if (!smsService.checkVerification(user.getPhoneNumber(), otp)) {
+                throw new AppException(ErrorCode.INVALID_OTP, "Invalid verification code.");
+            }
+            user.setPhoneVerified(true);
+        } else {
+            String stored = registerOtpCache.get(channel, userId);
+            if (stored == null) {
+                throw new AppException(ErrorCode.OTP_EXPIRED, "Verification code has expired. Please request a new one.");
+            }
+            if (!stored.equals(otp)) {
+                throw new AppException(ErrorCode.INVALID_OTP, "Invalid verification code.");
+            }
+            user.setEmailVerified(true);
+            registerOtpCache.delete(channel, userId);
+        }
+        // A confirmed phone or email is enough proof of a real account — skip the admin
+        // approval queue, same as Google-registered accounts get on sign-up.
+        user.setApprovalStatus(Constants.APPROVAL_APPROVED);
+        userRepository.save(user);
+    }
+
+    private void validateOtpChannel(String channel) throws AppException {
+        if (!OtpChannel.PHONE.equals(channel) && !OtpChannel.EMAIL.equals(channel)) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "channel must be PHONE or EMAIL");
+        }
+    }
+
+    @Override
+    public UserEntity resolveAccountForVerification(String username, String password) throws AppException {
+        OAuthRequest lookup = new OAuthRequest();
+        lookup.setUsername(username);
+        UserEntity user = authUser(lookup);
+
+        if (user == null || !bCryptPasswordEncoder.matches(password, user.getPassword())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED, "Invalid credentials");
+        }
+        return user;
+    }
+
+    @Override
+    @Transactional
+    public UserEntity findOrCreateGoogleUser(String email) throws AppException {
+        Optional<UserEntity> existing = userRepository.findByEmailAndStatus(email, Constants.STATUS_ACTIVE);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setStatus(Constants.STATUS_ACTIVE);
+        userEntity.setUserId(UUID.randomUUID().toString());
+        userEntity.setEmail(email);
+        userEntity.setUsername(generateUniqueUsername(email));
+        // Never disclosed/returned — Google-provisioned accounts can't log in via grant_type=password.
+        byte[] randomBytes = new byte[32];
+        RANDOM.nextBytes(randomBytes);
+        userEntity.setPassword(bCryptPasswordEncoder.encode(Base64.getEncoder().encodeToString(randomBytes)));
+        userEntity.setUserType(Constants.USER);
+        userEntity.setRegisterChannel(RegisterChannel.GOOGLE);
+        // Google verifies the email, so unlike self-registration these accounts don't need admin approval.
+        userEntity.setApprovalStatus(Constants.APPROVAL_APPROVED);
+        // Google verifies the email, and there's no phone number to verify on this path anyway.
+        userEntity.setPhoneVerified(true);
+        userEntity.setEmailVerified(true);
+
+        roleRepository.findByCode("PUBLIC_USER").ifPresent(role -> userEntity.getRoles().add(role));
+
+        userRepository.save(userEntity);
+        return userEntity;
+    }
+
+    private String generateUniqueUsername(String email) {
+        String localPart = email.substring(0, email.indexOf('@')).toLowerCase()
+            .replaceAll("[^a-z0-9._-]", "");
+        if (localPart.isBlank()) {
+            localPart = "user";
+        }
+        String candidate = localPart;
+        while (userRepository.findByUsernameAndStatus(candidate, Constants.STATUS_ACTIVE).isPresent()) {
+            candidate = localPart + RANDOM.nextInt(10000, 100000);
+        }
+        return candidate;
     }
 
     @Override
@@ -397,6 +524,9 @@ public class UserServiceImpl implements UserService {
         user.setStatus(Constants.STATUS_ACTIVE);
         // Admin-created accounts are trusted, no separate approval step needed
         user.setApprovalStatus(Constants.APPROVAL_APPROVED);
+        // Admin-created, so there's no self-service OTP step to gate on
+        user.setPhoneVerified(true);
+        user.setEmailVerified(true);
 
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
             Set<RoleEntity> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));

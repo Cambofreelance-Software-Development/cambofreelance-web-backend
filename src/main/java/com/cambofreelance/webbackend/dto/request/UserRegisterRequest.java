@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +21,7 @@ public class UserRegisterRequest {
     private String username;
 
     @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^\\+[1-9]\\d{6,14}$", message = "Phone number must be in international format, e.g. +85512345678")
     private String phoneNumber;
 
     @NotBlank(message = "Email is required")

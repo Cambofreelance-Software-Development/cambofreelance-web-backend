@@ -1,0 +1,17 @@
+package com.cambofreelance.webbackend.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class SendRegisterOtpRequest {
+
+    @NotBlank(message = "User id is required")
+    private String userId;
+
+    /** PHONE or EMAIL */
+    @NotBlank(message = "Channel is required")
+    private String channel;
+}

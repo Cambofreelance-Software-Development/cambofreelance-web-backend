@@ -7,13 +7,15 @@ spring:
   session:
     store-type: none
   datasource:
-    url: jdbc:postgresql://postgres:5432/softpoint_db
+    url: jdbc:postgresql://194.233.91.140:4010/dev_softpoint_auto_id_dev
     username: superuser
-    password: SUPERUSER@@2026#
+    password: CF_SUPERUSER@@2026
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: none
+
   flyway:
     placeholder-replacement: false
     enabled: true
@@ -27,17 +29,22 @@ spring:
 
   cache:
     type: redis
+
   mail:
-    host: smtp.gmail.com
+    host: mail.softpoint.com.kh
     port: 587
-    username: ${MAIL_USERNAME:your-email@gmail.com}
-    password: ${MAIL_PASSWORD:your-app-password}
+    username: soppos@softpoint.com.kh
+    password: g0%cJ]~6p-Z7
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+            required: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
   data:
     redis:
       host: redis
@@ -54,6 +61,14 @@ spring:
       enabled: true
       max-file-size: 50MB
       max-request-size: 52MB
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+            client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
+            scope: openid,email,profile
 otel:
   exporter:
     otlp:
@@ -144,8 +159,31 @@ payway:
   merchant-id: sopposstore
   api-key: fd5607aa-06d6-4ccf-a977-ea754b4c73fb
   # ABA sandbox can't reach localhost; verification still works via /subscriptions/transactions/{tranId}/status polling.
-  callback-url: http://localhost:26022/payway/callback
-  success-url: http://localhost:3000/en/payment/result
-  cancel-url: http://localhost:3000/en/payment/result
-  # Card-on-File (auto-renew): flip only after ABA confirms COF is live for sopposstore.
+  callback-url: https://soppossytem.api.cambofreelance.com/payway/callback
+  success-url: https://soppossytem.cambofreelance.com/en/en/payment/result
+  cancel-url: https://soppossytem.cambofreelance.com/en/en/payment/result
   cof-enabled: false
+
+otp:
+  ttl-minutes: 5
+  resend-cooldown-seconds: 60
+  daily-limit: 5   # max OTP sends per channel per user within a rolling 24h window
+
+sms:
+  provider: twilio   # twilio | plasgate — switches which SmsService bean is active
+  enabled: false   # flip once a provider account is live; while false, OTPs are logged, not texted
+  twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:}
+  plasgate:
+    base-url: https://cloudapi.plasgate.com/rest/send
+    private-key: ${PLASGATE_KEY:}
+    secret: ${PLASGATE_SECRET:}
+    sender: ${PLASGATE_SENDER:}
+
+app:
+  oauth2:
+    authorized-redirect-uris:
+      - https://soppossytem.cambofreelance.com/en/auth/google/callback
+    default-redirect-uri: https://soppossytem.cambofreelance.com/en/auth/google/callback

@@ -39,4 +39,7 @@ public final class ErrorCode {
     public static final String AUTO_RENEW_NOT_AVAILABLE     = "ERR-0019";
     public static final String AUTO_RENEW_TOKEN_MISSING     = "ERR-0020";
     public static final String ACTIVE_SUBSCRIPTION_NOT_FOUND = "ERR-0021";
+    public static final String GOOGLE_AUTH_FAILED = "ERR-0022";
+    public static final String ACCOUNT_NOT_VERIFIED = "ERR-0023";
+    public static final String OTP_SEND_LIMIT_EXCEEDED = "ERR-0024";
 }

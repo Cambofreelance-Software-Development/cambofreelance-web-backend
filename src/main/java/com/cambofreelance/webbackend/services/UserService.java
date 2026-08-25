@@ -31,6 +31,25 @@ public interface UserService {
 
     UserEntity registerUser(UserRegisterRequest req) throws AppException;
 
+    /** Sends (or resends, subject to a cooldown) a register-time OTP over the given channel (PHONE or EMAIL). */
+    void sendRegisterOtp(String userId, String channel) throws AppException;
+
+    /** Verifies the register-time OTP for the given channel and marks that channel as verified. */
+    void verifyRegisterOtp(String userId, String channel, String otp) throws AppException;
+
+    /**
+     * Re-validates credentials (same check as login) and returns the account regardless of its
+     * verification status — lets the client resume the register-OTP flow after a login attempt
+     * was blocked by {@link com.cambofreelance.webbackend.constants.ErrorCode#ACCOUNT_NOT_VERIFIED}.
+     */
+    UserEntity resolveAccountForVerification(String username, String password) throws AppException;
+
+    /**
+     * Logs in an existing account by verified Google email, or auto-provisions a new,
+     * auto-approved one if none exists yet.
+     */
+    UserEntity findOrCreateGoogleUser(String email) throws AppException;
+
     UserEntity getUserById(String userId) throws AppException;
 
     UserProfileResponse getUserProfile(String userId) throws AppException;

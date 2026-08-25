@@ -43,17 +43,22 @@ spring:
 
   cache:
     type: redis
+
   mail:
-    host: smtp.gmail.com
+    host: mail.softpoint.com.kh
     port: 587
-    username: cambofreelance.dev@gmail.com
-    password: pknuscluaqjwrxun
+    username: soppos@softpoint.com.kh
+    password: g0%cJ]~6p-Z7
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+            required: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
   data:
     redis:
       host: 194.233.91.140
@@ -70,6 +75,14 @@ spring:
       enabled: true
       max-file-size: 50MB
       max-request-size: 52MB
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+            client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
+            scope: openid,email,profile
 otel:
   exporter:
     otlp:
@@ -168,3 +181,27 @@ payway:
   cancel-url: https://soppossytem.cambofreelance.com/en/en/payment/result
   # Card-on-File (auto-renew): flip only after ABA confirms COF is live for sopposstore.
   cof-enabled: false
+
+otp:
+  ttl-minutes: 5
+  resend-cooldown-seconds: 60
+  daily-limit: 5   # max OTP sends per channel per user within a rolling 24h window
+
+sms:
+  provider: plasgate   # twilio | plasgate — switches which SmsService bean is active
+  enabled: false   # flip once a provider account is live; while false, OTPs are logged, not texted
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:}
+  plasgate:
+    base-url: https://cloudapi.plasgate.com/rest/send
+    private-key: ${PLASGATE_KEY:}
+    secret: ${PLASGATE_SECRET:}
+    sender: ${PLASGATE_SENDER:}
+
+app:
+  oauth2:
+    authorized-redirect-uris:
+      - http://localhost:3000/en/auth/google/callback
+    default-redirect-uri: http://localhost:3000/en/auth/google/callback
