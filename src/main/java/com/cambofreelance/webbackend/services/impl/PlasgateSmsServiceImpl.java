@@ -59,7 +59,7 @@ public class PlasgateSmsServiceImpl implements SmsService {
             Map<String, String> body = Map.of(
                 "sender", sender,
                 "to", normalize(phoneNumber),
-                "content", "Your CamboFreelance verification code is " + otp
+                "content", "Your Soppossytem.com verification code is " + otp
             );
             webClient.post()
                 .uri(baseUrl + "?private_key=" + privateKey)

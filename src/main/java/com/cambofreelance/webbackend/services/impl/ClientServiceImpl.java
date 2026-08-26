@@ -218,18 +218,26 @@ public class ClientServiceImpl implements ClientService {
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     private ClientEntity getOrCreate(String userId) {
-        return clientRepository.findByUserId(userId).orElseGet(() -> {
-            UserEntity user = requireUser(userId);
-            ClientEntity c = new ClientEntity();
-            c.setId(UUID.randomUUID().toString());
-            c.setUserId(userId);
-            c.setCompanyEmail(user.getEmail());
-            c.setEmailVerified(false);
-            c.setClientStatus(Constants.CLIENT_PENDING);
-            c.setOnboardingStep(Constants.STEP_VERIFY_EMAIL);
-            c.setCreatedBy(userId);
-            return clientRepository.save(c);
+        UserEntity user = requireUser(userId);
+        ClientEntity c = clientRepository.findByUserId(userId).orElseGet(() -> {
+            ClientEntity created = new ClientEntity();
+            created.setId(UUID.randomUUID().toString());
+            created.setUserId(userId);
+            created.setCompanyEmail(user.getEmail());
+            created.setEmailVerified(false);
+            created.setClientStatus(Constants.CLIENT_PENDING);
+            created.setOnboardingStep(Constants.STEP_VERIFY_EMAIL);
+            created.setCreatedBy(userId);
+            return created;
         });
+        // Phone OTP at registration is already proof of a real contact channel — don't make
+        // the user prove it again with a second (email) OTP before onboarding. Covers both
+        // brand-new clients and ones stuck on this step from before phone OTP existed.
+        if (Constants.STEP_VERIFY_EMAIL.equals(c.getOnboardingStep()) && Boolean.TRUE.equals(user.getPhoneVerified())) {
+            c.setEmailVerified(true);
+            c.setOnboardingStep(Constants.STEP_COMPANY_INFO);
+        }
+        return clientRepository.save(c);
     }
 
     /** Resolves an event actor (userId or "SYS") to a display name, caching lookups. */

@@ -189,7 +189,7 @@ otp:
 
 sms:
   provider: plasgate   # twilio | plasgate — switches which SmsService bean is active
-  enabled: false   # flip once a provider account is live; while false, OTPs are logged, not texted
+  enabled: true   # flip once a provider account is live; while false, OTPs are logged, not texted
   twilio:
     account-sid: ${TWILIO_ACCOUNT_SID:}
     auth-token: ${TWILIO_AUTH_TOKEN:}
