@@ -29,6 +29,9 @@ public interface SubscriptionService {
     /** Admin manually settles a payment that PayWay could not confirm automatically. */
     PaymentTransactionResponse manualVerify(String tranId, boolean approve, String note, String adminId);
 
+    /** Admin-initiated refund of a settled (APPROVED) payment. Idempotent if already refunded. */
+    PaymentTransactionResponse refundPayment(String tranId, String reason, String adminId);
+
     java.util.List<com.cambofreelance.webbackend.dto.response.PaymentEventResponse> getPaymentLogs(String tranId);
 
     /** Self-service opt in/out of Card-on-File auto-renewal on the caller's active subscription. */

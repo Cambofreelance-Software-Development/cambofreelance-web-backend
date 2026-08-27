@@ -333,6 +333,44 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    @Transactional
+    @Auditable(action = "REFUND", module = "PAYMENT")
+    public PaymentTransactionResponse refundPayment(String tranId, String reason, String adminId) {
+        PaymentTransactionEntity tx = transactionRepository.findByTranId(tranId)
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.PAYMENT_NOT_FOUND, "Payment transaction not found");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+        if (Constants.PAY_REFUNDED.equals(tx.getPaymentStatus())) {
+            return toPaymentResponse(tx); // already refunded — idempotent
+        }
+        if (!Constants.PAY_APPROVED.equals(tx.getPaymentStatus())) {
+            AppException ex = new AppException(ErrorCode.PAYMENT_NOT_COMPLETED,
+                "Only a settled (approved) payment can be refunded");
+            ex.setHttpStatus(HttpStatus.BAD_REQUEST);
+            throw ex;
+        }
+
+        // Money actually moves here (once ABA's refund API is wired in) — if this throws,
+        // nothing below runs and the transaction stays APPROVED.
+        paywayClient.refund(tx.getTranId(), tx.getAmount(), reason);
+
+        String from = tx.getPaymentStatus();
+        tx.setPaymentStatus(Constants.PAY_REFUNDED);
+        tx.setRefundedAt(new Date());
+        tx.setRefundedBy(adminId);
+        tx.setRefundReason(reason);
+        tx.setUpdatedAt(new Date());
+        tx.setUpdatedBy(adminId);
+        transactionRepository.save(tx);
+        logEvent(tx, from, Constants.PAY_REFUNDED, Constants.PAY_SRC_MANUAL, reason, adminId);
+        billingService.markInvoiceRefunded(tx.getId());
+
+        return toPaymentResponse(tx);
+    }
+
+    @Override
     public List<com.cambofreelance.webbackend.dto.response.PaymentEventResponse> getPaymentLogs(String tranId) {
         PaymentTransactionEntity tx = transactionRepository.findByTranId(tranId)
             .orElseThrow(() -> {
@@ -813,6 +851,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .initiatedBy(t.getInitiatedBy())
             .createdAt(t.getCreatedAt())
             .verifiedAt(t.getVerifiedAt())
+            .refundedBy(t.getRefundedBy())
+            .refundReason(t.getRefundReason())
+            .refundedAt(t.getRefundedAt())
             .build();
     }
 }

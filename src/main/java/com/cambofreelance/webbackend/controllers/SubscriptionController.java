@@ -107,6 +107,18 @@ public class SubscriptionController {
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
+    /** Admin refund — settles money back for an already-approved payment. */
+    @PutMapping("/cms/payments/{tranId}/refund")
+    @PreAuthorize("hasAuthority('payment.refund')")
+    public ResponseEntity<Object> refundPayment(
+        @PathVariable String tranId,
+        @Valid @RequestBody com.cambofreelance.webbackend.dto.request.RefundPaymentRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = subscriptionService.refundPayment(tranId, request.getReason(), adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
     /** Payment workflow log for one transaction */
     @GetMapping("/cms/payments/{tranId}/logs")
     @PreAuthorize("hasAuthority('subscription.view')")

@@ -229,6 +229,28 @@ public class PaywayClient {
         throw ex;
     }
 
+    /**
+     * STUB — ABA's refund API is not documented anywhere in this codebase (no doc bundle, no
+     * prior integration, and full-repo search turns up nothing). Guessing at the endpoint path,
+     * required fields, or hash field order for a money-moving API is worse than failing loudly
+     * (same reasoning as {@link #chargeStoredToken}).
+     *
+     * TODO: once ABA shares its real refund API spec, replace this body with the actual
+     * server-to-server refund request (endpoint path, required fields, hash field order,
+     * response shape) — everything upstream (SubscriptionServiceImpl#refundPayment, the admin
+     * endpoint, and the frontend Refund button) already calls this method and only needs this
+     * one method to start working end-to-end.
+     */
+    public void refund(String tranId, BigDecimal amount, String reason) {
+        log.error("[PayWay] refund called but ABA's refund API is not implemented/spec'd — "
+            + "refusing to guess at field names for tran_id={}", tranId);
+        AppException ex = new AppException(ErrorCode.GENERAL_ERROR,
+            "Automatic refund via ABA PayWay is not available yet — process the refund in ABA's "
+                + "merchant portal, then this action can be extended to record it");
+        ex.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);
+        throw ex;
+    }
+
     /** Server-to-server status check — the source of truth for a transaction. */
     public PaywayTransactionStatus fetchTransactionDetail(String tranId) {
         requireConfig();

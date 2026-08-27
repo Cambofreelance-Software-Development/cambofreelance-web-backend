@@ -75,6 +75,17 @@ public class PaymentTransactionEntity extends BaseEntity implements Serializable
     @Column(name = "verify_note")
     private String verifyNote;
 
+    /** Admin who triggered the refund (null unless refunded) */
+    @Column(name = "refunded_by")
+    private String refundedBy;
+
+    @Column(name = "refund_reason")
+    private String refundReason;
+
+    @Column(name = "refunded_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date refundedAt;
+
     /** Plan this transaction activates onto — same as the subscription's current plan for a
      *  plain renewal, different for a prorated upgrade. */
     @Column(name = "target_plan_id")

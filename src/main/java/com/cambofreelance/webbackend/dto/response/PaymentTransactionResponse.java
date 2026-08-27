@@ -27,4 +27,10 @@ public class PaymentTransactionResponse {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date verifiedAt;
+
+    private String refundedBy;
+    private String refundReason;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
+    private Date refundedAt;
 }
