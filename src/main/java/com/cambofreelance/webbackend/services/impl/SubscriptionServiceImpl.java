@@ -138,6 +138,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             amount = priceFor(plan, cycle);
         }
 
+        // $0 plans never touch the payment gateway — activate immediately instead.
+        boolean freePlan = amount.compareTo(BigDecimal.ZERO) == 0;
+
         // Abandon any previous unpaid checkout attempts
         subscriptionRepository.findByUserIdAndSubStatus(userId, Constants.SUB_PENDING_PAYMENT)
             .forEach(s -> {
@@ -147,10 +150,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 subscriptionRepository.save(s);
             });
 
-        // Auto-renew opt-in only makes sense when starting a brand-new subscription — renewals
-        // and upgrades pay onto an existing sub whose auto-renew state (if any) is unchanged
-        // here and managed instead via setAutoRenew()/adminSetAutoRenew().
-        boolean requestLifetimeToken = activeSub == null && Boolean.TRUE.equals(request.getAutoRenew());
+        // Auto-renew opt-in only makes sense when starting a brand-new, paid subscription —
+        // renewals and upgrades pay onto an existing sub whose auto-renew state (if any) is
+        // unchanged here and managed instead via setAutoRenew()/adminSetAutoRenew(); a $0 plan
+        // never gets charged, so there's no card to keep on file.
+        boolean requestLifetimeToken = activeSub == null && !freePlan && Boolean.TRUE.equals(request.getAutoRenew());
         if (requestLifetimeToken) {
             requireCofEnabled();
         }
@@ -180,16 +184,40 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         tx.setUserId(userId);
         tx.setAmount(amount);
         tx.setCurrency("USD");
-        tx.setPaymentOption(request.getPaymentOption());
-        tx.setPaymentStatus(Constants.PAY_PENDING);
+        tx.setPaymentOption(freePlan ? null : request.getPaymentOption());
+        tx.setPaymentStatus(freePlan ? Constants.PAY_APPROVED : Constants.PAY_PENDING);
         tx.setTargetPlanId(plan.getId());
         tx.setProrated(planChange);
         tx.setInitiatedBy(Constants.PAY_INITIATED_USER);
         tx.setCreatedBy(userId);
+        if (freePlan) {
+            tx.setVerifiedAt(new Date());
+            tx.setVerifyMethod("FREE_PLAN");
+        }
         transactionRepository.save(tx);
-        logEvent(tx, null, Constants.PAY_PENDING, Constants.PAY_SRC_CHECKOUT,
-            (planChange ? "Prorated upgrade checkout" : renew ? "Renewal checkout" : "New checkout")
+        logEvent(tx, null, tx.getPaymentStatus(), Constants.PAY_SRC_CHECKOUT,
+            (freePlan ? "Free plan — activated without payment"
+                : planChange ? "Prorated upgrade checkout" : renew ? "Renewal checkout" : "New checkout")
                 + " for plan " + plan.getName(), userId);
+
+        if (freePlan) {
+            // No gateway round-trip for a $0 plan: settle the transaction and activate the
+            // subscription right away, exactly like a PayWay-approved callback would.
+            billingService.issueInvoiceForPayment(tx);
+            activateSubscription(tx);
+            completeClientOnboarding(userId);
+
+            return SubscriptionCheckoutResponse.builder()
+                .tranId(tx.getTranId())
+                .subscriptionId(sub.getId())
+                .amount(amount)
+                .currency("USD")
+                .paymentRequired(false)
+                .prorated(planChange)
+                .creditApplied(creditApplied)
+                .remainingDays(remainingDays)
+                .build();
+        }
 
         // Onboarding: client is now at the payment step
         clientRepository.findByUserId(userId).ifPresent(c -> {
@@ -230,6 +258,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .qrImage(qr.getQrImage())
             .qrString(qr.getQrString())
             .abapayDeeplink(qr.getAbapayDeeplink())
+            .paymentRequired(true)
             .prorated(planChange)
             .creditApplied(creditApplied)
             .remainingDays(remainingDays)
