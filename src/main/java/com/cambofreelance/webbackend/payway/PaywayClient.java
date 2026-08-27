@@ -43,6 +43,12 @@ public class PaywayClient {
     public static final String PURCHASE_PATH           = "/api/payment-gateway/v1/payments/purchase";
     public static final String TRANSACTION_DETAIL_PATH = "/api/payment-gateway/v1/payments/transaction-detail";
 
+    /**
+     * Selects ABA's branded KHQR image design (logo + colored ribbon baked into {@code qrImage}).
+     * Cosmetic only — not part of the signed hash string, so it's sent as a plain extra field.
+     */
+    private static final String QR_IMAGE_TEMPLATE = "template3_color";
+
     /** Bounds how long a checkout request waits on PayWay before failing fast with a clear error. */
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
 
@@ -198,6 +204,7 @@ public class PaywayClient {
         if (!cur.isEmpty())       fields.put("currency", cur);
         if (!rp.isEmpty())        fields.put("return_params", rp);
         if (!lifetime.isEmpty())  fields.put("lifetime", lifetime);
+        fields.put("qr_image_template", QR_IMAGE_TEMPLATE);
         fields.put("hash", hmacSha512B64(toSign));
         return fields;
     }
