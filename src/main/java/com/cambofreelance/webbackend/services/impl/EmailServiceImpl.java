@@ -1,10 +1,13 @@
 package com.cambofreelance.webbackend.services.impl;
 
+import com.cambofreelance.webbackend.constants.ErrorCode;
+import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.services.EmailService;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -18,14 +21,14 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendVerificationOtp(String to, String otp) {
-        send(to, "Verify your email - SOPPOS",
+        sendOrThrow(to, "Verify your email - SOPPOS",
             "Your email verification code is: " + otp + "\n\n"
                 + "This code expires in 15 minutes. If you didn't request this, you can ignore this email.");
     }
 
     @Override
     public void sendPasswordResetOtp(String to, String otp) {
-        send(to, "Reset your password - SOPPOS",
+        sendOrThrow(to, "Reset your password - SOPPOS",
             "Your password reset code is: " + otp + "\n\n"
                 + "This code expires in 15 minutes. If you didn't request this, you can ignore this email.");
     }
@@ -62,15 +65,33 @@ public class EmailServiceImpl implements EmailService {
     // Best-effort: failures are logged, not thrown, so an SMTP hiccup never aborts the caller's primary flow.
     private void send(String to, String subject, String body) {
         try {
-            var message = mailSender.createMimeMessage();
-            var helper = new MimeMessageHelper(message, false, "UTF-8");
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(body, false);
-            mailSender.send(message);
-            log.info("Email sent to {} ({})", to, subject);
+            doSend(to, subject, body);
         } catch (Exception e) {
             log.error("Failed to send email to {} ({})", to, subject, e);
         }
+    }
+
+    // The OTP itself is the primary flow, so a swallowed SMTP failure here would mean the
+    // caller reports success while the user never receives a usable code — must surface as an error.
+    private void sendOrThrow(String to, String subject, String body) {
+        try {
+            doSend(to, subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send email to {} ({})", to, subject, e);
+            AppException ex = new AppException(ErrorCode.OTP_EMAIL_SEND_FAILED,
+                "Failed to send the verification email. Please try again later.");
+            ex.setHttpStatus(HttpStatus.BAD_GATEWAY);
+            throw ex;
+        }
+    }
+
+    private void doSend(String to, String subject, String body) throws Exception {
+        var message = mailSender.createMimeMessage();
+        var helper = new MimeMessageHelper(message, false, "UTF-8");
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(body, false);
+        mailSender.send(message);
+        log.info("Email sent to {} ({})", to, subject);
     }
 }
