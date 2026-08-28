@@ -9,7 +9,7 @@ spring:
   datasource:
     url: jdbc:postgresql://postgres:5432/softpoint_db
     username: superuser
-    password: CSUPERUSER@@2026#
+    password: SUPERUSER@@2026#
     driver-class-name: org.postgresql.Driver
 
   jpa:
