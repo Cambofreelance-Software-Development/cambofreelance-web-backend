@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.services;
 
 import java.util.Date;
+import java.util.List;
 
 public interface EmailService {
 
@@ -18,4 +19,11 @@ public interface EmailService {
 
     /** An auto-renew charge succeeded. Unreachable until PaywayClient#chargeStoredToken is implemented. */
     void sendAutoRenewSuccess(String to, String planName, Date newExpiresAt);
+
+    /** Admin follow-up alert: a customer's subscription is approaching its expiry date. */
+    void sendSubscriptionExpiringAlert(List<String> to, String customerUsername, String customerEmail,
+        String planName, Date expiresAt, long daysRemaining);
+
+    /** Admin-triggered check that outgoing SMTP is actually working. Must throw on failure. */
+    void sendTestEmail(String to);
 }

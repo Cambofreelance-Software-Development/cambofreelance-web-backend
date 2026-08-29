@@ -14,4 +14,5 @@ public class CmsGeneralSettingResponse {
     private String siteLogo;
     private String siteLogoFooter;
     private String siteDescription;
+    private String siteEmail;
 }

@@ -126,4 +126,12 @@ public final class Constants {
     public static final String INV_PAID = "PAID";
     public static final String INV_REFUNDED = "REFUNDED";
     public static final String INV_CANCELLED = "CANCELLED";
+
+    // Admin roles
+    public static final String ROLE_ADMIN = "ADMIN";
+    public static final String ROLE_SUPER_ADMIN = "SUPER_ADMIN";
+
+    // Admin notification types / reference types
+    public static final String NOTIF_TYPE_SUBSCRIPTION_EXPIRING = "SUBSCRIPTION_EXPIRING";
+    public static final String NOTIF_REF_SUBSCRIPTION = "SUBSCRIPTION";
 }

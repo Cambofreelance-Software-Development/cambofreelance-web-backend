@@ -32,4 +32,11 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
          + "AND (s.autoRenewLastAttemptAt IS NULL OR s.autoRenewLastAttemptAt < :attemptCutoff)")
     List<UserSubscriptionEntity> findAutoRenewCandidates(@Param("status") String status, @Param("from") Date from,
         @Param("to") Date to, @Param("maxFailures") int maxFailures, @Param("attemptCutoff") Date attemptCutoff);
+
+    /** ACTIVE subscriptions expiring within the window that haven't been notified at every threshold yet. */
+    @Query("SELECT s FROM UserSubscriptionEntity s WHERE s.subStatus = :status "
+         + "AND s.expiresAt BETWEEN :from AND :to "
+         + "AND (s.notice7dSent = false OR s.notice3dSent = false OR s.notice1dSent = false)")
+    List<UserSubscriptionEntity> findExpiryReminderCandidates(
+        @Param("status") String status, @Param("from") Date from, @Param("to") Date to);
 }

@@ -43,4 +43,6 @@ public final class ErrorCode {
     public static final String ACCOUNT_NOT_VERIFIED = "ERR-0023";
     public static final String OTP_SEND_LIMIT_EXCEEDED = "ERR-0024";
     public static final String OTP_EMAIL_SEND_FAILED = "ERR-0025";
+    public static final String NOTIFICATION_NOT_FOUND = "ERR-0026";
+    public static final String TEST_EMAIL_SEND_FAILED = "ERR-0027";
 }

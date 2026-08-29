@@ -5,6 +5,7 @@ import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.services.EmailService;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,14 +24,16 @@ public class EmailServiceImpl implements EmailService {
     public void sendVerificationOtp(String to, String otp) {
         sendOrThrow(to, "Verify your email - SOPPOS",
             "Your email verification code is: " + otp + "\n\n"
-                + "This code expires in 15 minutes. If you didn't request this, you can ignore this email.");
+                + "This code expires in 15 minutes. If you didn't request this, you can ignore this email.",
+            ErrorCode.OTP_EMAIL_SEND_FAILED, "Failed to send the verification email. Please try again later.");
     }
 
     @Override
     public void sendPasswordResetOtp(String to, String otp) {
         sendOrThrow(to, "Reset your password - SOPPOS",
             "Your password reset code is: " + otp + "\n\n"
-                + "This code expires in 15 minutes. If you didn't request this, you can ignore this email.");
+                + "This code expires in 15 minutes. If you didn't request this, you can ignore this email.",
+            ErrorCode.OTP_EMAIL_SEND_FAILED, "Failed to send the verification email. Please try again later.");
     }
 
     @Override
@@ -58,6 +61,27 @@ public class EmailServiceImpl implements EmailService {
                 + "Your subscription is now active until " + fmt(newExpiresAt) + ".");
     }
 
+    @Override
+    public void sendSubscriptionExpiringAlert(List<String> to, String customerUsername, String customerEmail,
+            String planName, Date expiresAt, long daysRemaining) {
+        if (to == null || to.isEmpty()) {
+            return;
+        }
+        String dayWord = daysRemaining == 1 ? "day" : "days";
+        send(to.toArray(new String[0]), "Subscription expiring in " + daysRemaining + " " + dayWord + " - SOPPOS",
+            "Customer " + customerUsername + " (" + customerEmail + ") is subscribed to the " + planName
+                + " plan, which expires on " + fmt(expiresAt) + ".\n\n"
+                + "Consider reaching out to help them renew before it lapses.");
+    }
+
+    @Override
+    public void sendTestEmail(String to) {
+        sendOrThrow(to, "Test email - SOPPOS",
+            "This is a test email from the CamboFreelance admin dashboard to confirm outgoing "
+                + "email is configured correctly. If you received this, SMTP is working.",
+            ErrorCode.TEST_EMAIL_SEND_FAILED, "Failed to send the test email. Check the SMTP configuration.");
+    }
+
     private static String fmt(Date date) {
         return new SimpleDateFormat("yyyy-MM-dd").format(date);
     }
@@ -71,15 +95,25 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    // The OTP itself is the primary flow, so a swallowed SMTP failure here would mean the
-    // caller reports success while the user never receives a usable code — must surface as an error.
-    private void sendOrThrow(String to, String subject, String body) {
+    // Same as send(String, ...) above, but for a notification going to multiple recipients at once
+    // (e.g. every ADMIN/SUPER_ADMIN) — one SMTP round-trip instead of one send per recipient.
+    private void send(String[] to, String subject, String body) {
+        try {
+            doSend(to, subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send email to {} ({})", String.join(",", to), subject, e);
+        }
+    }
+
+    // Shared by any caller whose primary flow depends on the email actually arriving (OTP, the
+    // admin test-email check) — a swallowed SMTP failure here would mean the caller reports
+    // success while the recipient never gets anything, so it must surface as an error instead.
+    private void sendOrThrow(String to, String subject, String body, String errorCode, String errorMessage) {
         try {
             doSend(to, subject, body);
         } catch (Exception e) {
             log.error("Failed to send email to {} ({})", to, subject, e);
-            AppException ex = new AppException(ErrorCode.OTP_EMAIL_SEND_FAILED,
-                "Failed to send the verification email. Please try again later.");
+            AppException ex = new AppException(errorCode, errorMessage);
             ex.setHttpStatus(HttpStatus.BAD_GATEWAY);
             throw ex;
         }
@@ -93,5 +127,15 @@ public class EmailServiceImpl implements EmailService {
         helper.setText(body, false);
         mailSender.send(message);
         log.info("Email sent to {} ({})", to, subject);
+    }
+
+    private void doSend(String[] to, String subject, String body) throws Exception {
+        var message = mailSender.createMimeMessage();
+        var helper = new MimeMessageHelper(message, false, "UTF-8");
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(body, false);
+        mailSender.send(message);
+        log.info("Email sent to {} ({})", String.join(",", to), subject);
     }
 }

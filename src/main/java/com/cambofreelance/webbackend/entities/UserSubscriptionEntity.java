@@ -73,4 +73,14 @@ public class UserSubscriptionEntity extends BaseEntity implements Serializable {
     @Column(name = "auto_renew_last_attempt_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date autoRenewLastAttemptAt;
+
+    /** One-shot flags so the expiry-reminder job never re-notifies the same threshold twice. Reset on renewal. */
+    @Column(name = "notice_7d_sent")
+    private Boolean notice7dSent = false;
+
+    @Column(name = "notice_3d_sent")
+    private Boolean notice3dSent = false;
+
+    @Column(name = "notice_1d_sent")
+    private Boolean notice1dSent = false;
 }

@@ -1,5 +1,6 @@
 package com.cambofreelance.webbackend.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
@@ -25,4 +26,8 @@ public class CmsGeneralSettingRequest {
     private String siteLogoFooter;
 
     private String siteDescription;
+
+    /** Recipient for admin-facing notifications (contact form, subscription-expiry alerts, etc). */
+    @Email
+    private String siteEmail;
 }

@@ -57,6 +57,13 @@ public class CmsSettingController {
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
+    @PostMapping("/general/test-email")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> sendTestEmail(@RequestParam String to) {
+        cmsSettingService.sendTestEmail(to);
+        return new ResponseEntity<>(new MessageResponse("Test email sent.", ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
     // ── Social ────────────────────────────────────────────────────────────────
 
     @GetMapping("/social")

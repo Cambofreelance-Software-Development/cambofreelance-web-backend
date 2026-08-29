@@ -30,6 +30,7 @@ import com.cambofreelance.webbackend.entities.CmsSettingEntity;
 import com.cambofreelance.webbackend.repository.CmsSettingRepository;
 import com.cambofreelance.webbackend.audit.Auditable;
 import com.cambofreelance.webbackend.services.CmsSettingService;
+import com.cambofreelance.webbackend.services.EmailService;
 import com.cambofreelance.webbackend.services.SpacesService;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
@@ -60,6 +61,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     private final CmsSettingRepository repository;
     private final SpacesService spacesService;
     private final IpWhitelistCache ipWhitelistCache;
+    private final EmailService emailService;
 
     @Value("${cms.upload.dir:uploads/logos}")
     private String uploadDir;
@@ -80,6 +82,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
             .siteLogo(m.getOrDefault("site_logo", ""))
             .siteLogoFooter(m.getOrDefault("site_logo_footer", ""))
             .siteDescription(m.getOrDefault("site_description", ""))
+            .siteEmail(m.getOrDefault("site_email", ""))
             .build();
     }
 
@@ -101,8 +104,16 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         if (req.getSiteDescription() != null) {
             values.put("site_description", req.getSiteDescription());
         }
+        if (req.getSiteEmail() != null) {
+            values.put("site_email", req.getSiteEmail());
+        }
         batchUpsert(SettingGroup.GENERAL, values);
         return getGeneralSettings();
+    }
+
+    @Override
+    public void sendTestEmail(String to) {
+        emailService.sendTestEmail(to);
     }
 
     @Override

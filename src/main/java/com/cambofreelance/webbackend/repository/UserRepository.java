@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.repository;
 
 import com.cambofreelance.webbackend.entities.UserEntity;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,4 +26,8 @@ public interface UserRepository extends JpaRepository<UserEntity, String>, JpaSp
            "JOIN r.permissions p " +
            "WHERE u.userId = :userId AND r.status = 'ACT'")
     Set<String> findActivePermissionCodesByUserId(@Param("userId") String userId);
+
+    @Query("SELECT DISTINCT u FROM UserEntity u JOIN u.roles r "
+         + "WHERE r.code IN :roleCodes AND u.status = :status")
+    List<UserEntity> findByRoleCodesAndStatus(@Param("roleCodes") List<String> roleCodes, @Param("status") String status);
 }

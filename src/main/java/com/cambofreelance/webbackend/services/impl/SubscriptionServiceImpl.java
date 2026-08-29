@@ -21,6 +21,7 @@ import com.cambofreelance.webbackend.repository.PricingPlanRepository;
 import com.cambofreelance.webbackend.repository.UserRepository;
 import com.cambofreelance.webbackend.repository.UserSubscriptionRepository;
 import com.cambofreelance.webbackend.services.EmailService;
+import com.cambofreelance.webbackend.services.NotificationService;
 import com.cambofreelance.webbackend.services.SubscriptionService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
@@ -57,6 +58,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     /** Don't re-attempt a subscription the job already tried within this window. */
     private static final long AUTO_RENEW_RETRY_HOURS = 20;
 
+    /** Days-before-expiry marks the reminder job checks, most urgent first. */
+    private static final int[] EXPIRY_NOTICE_THRESHOLDS = {1, 3, 7};
+
     private final UserRepository userRepository;
     private final PricingPlanRepository planRepository;
     private final UserSubscriptionRepository subscriptionRepository;
@@ -66,6 +70,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final com.cambofreelance.webbackend.services.BillingService billingService;
     private final PaywayClient paywayClient;
     private final EmailService emailService;
+    private final NotificationService notificationService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     /** ABA has not enabled Card-on-File for this merchant yet — flip only once confirmed. */
@@ -551,6 +556,100 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
     }
 
+    @Override
+    @Transactional
+    public void notifyExpiringSubscriptions() {
+        Date now = new Date();
+        Calendar windowEndCal = Calendar.getInstance();
+        windowEndCal.setTime(now);
+        windowEndCal.add(Calendar.DAY_OF_MONTH, EXPIRY_NOTICE_THRESHOLDS[EXPIRY_NOTICE_THRESHOLDS.length - 1]);
+
+        List<UserSubscriptionEntity> candidates = subscriptionRepository.findExpiryReminderCandidates(
+            Constants.SUB_ACTIVE, now, windowEndCal.getTime());
+        for (UserSubscriptionEntity sub : candidates) {
+            try {
+                maybeNotifyExpiry(sub, now);
+            } catch (Exception e) {
+                // One candidate's failure must never abort the batch.
+                log.error("[ExpiryReminder] unexpected error for sub={}", sub.getId(), e);
+            }
+        }
+    }
+
+    private void maybeNotifyExpiry(UserSubscriptionEntity sub, Date now) {
+        long daysRemaining = daysBetween(now, sub.getExpiresAt());
+        Integer threshold = null;
+        for (int t : EXPIRY_NOTICE_THRESHOLDS) {
+            if (daysRemaining <= t && !isNoticeSent(sub, t)) {
+                threshold = t;
+                break;
+            }
+        }
+        if (threshold == null) {
+            return;
+        }
+
+        // Mark this tier and every coarser tier sent, so a subscription that jumps straight to a
+        // closer tier (e.g. created already near expiry) fires exactly one notice per run, not a stack.
+        for (int t : EXPIRY_NOTICE_THRESHOLDS) {
+            if (t >= threshold) {
+                markNoticeSent(sub, t);
+            }
+        }
+        subscriptionRepository.save(sub);
+
+        UserEntity user = userRepository.findById(sub.getUserId()).orElse(null);
+        PricingPlanEntity plan = planRepository.findById(sub.getPlanId()).orElse(null);
+        String planName = plan != null ? plan.getName() : "Unknown plan";
+        String customerLabel = user != null ? user.getUsername() + " (" + user.getEmail() + ")" : sub.getUserId();
+        String dayWord = daysRemaining == 1 ? "day" : "days";
+
+        notificationService.create(
+            Constants.NOTIF_TYPE_SUBSCRIPTION_EXPIRING,
+            "Subscription expiring in " + daysRemaining + " " + dayWord,
+            customerLabel + "'s " + planName + " subscription expires on " + new SimpleDateFormat("yyyy-MM-dd").format(sub.getExpiresAt())
+                + ". Consider following up to renew.",
+            sub.getId(), Constants.NOTIF_REF_SUBSCRIPTION);
+
+        if (user != null) {
+            List<String> adminEmails = resolveAdminEmails();
+            if (!adminEmails.isEmpty()) {
+                emailService.sendSubscriptionExpiringAlert(
+                    adminEmails, user.getUsername(), user.getEmail(), planName, sub.getExpiresAt(), daysRemaining);
+            } else {
+                log.warn("[ExpiryReminder] no ADMIN/SUPER_ADMIN users with an email found; in-app notification still created");
+            }
+        }
+    }
+
+    private boolean isNoticeSent(UserSubscriptionEntity sub, int thresholdDays) {
+        return switch (thresholdDays) {
+            case 1 -> Boolean.TRUE.equals(sub.getNotice1dSent());
+            case 3 -> Boolean.TRUE.equals(sub.getNotice3dSent());
+            case 7 -> Boolean.TRUE.equals(sub.getNotice7dSent());
+            default -> throw new IllegalArgumentException("Unsupported expiry notice threshold: " + thresholdDays);
+        };
+    }
+
+    private void markNoticeSent(UserSubscriptionEntity sub, int thresholdDays) {
+        switch (thresholdDays) {
+            case 1 -> sub.setNotice1dSent(true);
+            case 3 -> sub.setNotice3dSent(true);
+            case 7 -> sub.setNotice7dSent(true);
+            default -> throw new IllegalArgumentException("Unsupported expiry notice threshold: " + thresholdDays);
+        }
+    }
+
+    private List<String> resolveAdminEmails() {
+        return userRepository.findByRoleCodesAndStatus(
+                List.of(Constants.ROLE_ADMIN, Constants.ROLE_SUPER_ADMIN), Constants.STATUS_ACTIVE)
+            .stream()
+            .map(UserEntity::getEmail)
+            .filter(StringUtils::hasText)
+            .distinct()
+            .toList();
+    }
+
     /** Resolves an event actor (userId or "SYS") to a display name, caching lookups. */
     private String resolveActorName(String actor, java.util.Map<String, String> cache) {
         if (actor == null || actor.isBlank()) return null;
@@ -654,6 +753,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
         sub.setSubStatus(Constants.SUB_ACTIVE);
         sub.setExpiresAt(cal.getTime());
+        // A fresh cycle starts here — re-arm the expiry reminder thresholds for it.
+        sub.setNotice7dSent(false);
+        sub.setNotice3dSent(false);
+        sub.setNotice1dSent(false);
         sub.setUpdatedAt(now);
         sub.setUpdatedBy(Constants.SYSTEM);
         subscriptionRepository.save(sub);

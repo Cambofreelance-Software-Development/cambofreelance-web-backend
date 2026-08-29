@@ -82,4 +82,13 @@ public class SubscriptionJobs {
     public void attemptAutoRenewals() {
         subscriptionService.attemptAutoRenewals();
     }
+
+    /**
+     * Daily 00:15 (after expireSubscriptions at 00:10, so a sub that lapsed overnight is already
+     * EXPIRED and excluded) — remind admins of ACTIVE subscriptions crossing the 7/3/1-day expiry marks.
+     */
+    @Scheduled(cron = "0 15 0 * * *")
+    public void notifyExpiringSubscriptions() {
+        subscriptionService.notifyExpiringSubscriptions();
+    }
 }

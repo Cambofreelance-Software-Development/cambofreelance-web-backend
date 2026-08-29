@@ -42,4 +42,7 @@ public interface SubscriptionService {
 
     /** Scheduled by SubscriptionJobs — attempts stored-token renewal for subscriptions nearing expiry. */
     void attemptAutoRenewals();
+
+    /** Scheduled by SubscriptionJobs — reminds admins of ACTIVE subscriptions crossing the 7/3/1-day expiry marks. */
+    void notifyExpiringSubscriptions();
 }

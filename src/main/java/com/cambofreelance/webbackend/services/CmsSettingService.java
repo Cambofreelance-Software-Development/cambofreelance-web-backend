@@ -33,6 +33,9 @@ public interface CmsSettingService {
     CmsGeneralSettingResponse updateGeneralSettings(CmsGeneralSettingRequest request);
     String uploadLogo(MultipartFile file);
 
+    /** Sends a one-off test email to confirm outgoing SMTP is actually working. Throws on failure. */
+    void sendTestEmail(String to);
+
     CmsSeoSettingResponse getSeoSettings();
     CmsSeoSettingResponse updateSeoSettings(CmsSeoSettingRequest request);
 
