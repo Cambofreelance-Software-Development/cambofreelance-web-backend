@@ -9,7 +9,9 @@ public class SubscriptionCheckoutRequest {
     @NotBlank
     private String planId;
 
-    /** MONTHLY (default) or YEARLY */
+    /** Ignored for new subscriptions — annual billing only. Ignored for renewals, which inherit
+     *  the existing subscription's billing cycle. Kept for backward compatibility with callers
+     *  that still send it. */
     private String billingCycle;
 
     /** Optional PayWay payment_option: cards, abapay_khqr, alipay, wechat... omit to let PayWay show all */

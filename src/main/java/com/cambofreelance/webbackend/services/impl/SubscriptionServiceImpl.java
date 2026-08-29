@@ -118,10 +118,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 return ex;
             });
 
-        String cycle = activeSub != null
-            ? activeSub.getBillingCycle()
-            : (Constants.BILLING_YEARLY.equalsIgnoreCase(request.getBillingCycle())
-                ? Constants.BILLING_YEARLY : Constants.BILLING_MONTHLY);
+        // Annual billing only — new subscriptions always bill yearly regardless of what the
+        // client sends. Renewals inherit the existing subscription's cycle.
+        String cycle = activeSub != null ? activeSub.getBillingCycle() : Constants.BILLING_YEARLY;
 
         // Switching to a different (higher) plan while still active is a mid-cycle upgrade:
         // charge only the prorated difference and keep the current expiry — don't extend it.
