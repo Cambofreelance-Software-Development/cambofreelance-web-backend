@@ -1,0 +1,1975 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create product — Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --canvas:#ECEFF2; --surface:#FFFFFF;
+  --ink:#0F1A22; --ink-2:#33454F; --muted:#6C7C88;
+  --line:#D6DDE3; --line-2:#E7ECF0;
+  --primary:#0B5265; --primary-700:#084252; --primary-soft:#E4EFF3;
+  --accent:#D97D00; --accent-soft:#FDF2E1;
+  --ok:#147A4E; --ok-soft:#E4F3EB;
+  --danger:#C0342B; --danger-soft:#FBEAE8;
+  --sans:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --r:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--canvas);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1420px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.crumb{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.crumb b{color:var(--ink-2);font-weight:600}
+.topbar h1{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:0}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* buttons */
+.btn{font-family:var(--sans);font-size:13px;font-weight:600;height:36px;padding:0 16px;border-radius:var(--r);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;transition:background .15s,border-color .15s,color .15s}
+.btn:hover{background:#F5F7F9;border-color:#C3CDD5}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-700);border-color:var(--primary-700)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn-ghost:hover{background:#E3E8EC;color:var(--ink)}
+.btn-sm{height:30px;padding:0 10px;font-size:12px}
+.btn-icon{height:38px;width:40px;padding:0;justify-content:center;flex:0 0 auto}
+.btn svg{width:15px;height:15px;stroke-width:1.9}
+
+/* layout */
+.wrap{max-width:1420px;margin:0 auto;padding:20px 24px 120px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 336px;gap:20px;align-items:start}
+.rail{position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.card-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line-2);background:#FBFCFD}
+.card-head h2{margin:0;font-size:14px;font-weight:700}
+.card-head .hint{font-size:12px;color:var(--muted);margin-left:auto}
+.card-body{padding:20px}
+.card.conditional{border-color:#C9D9DE;box-shadow:inset 3px 0 0 var(--primary)}
+.card.conditional .card-head{background:var(--primary-soft)}
+
+/* fields */
+.grid{display:grid;gap:14px 16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.span2{grid-column:span 2}
+.span-all{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+label.lbl{font-size:10.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:5px}
+.req{color:var(--danger);font-weight:700}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  font-family:var(--sans);font-size:13.5px;color:var(--ink);height:38px;padding:0 11px;width:100%;
+  border:1px solid var(--line);border-radius:6px;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+textarea{height:auto;padding:9px 11px;resize:vertical;line-height:1.5}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(11,82,101,.13)}
+input::placeholder{color:#A9B5BE}
+input:disabled,select:disabled,input[readonly]{background:#F1F4F6;color:var(--muted)}
+input:disabled,select:disabled{cursor:not-allowed}
+select{appearance:none;cursor:pointer;padding-right:30px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236C7C88' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;background-size:15px}
+.mono{font-family:var(--mono);letter-spacing:.02em;font-size:13px}
+.with-btn{display:flex;gap:7px}
+.with-btn input,.with-btn select{flex:1;min-width:0}
+.help{font-size:11.5px;color:var(--muted)}
+.err-msg{font-size:11.5px;color:var(--danger);font-weight:500}
+.warn-msg{font-size:11.5px;color:var(--accent);font-weight:500}
+.field.error input,.field.error select{border-color:var(--danger);background:var(--danger-soft)}
+.prefix-input{position:relative}
+.prefix-input input{padding-left:32px}
+.prefix-input .sym{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12.5px;color:var(--muted);pointer-events:none;font-family:var(--mono)}
+
+/* segmented */
+.seg{display:flex;background:#EFF2F5;border:1px solid var(--line);border-radius:7px;padding:3px;gap:3px}
+.seg label{flex:1;position:relative}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:7px 6px;border-radius:5px;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:var(--ink-2);text-align:center;transition:background .15s,color .15s}
+.seg span small{font-size:10px;font-weight:500;color:var(--muted)}
+.seg input:checked + span{background:var(--primary);color:#fff}
+.seg input:checked + span small{color:rgba(255,255,255,.75)}
+.seg input:focus-visible + span{outline:2px solid var(--primary);outline-offset:2px}
+
+/* calc strip */
+.calc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line-2);border:1px solid var(--line-2);border-radius:8px;overflow:hidden;margin-top:16px}
+.calc div{background:#FAFBFC;padding:10px 12px}
+.calc dt{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.calc dd{margin:3px 0 0;font-family:var(--mono);font-size:15px;font-weight:600}
+.calc dd.pos{color:var(--ok)} .calc dd.neg{color:var(--danger)}
+
+/* image */
+.drop{border:1.5px dashed #C3CDD5;border-radius:8px;background:#FAFBFC;padding:18px;text-align:center;cursor:pointer;
+  transition:border-color .15s,background .15s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.drop:hover,.drop.over{border-color:var(--primary);background:var(--primary-soft)}
+.drop svg{width:22px;height:22px;color:var(--muted);stroke-width:1.6}
+.drop b{font-size:12.5px} .drop small{font-size:11px;color:var(--muted)}
+.thumb{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px}
+.thumb img{width:62px;height:62px;object-fit:cover;border-radius:6px;background:#EEF1F4}
+.thumb .meta{min-width:0;flex:1}
+.thumb .meta b{display:block;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thumb .meta small{color:var(--muted);font-size:11px}
+
+/* repeatable rows */
+.rows{display:flex;flex-direction:column;gap:8px}
+.row-item{display:grid;gap:8px;align-items:end;grid-template-columns:34px repeat(var(--cols,3),minmax(0,1fr)) 36px;
+  padding:8px;border:1px solid var(--line-2);border-radius:7px;background:#FBFCFD}
+.row-no{font-family:var(--mono);font-size:11px;color:var(--muted);height:38px;display:flex;align-items:center;justify-content:center}
+.row-del,.row-exp{height:38px;width:36px;border:1px solid var(--line);background:var(--surface);border-radius:6px;cursor:pointer;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.row-del:hover{color:var(--danger);border-color:var(--danger);background:var(--danger-soft)}
+.row-exp:hover{color:var(--primary);border-color:var(--primary)}
+.row-del svg,.row-exp svg{width:15px;height:15px;stroke-width:2}
+
+/* inventory items table */
+.items-head,.item-row{display:grid;gap:8px;align-items:center;
+  grid-template-columns:32px minmax(120px,1.5fr) minmax(100px,1.1fr) minmax(90px,1fr) minmax(90px,.9fr) minmax(120px,1.2fr) 36px 36px}
+.items-head{padding:0 8px 6px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.item-row{padding:8px;border:1px solid var(--line-2);border-radius:7px;background:#FBFCFD}
+.item-row input,.item-row select{height:34px;font-size:12.5px}
+.item-row .cell{min-width:0;display:flex;flex-direction:column;gap:3px}
+.item-row .cell .err-msg{font-size:10.5px}
+.item-row.err{border-color:var(--danger);background:var(--danger-soft)}
+.item-more{grid-column:1/-1;display:none;gap:10px;padding:10px 4px 2px;border-top:1px dashed var(--line);
+  grid-template-columns:repeat(4,minmax(0,1fr));margin-top:4px}
+.item-row.open .item-more{display:grid}
+.st{border-left:3px solid var(--muted)!important}
+.st-available{border-left-color:var(--ok)!important}
+.st-reserved{border-left-color:var(--accent)!important}
+.st-loan{border-left-color:#7A5AF8!important}
+.st-sold,.st-delivered{border-left-color:var(--primary)!important}
+.st-damaged,.st-returned{border-left-color:var(--danger)!important}
+.doc-mini{font-size:11px;color:var(--primary);font-weight:600;cursor:pointer;background:none;border:none;padding:0;text-align:left}
+
+/* packaging */
+.pack-row{display:grid;grid-template-columns:110px 1fr 1fr 1fr;gap:12px;align-items:end;padding:12px 0;border-top:1px solid var(--line-2)}
+.pack-row:first-of-type{border-top:none;padding-top:0}
+.pack-tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);background:var(--primary-soft);
+  border-radius:5px;padding:9px 10px;text-align:center;height:38px;display:flex;align-items:center;justify-content:center}
+.pack-preview{margin-top:14px;padding:12px 14px;border-radius:7px;background:var(--ink);color:#DCE6EA;font-family:var(--mono);font-size:12.5px;
+  display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.pack-preview b{color:#fff;font-weight:600} .pack-preview .eq{color:var(--accent)}
+
+/* variants */
+.switch{display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.switch input{position:absolute;opacity:0;width:0;height:0}
+.switch .track{width:38px;height:22px;border-radius:20px;background:#C7D0D8;position:relative;transition:background .18s;flex:0 0 auto}
+.switch .track i{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .18s;box-shadow:0 1px 2px rgba(15,26,34,.3)}
+.switch input:checked + .track{background:var(--primary)}
+.switch input:checked + .track i{transform:translateX(16px)}
+.switch input:focus-visible + .track{outline:2px solid var(--primary);outline-offset:2px}
+.switch b{font-size:13.5px;font-weight:600}
+.chipset{display:flex;flex-wrap:wrap;gap:7px}
+.chipset button{font-family:var(--sans);font-size:12.5px;font-weight:600;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink-2);border-radius:20px;padding:6px 13px;cursor:pointer;transition:all .15s}
+.chipset button:hover{border-color:var(--primary);color:var(--primary)}
+.chipset button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.var-head,.var-row{display:grid;gap:8px;align-items:center;
+  grid-template-columns:30px minmax(110px,1.3fr) minmax(120px,1.3fr) minmax(110px,1.2fr) minmax(80px,.8fr) minmax(80px,.8fr) minmax(66px,.7fr) 36px}
+.var-head{padding:0 8px 6px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.var-row{padding:8px;border:1px solid var(--line-2);border-radius:7px;background:#FBFCFD}
+.var-row input{height:34px;font-size:12.5px}
+.var-row .cell{min-width:0;display:flex;flex-direction:column;gap:3px}
+.var-row .cell .err-msg{font-size:10.5px}
+.var-name{font-size:12.5px;font-weight:600;line-height:1.3;word-break:break-word}
+.var-name small{display:block;font-weight:500;color:var(--muted);font-size:10.5px}
+@media (max-width:1240px){ .var-head{display:none} .var-row{grid-template-columns:30px repeat(2,minmax(0,1fr)) 36px} }
+@media (max-width:760px){ .var-row{grid-template-columns:1fr 1fr} }
+
+/* documents */
+.doc-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.doc{display:flex;align-items:center;gap:10px;border:1px solid var(--line-2);border-radius:7px;padding:9px 12px;background:#FBFCFD}
+.doc .ico{width:30px;height:30px;border-radius:6px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.doc .ico svg{width:15px;height:15px;stroke-width:1.9}
+.doc .info{min-width:0;flex:1}
+.doc .info b{display:block;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc .info small{font-size:11px;color:var(--muted)}
+.doc select{width:auto;height:30px;font-size:12px;flex:0 0 auto}
+.doc-empty{font-size:12.5px;color:var(--muted);padding:14px;text-align:center;border:1px dashed var(--line);border-radius:7px}
+
+/* live summary plate */
+.plate{background:var(--ink);border-radius:10px;overflow:hidden;color:#E6EDF0;border:1px solid #0A1218;box-shadow:0 8px 24px -12px rgba(15,26,34,.55)}
+.plate-top{padding:12px 16px;border-bottom:1px solid #24333C;display:flex;align-items:center;gap:8px}
+.plate-top span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7E939E;font-weight:600}
+.plate-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+.plate-body{padding:16px}
+.plate-name{font-size:16px;font-weight:700;color:#fff;line-height:1.25;word-break:break-word}
+.plate-name.empty{color:#5D727D;font-weight:500}
+.plate-sub{font-family:var(--mono);font-size:11.5px;color:#8FA6B1;margin-top:4px}
+.plate-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:11px}
+.chip{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:20px;
+  background:#1E2E37;color:#A9C0CB;border:1px solid #2C3D47}
+.chip.hot{background:rgba(217,125,0,.16);color:#F0B45E;border-color:rgba(217,125,0,.35)}
+.chip.live{background:rgba(20,122,78,.18);color:#5FD3A0;border-color:rgba(20,122,78,.4)}
+.plate-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#24333C;border-radius:7px;overflow:hidden;margin-top:14px}
+.plate-cell{background:#16232B;padding:9px 11px}
+.plate-cell dt{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#7E939E;font-weight:600}
+.plate-cell dd{margin:3px 0 0;font-family:var(--mono);font-size:13px;color:#fff;font-weight:500}
+.plate-cell dd.pos{color:#5FD3A0} .plate-cell dd.neg{color:#F08C82}
+.stock-split{margin-top:12px;border:1px solid #24333C;border-radius:7px;overflow:hidden}
+.stock-split .hd{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#7E939E;font-weight:600;padding:8px 11px;border-bottom:1px solid #24333C}
+.stock-split .ln{display:flex;justify-content:space-between;padding:5px 11px;font-size:12px;color:#A9C0CB}
+.stock-split .ln b{font-family:var(--mono);color:#fff;font-weight:500}
+.stock-split .ln .sw{display:inline-flex;align-items:center;gap:7px}
+.stock-split .ln i{width:6px;height:6px;border-radius:50%;display:inline-block}
+.barcode{margin-top:14px;background:#fff;border-radius:5px;padding:8px 10px 5px}
+.bars{display:flex;align-items:flex-end;gap:1px;height:38px}
+.bars i{display:block;background:#0F1A22;flex:0 0 auto}
+.barcode .num{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-align:center;color:#0F1A22;margin-top:4px}
+.plate-foot{border-top:1px solid #24333C;padding:11px 16px}
+.check{display:flex;align-items:center;gap:7px;font-size:12px;color:#A9C0CB;padding:3px 0}
+.check svg{width:13px;height:13px;flex:0 0 auto;stroke-width:2.4}
+.check.done{color:#5FD3A0} .check.todo{color:#F0B45E}
+.rail-actions{display:flex;flex-direction:column;gap:8px}
+.rail-actions .btn{width:100%;justify-content:center;height:40px}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(15,26,34,.5);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-bg[hidden]{display:none}
+.modal{background:var(--surface);border-radius:12px;width:min(600px,100%);max-height:88vh;overflow:auto;box-shadow:0 24px 60px -20px rgba(15,26,34,.6)}
+.modal header{padding:18px 22px 14px;border-bottom:1px solid var(--line-2)}
+.modal header h3{margin:0;font-size:16px}
+.modal header p{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+.modal .body{padding:18px 22px}
+.modal footer{padding:14px 22px;border-top:1px solid var(--line-2);display:flex;gap:8px;justify-content:flex-end;background:#FBFCFD}
+.review{display:grid;grid-template-columns:160px 1fr;gap:1px;background:var(--line-2);border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.review dt{background:#FAFBFC;padding:8px 12px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.review dd{background:var(--surface);padding:8px 12px;margin:0;font-size:13px;word-break:break-word}
+.review dd.mono{font-family:var(--mono)}
+.review .sec{grid-column:1/-1;background:var(--ink);color:#B9CBD4;padding:6px 12px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11.5px;color:var(--muted)}
+.flow b{background:var(--primary-soft);color:var(--primary);border-radius:20px;padding:3px 9px;font-weight:600;font-size:11px}
+.flow span{color:#B3BEC6}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,140%);background:var(--ink);color:#fff;border-radius:9px;padding:12px 18px;z-index:90;
+  display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:500;box-shadow:0 14px 34px -12px rgba(15,26,34,.7);
+  transition:transform .28s cubic-bezier(.2,.9,.3,1);max-width:calc(100vw - 32px)}
+.toast.show{transform:translate(-50%,0)}
+.toast svg{width:17px;height:17px;flex:0 0 auto;stroke-width:2.2}
+.toast .tick{color:#5FD3A0} .toast .warn{color:#F0B45E}
+.scan-flash{animation:flash .5s ease}
+@keyframes flash{0%{background:var(--accent-soft)}100%{background:var(--surface)}}
+
+@media (max-width:1240px){
+  .items-head{display:none}
+  .item-row{grid-template-columns:32px repeat(2,minmax(0,1fr)) 36px 36px}
+  .item-more{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1120px){ .layout{grid-template-columns:minmax(0,1fr)} .rail{position:static;order:-1} }
+@media (max-width:760px){
+  .wrap{padding:16px 14px 100px} .topbar-inner{padding:10px 14px}
+  .g2,.g3,.g4,.calc{grid-template-columns:minmax(0,1fr)}
+  .span2{grid-column:auto}
+  .pack-row{grid-template-columns:1fr 1fr} .pack-tag{grid-column:1/-1}
+  .row-item{grid-template-columns:1fr 1fr;--cols:2}
+  .item-row{grid-template-columns:1fr 1fr} .item-more{grid-template-columns:1fr}
+  .row-no{display:none}
+  .topbar-actions{width:100%} .topbar-actions .btn{flex:1;justify-content:center}
+}
+</style>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <div class="crumb">Inventory <b>›</b> Products <b>›</b> New</div>
+      <h1>Create product</h1>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="btn btn-ghost" id="btnCancel">Cancel</button>
+      <button type="button" class="btn" id="btnDraft">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        Save as draft
+      </button>
+      <button type="button" class="btn btn-primary" id="btnSave">Save product</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<form id="form" novalidate>
+<div class="layout">
+  <div>
+
+    <!-- 1. PRODUCT INFORMATION -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Product information</h2>
+        <span class="hint">This defines the model, not an individual unit</span>
+      </div>
+      <div class="card-body">
+        <div class="grid g4">
+          <div class="field">
+            <label class="lbl" for="ptype">Product type</label>
+            <select id="ptype">
+              <option value="stock">Stock item</option>
+              <option value="vehicle">Vehicle</option>
+              <option value="part">Spare part</option>
+              <option value="electronic">Electronics</option>
+              <option value="service">Service / non-stock</option>
+            </select>
+          </div>
+          <div class="field span2">
+            <label class="lbl" for="name">Product name <span class="req">*</span></label>
+            <input type="text" id="name" placeholder="Honda Dream 125" autocomplete="off">
+            <div class="err-msg" hidden></div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="status">Product status</label>
+            <select id="status">
+              <option value="draft">Draft</option>
+              <option value="active" selected>Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <div class="help">Separate from unit status.</div>
+          </div>
+
+          <div class="field">
+            <label class="lbl" for="sku">SKU <span class="req">*</span></label>
+            <div class="with-btn">
+              <input type="text" id="sku" class="mono" placeholder="MC-HON-DREA-0001" autocomplete="off">
+              <button type="button" class="btn btn-icon" id="btnSku" title="Generate SKU">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
+              </button>
+            </div>
+            <div class="err-msg" hidden></div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="barcode">Barcode <span class="req" id="barcodeReq">*</span></label>
+            <div class="with-btn">
+              <input type="text" id="barcode" class="mono" placeholder="Scan or type" inputmode="numeric" autocomplete="off">
+              <button type="button" class="btn btn-icon" id="btnScan" title="Scan with connected reader">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>
+              </button>
+            </div>
+            <div class="err-msg" hidden></div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="pcode">Product code</label>
+            <input type="text" id="pcode" class="mono" placeholder="Internal reference" autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="lbl" for="mpn">Manufacturer part no.</label>
+            <input type="text" id="mpn" class="mono" placeholder="MPN" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label class="lbl" for="category">Category <span class="req">*</span></label>
+            <select id="category">
+              <option value="">Select category…</option>
+              <optgroup label="Vehicles">
+                <option value="motorcycle">Motorcycle</option>
+                <option value="car">Car</option>
+                <option value="truck">Truck / commercial</option>
+              </optgroup>
+              <optgroup label="Parts &amp; service">
+                <option value="parts">Spare parts</option>
+                <option value="tyres">Tyres &amp; wheels</option>
+                <option value="lubricants">Lubricants &amp; fluids</option>
+                <option value="accessories">Accessories</option>
+              </optgroup>
+              <optgroup label="Devices">
+                <option value="phones">Mobile phones</option>
+                <option value="electronics">Electronics</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="general">General goods</option>
+              </optgroup>
+            </select>
+            <div class="err-msg" hidden></div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="brand">Brand</label>
+            <input type="text" id="brand" list="brands" placeholder="Honda" autocomplete="off">
+            <datalist id="brands">
+              <option>Honda</option><option>Yamaha</option><option>Suzuki</option><option>Toyota</option>
+              <option>Hyundai</option><option>Bosch</option><option>NGK</option><option>Samsung</option>
+            </datalist>
+          </div>
+          <div class="field">
+            <label class="lbl" for="model">Model</label>
+            <input type="text" id="model" placeholder="Dream 125" autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="lbl" for="year">Model year</label>
+            <input type="number" id="year" min="1950" max="2100" placeholder="2026">
+          </div>
+
+          <div class="field">
+            <label class="lbl" for="unit">Unit <span class="req">*</span></label>
+            <select id="unit">
+              <option value="">Select unit…</option>
+              <option value="Piece">Piece</option>
+              <option value="Unit">Unit (vehicle)</option>
+              <option value="Set">Set</option>
+              <option value="Litre">Litre</option>
+              <option value="Kilogram">Kilogram</option>
+              <option value="Metre">Metre</option>
+              <option value="Pair">Pair</option>
+            </select>
+            <div class="err-msg" hidden></div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="supplier">Preferred supplier</label>
+            <select id="supplier">
+              <option value="">Not set</option>
+              <option>Honda Cambodia Co., Ltd</option>
+              <option>N.C.X Distribution</option>
+              <option>Kim Heng Auto Parts</option>
+              <option>Direct import</option>
+            </select>
+          </div>
+          <div class="field span2">
+            <label class="lbl" for="desc">Description</label>
+            <textarea id="desc" rows="2" placeholder="Notes shown on quotes and invoices"></textarea>
+          </div>
+
+          <div class="field span-all">
+            <label class="lbl">Product image</label>
+            <div id="dropZone" class="drop" tabindex="0" role="button" aria-label="Upload product image">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v13"/></svg>
+              <b>Drop an image or browse</b>
+              <small>JPG or PNG, up to 5 MB. Applies to the product, not to individual units.</small>
+            </div>
+            <div id="thumbWrap" hidden class="thumb">
+              <img id="thumbImg" alt="">
+              <div class="meta"><b id="thumbName"></b><small id="thumbSize"></small></div>
+              <button type="button" class="btn btn-sm" id="btnRemoveImg">Remove</button>
+            </div>
+            <input type="file" id="file" accept="image/*" hidden>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PRICING -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Pricing</h2>
+        <span class="hint">Prices exclude tax unless the rule is inclusive</span>
+      </div>
+      <div class="card-body">
+        <div class="grid g4">
+          <div class="field">
+            <label class="lbl" for="currency">Currency</label>
+            <select id="currency">
+              <option value="USD">USD — US dollar</option>
+              <option value="KHR">KHR — Riel</option>
+              <option value="THB">THB — Baht</option>
+              <option value="EUR">EUR — Euro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="effective">Effective from</label>
+            <input type="date" id="effective">
+          </div>
+          <div class="field">
+            <label class="lbl" for="cost">Cost price</label>
+            <div class="prefix-input"><span class="sym cur">$</span><input type="number" id="cost" min="0" step="0.01" class="mono" placeholder="0.00"></div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="retail">Retail price</label>
+            <div class="prefix-input"><span class="sym cur">$</span><input type="number" id="retail" min="0" step="0.01" class="mono" placeholder="0.00"></div>
+            <div class="warn-msg" id="retailWarn" hidden></div>
+            <div class="err-msg" hidden></div>
+          </div>
+
+          <div class="field">
+            <label class="lbl" for="wholesale">Wholesale price</label>
+            <div class="prefix-input"><span class="sym cur">$</span><input type="number" id="wholesale" min="0" step="0.01" class="mono" placeholder="0.00"></div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="vip">VIP price</label>
+            <div class="prefix-input"><span class="sym cur">$</span><input type="number" id="vip" min="0" step="0.01" class="mono" placeholder="0.00"></div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="discVal">Discount</label>
+            <div class="with-btn">
+              <input type="number" id="discVal" min="0" step="0.01" class="mono" placeholder="0">
+              <select id="discType" style="width:118px;flex:0 0 auto">
+                <option value="percent">% off</option>
+                <option value="fixed">Fixed</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="tax">Tax</label>
+            <select id="tax">
+              <option value="0">Not taxable</option>
+              <option value="10" selected>VAT 10% — exclusive</option>
+              <option value="10i">VAT 10% — included</option>
+              <option value="5">Special rate 5%</option>
+            </select>
+          </div>
+        </div>
+
+        <dl class="calc">
+          <div><dt>Gross margin</dt><dd id="cMargin">—</dd></div>
+          <div><dt>Margin %</dt><dd id="cMarginPct">—</dd></div>
+          <div><dt>Selling price after discount</dt><dd id="cAfter">—</dd></div>
+        </dl>
+
+        <div style="margin-top:16px">
+          <label class="lbl" style="margin-bottom:7px">Price history</label>
+          <div class="doc-empty" id="priceHistory">No price changes yet — history starts recording after the first save.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. INVENTORY -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Inventory</h2>
+        <span class="hint">Tracking type decides which stock records are kept</span>
+      </div>
+      <div class="card-body">
+        <div class="field" style="margin-bottom:16px">
+          <label class="lbl">Tracking type <span class="req">*</span></label>
+          <div class="seg" id="trackSeg">
+            <label><input type="radio" name="track" value="quantity" checked><span>Quantity<small>Count only</small></span></label>
+            <label><input type="radio" name="track" value="batch"><span>Batch<small>Lot &amp; expiry</small></span></label>
+            <label><input type="radio" name="track" value="serialized"><span>Serialized<small>One item per record</small></span></label>
+          </div>
+          <div class="help" id="trackNote" style="margin-top:7px">Stock is counted as a single pooled quantity.</div>
+        </div>
+
+        <div class="grid g4">
+          <div class="field">
+            <label class="lbl" for="opening">Opening stock</label>
+            <input type="number" id="opening" min="0" step="1" class="mono" placeholder="0">
+            <div class="help" id="openingHelp">Quantity on hand at go-live.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="reorder">Reorder level</label>
+            <input type="number" id="reorder" min="0" step="1" class="mono" placeholder="0">
+          </div>
+          <div class="field">
+            <label class="lbl" for="minStock">Minimum stock</label>
+            <input type="number" id="minStock" min="0" step="1" class="mono" placeholder="0">
+          </div>
+          <div class="field">
+            <label class="lbl" for="maxStock">Maximum stock</label>
+            <input type="number" id="maxStock" min="0" step="1" class="mono" placeholder="0">
+            <div class="err-msg" hidden></div>
+          </div>
+          <div class="field span2">
+            <label class="lbl" for="warehouse">Default warehouse</label>
+            <select id="warehouse">
+              <option value="">Select warehouse…</option>
+              <option>Main warehouse — Phnom Penh</option>
+              <option>Showroom — Toul Kork</option>
+              <option>Service centre store</option>
+              <option>Transit / in bond</option>
+            </select>
+          </div>
+          <div class="field span2">
+            <label class="lbl" for="location">Default storage location</label>
+            <input type="text" id="location" class="mono" placeholder="A-12-03 (aisle-rack-bin)" autocomplete="off">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. VEHICLE INFORMATION -->
+    <section class="card conditional" id="secVehicle" hidden>
+      <div class="card-head">
+        <h2>Vehicle information</h2>
+        <span class="hint">Specification shared by every unit of this model</span>
+      </div>
+      <div class="card-body">
+        <div class="span-all help" id="vinNote" hidden style="margin-bottom:14px">
+          VIN and engine number identify a physical bike, not the model — enter them per unit in <b>Inventory items</b> below.
+        </div>
+        <div class="grid g3">
+          <div class="field span2 per-unit" id="vinField">
+            <label class="lbl" for="vin">VIN / chassis number</label>
+            <div class="with-btn">
+              <input type="text" id="vin" class="mono" placeholder="MLHJC4110M5000123" autocomplete="off" maxlength="17" style="text-transform:uppercase">
+              <button type="button" class="btn btn-icon" id="btnScanVin" title="Scan VIN plate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg></button>
+            </div>
+            <div class="err-msg" hidden></div>
+          </div>
+          <div class="field per-unit">
+            <label class="lbl" for="engineNo">Engine number</label>
+            <input type="text" id="engineNo" class="mono" placeholder="JC41E-1000123" autocomplete="off">
+            <div class="err-msg" hidden></div>
+          </div>
+
+          <div class="field">
+            <label class="lbl" for="color">Colour <span class="help" id="colorHint" hidden style="text-transform:none;letter-spacing:0"></span></label>
+            <input type="text" id="color" placeholder="Matte black" autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="lbl" for="cc">Engine CC</label>
+            <input type="number" id="cc" min="0" step="1" class="mono" placeholder="125">
+          </div>
+          <div class="field">
+            <label class="lbl" for="fuel">Fuel type</label>
+            <select id="fuel">
+              <option value="">Select…</option>
+              <option>Petrol</option><option>Diesel</option><option>Hybrid</option><option>Electric</option><option>LPG</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="trans">Transmission</label>
+            <select id="trans">
+              <option value="">Select…</option>
+              <option>Manual</option><option>Automatic</option><option>Semi-automatic</option><option>CVT</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="vYear">Model year</label>
+            <input type="number" id="vYear" min="1950" max="2100" placeholder="2026">
+            <div class="help">Synced with product information.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="condition">Condition</label>
+            <select id="condition">
+              <option value="">Select…</option>
+              <option>Brand new</option><option>Used — excellent</option><option>Used — good</option>
+              <option>Used — fair</option><option>For parts</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="warranty">Warranty</label>
+            <select id="warranty">
+              <option value="">No warranty</option>
+              <option>3 months</option><option>6 months</option>
+              <option>12 months / 12,000 km</option><option>24 months / 30,000 km</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. ADDITIONAL ATTRIBUTES -->
+    <section class="card" id="secAttrs">
+      <div class="card-head">
+        <h2>Additional attributes</h2>
+        <span class="hint" id="attrsHint">Driven by the selected category</span>
+      </div>
+      <div class="card-body">
+        <div class="grid g4" id="attrGrid"></div>
+        <div class="doc-empty" id="attrEmpty">Choose a category to load its attribute set, or add a custom attribute below.</div>
+        <div class="rows" id="customAttrs" style="margin-top:12px"></div>
+        <button type="button" class="btn btn-sm" id="btnAddAttr" style="margin-top:10px">+ Add custom attribute</button>
+      </div>
+    </section>
+
+    <!-- VARIANTS -->
+    <section class="card" id="secVariants">
+      <div class="card-head">
+        <h2>Variants</h2>
+        <span class="hint" id="varHint">One product record, several sellable options</span>
+      </div>
+      <div class="card-body">
+        <label class="switch">
+          <input type="checkbox" id="varOn">
+          <span class="track"><i></i></span>
+          <b>Enable variants</b>
+        </label>
+        <div class="help" style="margin-top:8px" id="varIntro">
+          Turn this on when the same model is sold in several options — colours, storage sizes, tyre sizes. Each combination gets its own SKU, barcode, price and stock.
+        </div>
+
+        <div id="varBody" hidden style="margin-top:18px">
+          <div class="field">
+            <label class="lbl">Variant attributes</label>
+            <div class="chipset" id="varAttrPick"></div>
+            <div class="help">Pick what actually changes between units. Everything else stays on the product.</div>
+          </div>
+
+          <div class="grid g3" id="varValues" style="margin-top:14px"></div>
+
+          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;align-items:center">
+            <button type="button" class="btn btn-sm btn-primary" id="btnGenCombos">Generate combinations</button>
+            <button type="button" class="btn btn-sm" id="btnFillSku">Auto-fill SKUs</button>
+            <button type="button" class="btn btn-sm" id="btnFillBar">Fill barcodes</button>
+            <span class="help" id="comboHint" style="margin-left:auto"></span>
+          </div>
+
+          <div style="margin-top:14px">
+            <div class="var-head" id="varHead" hidden>
+              <div>#</div><div>Variant</div><div>SKU *</div><div>Barcode</div>
+              <div>Cost</div><div>Retail</div><div>Stock</div><div></div>
+            </div>
+            <div class="rows" id="varRows"></div>
+            <div class="doc-empty" id="varEmpty">Choose attributes and values, then generate the combinations.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. INVENTORY ITEMS -->
+    <section class="card conditional" id="secItems" hidden>
+      <div class="card-head">
+        <h2 id="itemsTitle">Inventory items</h2>
+        <span class="hint" id="itemsHint">One record per physical item</span>
+      </div>
+      <div class="card-body">
+        <div class="items-head" id="itemsHead"></div>
+        <div class="rows" id="itemRows"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn btn-sm" id="btnAddItem">+ Add item</button>
+          <button type="button" class="btn btn-sm" id="btnScanMulti">Scan multiple</button>
+          <button type="button" class="btn btn-sm" id="btnBulkImport">Bulk import</button>
+          <span class="help" id="itemCount" style="margin-left:auto"></span>
+        </div>
+        <div class="flow" style="margin-top:14px">
+          <span>Lifecycle:</span>
+          <b>Received</b><span>›</span><b>Available</b><span>›</span><b>Reserved</b><span>›</span>
+          <b>Loan pending</b><span>›</span><b>Sold</b><span>›</span><b>Delivered</b>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. BATCHES -->
+    <section class="card conditional" id="secBatch" hidden>
+      <div class="card-head">
+        <h2>Batches</h2>
+        <span class="hint">Opening stock is the total of all batch quantities</span>
+      </div>
+      <div class="card-body">
+        <div class="rows" id="batchRows"></div>
+        <button type="button" class="btn btn-sm" id="btnAddBatch" style="margin-top:10px">+ Add batch</button>
+      </div>
+    </section>
+
+    <!-- 8. PACKAGING -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Unit &amp; packaging</h2>
+        <span class="hint">Set how larger packs convert to the base unit</span>
+      </div>
+      <div class="card-body">
+        <div class="pack-row">
+          <div class="pack-tag">Base</div>
+          <div class="field"><label class="lbl" for="baseUnit">Base unit</label><input type="text" id="baseUnit" placeholder="Piece" readonly></div>
+          <div class="field"><label class="lbl">Conversion</label><input type="text" value="1" class="mono" disabled></div>
+          <div class="field"><label class="lbl" for="baseBarcode">Barcode</label><input type="text" id="baseBarcode" class="mono" placeholder="Product barcode" readonly></div>
+        </div>
+        <div class="pack-row">
+          <div class="pack-tag">Case</div>
+          <div class="field"><label class="lbl" for="caseName">Pack name</label><input type="text" id="caseName" placeholder="Case" autocomplete="off"></div>
+          <div class="field"><label class="lbl" for="caseQty">Base units per case</label><input type="number" id="caseQty" min="0" step="1" class="mono" placeholder="12"></div>
+          <div class="field">
+            <label class="lbl" for="caseBarcode">Barcode</label>
+            <div class="with-btn">
+              <input type="text" id="caseBarcode" class="mono" placeholder="Scan or type">
+              <button type="button" class="btn btn-icon scan-btn" data-target="caseBarcode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 8v8M10 8v8M13.5 8v8M17 8v8"/><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg></button>
+            </div>
+            <div class="err-msg" hidden></div>
+          </div>
+        </div>
+        <div class="pack-row">
+          <div class="pack-tag">Box</div>
+          <div class="field"><label class="lbl" for="boxName">Pack name</label><input type="text" id="boxName" placeholder="Box" autocomplete="off"></div>
+          <div class="field"><label class="lbl" for="boxQty">Cases per box</label><input type="number" id="boxQty" min="0" step="1" class="mono" placeholder="4"></div>
+          <div class="field">
+            <label class="lbl" for="boxBarcode">Barcode</label>
+            <div class="with-btn">
+              <input type="text" id="boxBarcode" class="mono" placeholder="Scan or type">
+              <button type="button" class="btn btn-icon scan-btn" data-target="boxBarcode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 8v8M10 8v8M13.5 8v8M17 8v8"/><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg></button>
+            </div>
+            <div class="err-msg" hidden></div>
+          </div>
+        </div>
+        <div class="pack-preview" id="packPreview">Set a conversion quantity to see the pack ladder.</div>
+      </div>
+    </section>
+
+    <!-- 10. DOCUMENTS -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Product documents</h2>
+        <span class="hint" id="docHint">Specifications, warranty terms, certificates</span>
+      </div>
+      <div class="card-body">
+        <div class="drop" id="docDrop" tabindex="0" role="button" aria-label="Upload documents">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+          <b>Drop files or browse</b>
+          <small>PDF, DOCX, JPG or PNG. Unit-specific papers attach to the item row instead.</small>
+        </div>
+        <input type="file" id="docFile" multiple hidden>
+        <div class="doc-list" id="docList"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- RIGHT RAIL -->
+  <aside class="rail">
+    <div class="plate">
+      <div class="plate-top"><i class="plate-dot"></i><span>Live summary</span></div>
+      <div class="plate-body">
+        <div class="plate-name empty" id="sName">Untitled product</div>
+        <div class="plate-sub" id="sSub">SKU — · No category</div>
+        <div class="plate-chips" id="sChips"></div>
+
+        <dl class="plate-grid">
+          <div class="plate-cell"><dt>Retail</dt><dd id="sRetail">—</dd></div>
+          <div class="plate-cell"><dt>Cost</dt><dd id="sCost">—</dd></div>
+          <div class="plate-cell"><dt>Margin</dt><dd id="sMargin">—</dd></div>
+          <div class="plate-cell"><dt>Opening stock</dt><dd id="sStock">0</dd></div>
+          <div class="plate-cell"><dt>Stock value</dt><dd id="sValue">—</dd></div>
+          <div class="plate-cell"><dt id="sItemsLbl">Serialized items</dt><dd id="sItems">0</dd></div>
+        </dl>
+
+        <div class="stock-split" id="sSplit" hidden>
+          <div class="hd">Inventory items by status</div>
+          <div id="sSplitRows"></div>
+        </div>
+
+        <div class="barcode" id="sBarcodeWrap" hidden>
+          <div class="bars" id="sBars"></div>
+          <div class="num" id="sBarNum"></div>
+        </div>
+      </div>
+      <div class="plate-foot" id="sChecks"></div>
+    </div>
+
+    <div class="rail-actions">
+      <button type="button" class="btn btn-primary" id="btnSave2">Save product</button>
+      <button type="button" class="btn" id="btnDraft2">Save as draft</button>
+    </div>
+  </aside>
+</div>
+</form>
+</div>
+
+<!-- review modal -->
+<div class="modal-bg" id="modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <header>
+      <h3 id="mTitle">Review before saving</h3>
+      <p>Check the details below. Inventory records are created as soon as you confirm.</p>
+    </header>
+    <div class="body"><dl class="review" id="reviewList"></dl></div>
+    <footer>
+      <button type="button" class="btn" id="btnBack">Back to edit</button>
+      <button type="button" class="btn btn-primary" id="btnConfirm">Confirm and save</button>
+    </footer>
+  </div>
+</div>
+
+<!-- bulk import modal -->
+<div class="modal-bg" id="bulkModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bTitle">
+    <header>
+      <h3 id="bTitle">Bulk import inventory items</h3>
+      <p id="bulkFormat">One item per line.</p>
+    </header>
+    <div class="body">
+      <textarea id="bulkText" rows="9" class="mono" placeholder=""></textarea>
+      <div class="help" style="margin-top:8px">Blank cost falls back to the product cost price. Blank status becomes Available.</div>
+      <div class="err-msg" id="bulkErr" hidden style="margin-top:8px"></div>
+    </div>
+    <footer>
+      <button type="button" class="btn" id="btnBulkCancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="btnBulkAdd">Import items</button>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+/* ---------- reference data ---------- */
+const EXISTING = {
+  sku:     ['MC-HON-0001','SP-NGK-0442','EL-SAM-1180'],
+  barcode: ['8850123456789','4901234567894','8801643738495'],
+  vin:     ['MLHJC4110M5000123','JTDBR32E870123456'],
+  engine:  ['JC41E-1000001','2NZ-1234567'],
+  serial:  ['SN-4417-8890','356938035643809']
+};
+
+const VEHICLE_CATS = ['motorcycle','car','truck'];
+const DEVICE_CATS  = ['phones','electronics'];
+const CUR = {USD:'$',KHR:'៛',THB:'฿',EUR:'€'};
+
+/* Category-driven attributes. Vehicle categories omit anything already on the
+   Vehicle information card so nothing is captured twice. */
+const ATTRS = {
+  motorcycle:[
+    {k:'brake', l:'Brake type', o:['Drum','Front disc','Disc / ABS']},
+    {k:'start', l:'Starter', o:['Kick','Electric','Kick + electric']},
+    {k:'wheel', l:'Wheel size', ph:'17 in'}
+  ],
+  car:[
+    {k:'body',  l:'Body type', o:['Sedan','Hatchback','SUV','Pickup','Van','Coupe']},
+    {k:'drive', l:'Drive type', o:['FWD','RWD','AWD','4WD']},
+    {k:'seats', l:'Seat count', ph:'5', num:true},
+    {k:'doors', l:'Doors', ph:'4', num:true}
+  ],
+  truck:[
+    {k:'body',    l:'Body type', o:['Flatbed','Box','Tipper','Tanker','Tractor unit']},
+    {k:'drive',   l:'Drive type', o:['4x2','4x4','6x2','6x4']},
+    {k:'payload', l:'Payload (kg)', ph:'3500', num:true},
+    {k:'axles',   l:'Axle count', ph:'2', num:true}
+  ],
+  phones:[
+    {k:'storage', l:'Storage', o:['64 GB','128 GB','256 GB','512 GB','1 TB']},
+    {k:'ram',     l:'RAM', o:['4 GB','6 GB','8 GB','12 GB','16 GB']},
+    {k:'screen',  l:'Screen size', ph:'6.7 in'},
+    {k:'network', l:'Network status', o:['Unlocked','Locked to carrier','Contract device']}
+  ],
+  electronics:[
+    {k:'voltage', l:'Voltage', ph:'220 V'},
+    {k:'power',   l:'Power', ph:'65 W'},
+    {k:'wty',     l:'Warranty', o:['None','3 months','6 months','12 months','24 months']}
+  ],
+  parts:[
+    {k:'partno',   l:'Part number', ph:'12345-KWB-901', mono:true},
+    {k:'compBrand',l:'Compatible brand', ph:'Honda'},
+    {k:'compModel',l:'Compatible model', ph:'Dream 125, Wave 110'},
+    {k:'position', l:'Fitment position', o:['Front','Rear','Left','Right','Universal']},
+    {k:'wty',      l:'Warranty', o:['None','1 month','3 months','6 months','12 months']}
+  ],
+  tyres:[
+    {k:'size',  l:'Tyre size', ph:'70/90-17', mono:true},
+    {k:'load',  l:'Load index', ph:'38P'},
+    {k:'speed', l:'Speed rating', o:['P','S','T','H','V','W']}
+  ],
+  lubricants:[
+    {k:'visc',   l:'Viscosity', o:['10W-30','10W-40','15W-40','20W-50','5W-30']},
+    {k:'volume', l:'Volume', ph:'0.8 L'},
+    {k:'api',    l:'API grade', ph:'SL / MA2'}
+  ],
+  accessories:[{k:'compModel', l:'Compatible model', ph:'Dream 125'}],
+  general:[]
+};
+
+/* Attributes that make sense to split a product into sellable variants. */
+const VAR_ATTRS = {
+  motorcycle:['Colour','Model year','Trim','Transmission'],
+  car:['Colour','Model year','Trim','Transmission','Engine CC'],
+  truck:['Colour','Model year','Body type','Drive type'],
+  phones:['Colour','Storage','RAM','Network status'],
+  electronics:['Colour','Capacity','Plug type'],
+  parts:['Compatible model','Fitment position','Size'],
+  tyres:['Size','Load index','Speed rating'],
+  lubricants:['Volume','Viscosity'],
+  accessories:['Colour','Size','Material'],
+  general:['Colour','Size','Material']
+};
+
+const STATUSES = [
+  {v:'available', l:'Available', c:'#147A4E'},
+  {v:'reserved',  l:'Reserved',  c:'#D97D00'},
+  {v:'loan',      l:'Loan pending', c:'#7A5AF8'},
+  {v:'sold',      l:'Sold',      c:'#0B5265'},
+  {v:'delivered', l:'Delivered', c:'#0B5265'},
+  {v:'returned',  l:'Returned',  c:'#C0342B'},
+  {v:'damaged',   l:'Damaged',   c:'#C0342B'}
+];
+
+/* ---------- helpers ---------- */
+const val = id => ($('#'+id) ? String($('#'+id).value).trim() : '');
+const num = id => parseFloat(val(id)) || 0;
+const track = () => $('input[name=track]:checked').value;
+const cur = () => CUR[val('currency')] || '$';
+const money = n => cur() + (Number(n)||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const isVehicle = () => VEHICLE_CATS.includes(val('category')) || val('ptype') === 'vehicle';
+const isDevice  = () => DEVICE_CATS.includes(val('category')) || val('ptype') === 'electronic';
+const isPhone   = () => val('category') === 'phones';
+const isService = () => val('ptype') === 'service';
+const needsIdentity = () => isVehicle() || isPhone();
+let trackTouched = false, docs = [], attrValues = {};
+let varPicked = [], varVals = {}, combos = [];
+const varOn = () => $('#varOn').checked;
+
+function setErrorEl(input,msg){
+  if(!input) return;
+  const field = input.closest('.field') || input.closest('.cell');
+  if(!field) return;
+  const box = field.querySelector('.err-msg');
+  field.classList.toggle('error', !!msg);
+  if(box){ box.textContent = msg || ''; box.hidden = !msg; }
+  const row = input.closest('.item-row');
+  if(row) row.classList.toggle('err', !!$$('.err-msg', row).length && !!msg ? true : row.querySelectorAll('.err-msg:not([hidden])').length > 0);
+}
+const setError = (id,msg) => setErrorEl($('#'+id), msg);
+function clearErrors(){
+  $$('.error').forEach(f=>f.classList.remove('error'));
+  $$('.err-msg').forEach(b=>{ b.hidden = true; });
+  $$('.item-row').forEach(r=>r.classList.remove('err'));
+}
+
+/* ---------- inventory item columns ---------- */
+function itemCols(){
+  if(isVehicle()) return [
+    {k:'id',     l:'VIN / chassis', ph:'HN001', req:true, mono:true},
+    {k:'engine', l:'Engine no.',    ph:'ENG001', mono:true},
+    {k:'color',  l:'Colour',        ph:'Black'}
+  ];
+  if(isPhone()) return [
+    {k:'id',     l:'IMEI',   ph:'15 digits', req:true, mono:true},
+    {k:'engine', l:'Model no.', ph:'SM-S928B', mono:true},
+    {k:'color',  l:'Colour', ph:'Titanium'}
+  ];
+  return [
+    {k:'id',     l:'Serial number', ph:'SN-0000-0000', req:true, mono:true},
+    {k:'engine', l:'Reference',     ph:'Optional', mono:true},
+    {k:'color',  l:'Variant',       ph:'Optional'}
+  ];
+}
+
+const delIco = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>`;
+const expIco = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg>`;
+
+function renderItemsHead(){
+  const c = itemCols();
+  $('#itemsHead').innerHTML = '<div>#</div>' + c.map(x=>`<div>${x.l}${x.req?' *':''}</div>`).join('')
+    + '<div>Cost</div><div>Status</div><div></div><div></div>';
+}
+
+function addItem(seed){
+  seed = seed || {};
+  const cols = itemCols(), wrap = $('#itemRows'), n = wrap.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'item-row';
+  row.innerHTML =
+    `<div class="row-no">${String(n).padStart(2,'0')}</div>` +
+    cols.map(c=>`<div class="cell">
+      <input type="text" class="item-in ${c.mono?'mono':''}" data-key="${c.k}" placeholder="${c.ph}" value="${seed[c.k]||''}"
+        ${c.k==='id' && isVehicle() ? 'maxlength="17" style="text-transform:uppercase"' : ''}>
+      <div class="err-msg" hidden></div></div>`).join('') +
+    `<div class="cell"><input type="number" class="item-in mono" data-key="cost" min="0" step="0.01" placeholder="0.00" value="${seed.cost||''}"></div>
+     <div class="cell"><select class="item-in st st-${seed.status||'available'}" data-key="status">
+        ${STATUSES.map(s=>`<option value="${s.v}"${(seed.status||'available')===s.v?' selected':''}>${s.l}</option>`).join('')}
+      </select></div>
+     <button type="button" class="row-exp" aria-label="More detail" aria-expanded="false">${expIco}</button>
+     <button type="button" class="row-del" aria-label="Remove item">${delIco}</button>
+     <div class="item-more">
+       <div class="cell"><label class="lbl">Warehouse</label>
+         <select class="item-in" data-key="warehouse">
+           <option value="">Default</option>
+           <option>Main warehouse — Phnom Penh</option><option>Showroom — Toul Kork</option>
+           <option>Service centre store</option><option>Transit / in bond</option>
+         </select></div>
+       <div class="cell"><label class="lbl">Location</label><input type="text" class="item-in mono" data-key="location" placeholder="Default"></div>
+       <div class="cell"><label class="lbl">Received on</label><input type="date" class="item-in" data-key="received"></div>
+       <div class="cell" data-variant-cell hidden><label class="lbl">Variant</label>
+         <select class="item-in" data-key="variant"><option value="">Unassigned</option></select></div>
+       <div class="cell"><label class="lbl">Unit documents</label>
+         <button type="button" class="doc-mini" data-doc-item>+ Attach registration, invoice…</button></div>
+     </div>`;
+  row.querySelector('.row-del').onclick = ()=>{ row.remove(); renumber('#itemRows'); validateItems(); refresh(); };
+  row.querySelector('.row-exp').onclick = e=>{
+    row.classList.toggle('open');
+    e.currentTarget.setAttribute('aria-expanded', row.classList.contains('open'));
+    e.currentTarget.style.transform = row.classList.contains('open') ? 'rotate(180deg)' : '';
+  };
+  row.querySelector('[data-doc-item]').onclick = ()=>{
+    const id = row.querySelector('[data-key=id]').value.trim() || 'this unit';
+    toast('Document upload for ' + id + ' opens on the item record');
+  };
+  row.querySelector('[data-key=status]').onchange = e=>{
+    e.target.className = 'item-in st st-' + e.target.value; refresh();
+  };
+  const vc = row.querySelector('[data-variant-cell]');
+  vc.hidden = !(varOn() && combos.length);
+  const vs = row.querySelector('[data-key=variant]');
+  vs.innerHTML = '<option value="">Unassigned</option>' +
+    combos.map(c=>`<option${seed.variant === c.key ? ' selected' : ''}>${c.key}</option>`).join('');
+  vs.onchange = ()=>{ renderCombos(); refresh(); };
+  wrap.appendChild(row);
+}
+
+function rebuildItems(){
+  const keys = (isVehicle()?'v':isPhone()?'p':'s');
+  const wrap = $('#itemRows');
+  if(wrap.dataset.kind === keys) return;
+  const kept = Array.from(wrap.children).map(readItem).filter(o=> o.id || o.engine || o.color);
+  wrap.dataset.kind = keys;
+  wrap.innerHTML = '';
+  renderItemsHead();
+  (kept.length ? kept : [{}]).forEach(addItem);
+}
+
+function readItem(row){
+  const o = {};
+  row.querySelectorAll('.item-in').forEach(i=> o[i.dataset.key] = i.value.trim());
+  return o;
+}
+const items = () => Array.from($('#itemRows').children).map(readItem);
+const filledItems = () => items().filter(i=>i.id);
+
+function renumber(sel){
+  Array.from($(sel).children).forEach((r,i)=>{
+    const no = r.querySelector('.row-no'); if(no) no.textContent = String(i+1).padStart(2,'0');
+  });
+}
+
+/* ---------- batches ---------- */
+function addBatch(){
+  const wrap = $('#batchRows'), n = wrap.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'row-item'; row.style.setProperty('--cols','5');
+  row.innerHTML = `
+    <div class="row-no">${String(n).padStart(2,'0')}</div>
+    <div class="field"><label class="lbl">Batch number</label><input type="text" class="mono batch-no" placeholder="LOT-2026-014"><div class="err-msg" hidden></div></div>
+    <div class="field"><label class="lbl">Quantity</label><input type="number" min="0" step="1" class="mono batch-qty" placeholder="0"></div>
+    <div class="field"><label class="lbl">Unit cost</label><input type="number" min="0" step="0.01" class="mono batch-cost" placeholder="0.00"></div>
+    <div class="field"><label class="lbl">Manufactured</label><input type="date" class="batch-mfg"></div>
+    <div class="field"><label class="lbl">Expires</label><input type="date" class="batch-exp"></div>
+    <button type="button" class="row-del" aria-label="Remove batch">${delIco}</button>`;
+  row.querySelector('.row-del').onclick = ()=>{ row.remove(); renumber('#batchRows'); refresh(); };
+  wrap.appendChild(row);
+}
+
+/* ---------- attributes ---------- */
+function renderAttrs(){
+  const set = ATTRS[val('category')] || [];
+  const grid = $('#attrGrid');
+  $$('#attrGrid .item-in, #attrGrid input, #attrGrid select').forEach(i=>{ if(i.dataset.attr) attrValues[i.dataset.attr] = i.value; });
+  grid.innerHTML = set.map(a=>`
+    <div class="field">
+      <label class="lbl">${a.l}</label>
+      ${a.o
+        ? `<select data-attr="${a.k}"><option value="">Select…</option>${a.o.map(o=>`<option${attrValues[a.k]===o?' selected':''}>${o}</option>`).join('')}</select>`
+        : `<input type="${a.num?'number':'text'}" class="${a.mono?'mono':''}" data-attr="${a.k}" placeholder="${a.ph||''}" value="${attrValues[a.k]||''}">`}
+    </div>`).join('');
+  $('#attrEmpty').hidden = set.length > 0 || $('#customAttrs').children.length > 0;
+  $('#attrsHint').textContent = val('category')
+    ? 'Attribute set for ' + catText().toLowerCase()
+    : 'Driven by the selected category';
+}
+function addCustomAttr(){
+  const wrap = $('#customAttrs');
+  const row = document.createElement('div');
+  row.className = 'row-item'; row.style.setProperty('--cols','2');
+  row.innerHTML = `
+    <div class="row-no">•</div>
+    <div class="field"><label class="lbl">Attribute name</label><input type="text" class="cattr-k" placeholder="Country of origin"></div>
+    <div class="field"><label class="lbl">Value</label><input type="text" class="cattr-v" placeholder="Thailand"></div>
+    <button type="button" class="row-del" aria-label="Remove attribute">${delIco}</button>`;
+  row.querySelector('.row-del').onclick = ()=>{ row.remove(); renderAttrs(); };
+  wrap.appendChild(row);
+  $('#attrEmpty').hidden = true;
+}
+function collectAttrs(){
+  const out = [];
+  $$('#attrGrid [data-attr]').forEach(i=>{ if(i.value.trim()){
+    out.push([i.closest('.field').querySelector('.lbl').textContent.trim(), i.value.trim()]);
+  }});
+  $$('#customAttrs .row-item').forEach(r=>{
+    const k = r.querySelector('.cattr-k').value.trim(), v = r.querySelector('.cattr-v').value.trim();
+    if(k && v) out.push([k,v]);
+  });
+  return out;
+}
+
+/* ---------- variants ---------- */
+function renderVarPicker(){
+  const list = VAR_ATTRS[val('category')] || VAR_ATTRS.general;
+  varPicked = varPicked.filter(a=> list.includes(a));
+  $('#varAttrPick').innerHTML = list.map(a=>
+    `<button type="button" class="${varPicked.includes(a)?'on':''}" data-attr="${a}">${a}</button>`).join('');
+  $$('#varAttrPick button').forEach(b=> b.onclick = ()=>{
+    const a = b.dataset.attr;
+    if(varPicked.includes(a)) varPicked = varPicked.filter(x=>x !== a);
+    else if(varPicked.length >= 3) return toast('Three attributes is the practical limit — more creates hundreds of SKUs','warn');
+    else varPicked.push(a);
+    renderVarPicker(); renderVarValues(); refresh();
+  });
+  $('#varHint').textContent = val('category')
+    ? 'Attribute options for ' + catText().toLowerCase()
+    : 'One product record, several sellable options';
+}
+
+function renderVarValues(){
+  const wrap = $('#varValues');
+  varPicked.forEach(a=>{ const el = wrap.querySelector(`[data-vv="${a}"]`); if(el) varVals[a] = el.value; });
+  wrap.innerHTML = varPicked.map(a=>`
+    <div class="field">
+      <label class="lbl">${a} values</label>
+      <input type="text" data-vv="${a}" value="${varVals[a]||''}" placeholder="${
+        a === 'Colour' ? 'Black, Red, White' : a === 'Storage' ? '128 GB, 256 GB' : 'Comma separated'}">
+      <div class="help">${(splitVals(varVals[a]).length || 0)} value${splitVals(varVals[a]).length === 1 ? '' : 's'}</div>
+    </div>`).join('');
+  wrap.querySelectorAll('[data-vv]').forEach(i=> i.oninput = ()=>{
+    varVals[i.dataset.vv] = i.value;
+    i.parentElement.querySelector('.help').textContent =
+      splitVals(i.value).length + ' value' + (splitVals(i.value).length === 1 ? '' : 's');
+    updateComboHint();
+  });
+  updateComboHint();
+}
+
+const splitVals = s => (s||'').split(',').map(x=>x.trim()).filter(Boolean);
+
+function comboCount(){
+  if(!varPicked.length) return 0;
+  return varPicked.reduce((n,a)=> n * (splitVals(varVals[a]).length || 0), 1);
+}
+function updateComboHint(){
+  const n = comboCount();
+  $('#comboHint').textContent = n
+    ? n + ' combination' + (n===1?'':'s') + ' will be generated'
+    : 'Add at least one value per attribute';
+}
+
+function code(s){ return (s||'').replace(/[^a-z0-9]/gi,'').slice(0,4).toUpperCase(); }
+
+function generateCombos(){
+  const n = comboCount();
+  if(!n) return toast('Add values for each selected attribute first','warn');
+  if(n > 60) return toast(n + ' combinations is too many — narrow the attributes','warn');
+
+  readCombos();
+  const prev = {};
+  combos.forEach(c=> prev[c.key] = c);
+
+  let sets = [[]];
+  varPicked.forEach(a=>{
+    const next = [];
+    splitVals(varVals[a]).forEach(v=> sets.forEach(s=> next.push(s.concat([[a,v]]))));
+    sets = next;
+  });
+
+  combos = sets.map(parts=>{
+    const key = parts.map(p=>p[1]).join(' / ');
+    const old = prev[key];
+    return old || {
+      key: key,
+      parts: parts,
+      sku: val('sku') ? val('sku') + '-' + parts.map(p=>code(p[1])).join('-') : '',
+      barcode: '', cost: '', retail: '', stock: ''
+    };
+  });
+  renderCombos();
+  toast(combos.length + ' variant' + (combos.length===1?'':'s') + ' generated');
+}
+
+function readCombos(){
+  Array.from($('#varRows').children).forEach((row,i)=>{
+    if(!combos[i]) return;
+    row.querySelectorAll('[data-vk]').forEach(inp=> combos[i][inp.dataset.vk] = inp.value.trim());
+  });
+}
+
+function renderCombos(){
+  const wrap = $('#varRows');
+  $('#varHead').hidden = !combos.length;
+  $('#varEmpty').hidden = combos.length > 0;
+  const stockLocked = track() !== 'quantity';
+  wrap.innerHTML = combos.map((c,i)=>`
+    <div class="var-row">
+      <div class="row-no">${String(i+1).padStart(2,'0')}</div>
+      <div class="var-name">${c.key}<small>${c.parts.map(p=>p[0]).join(' · ')}</small></div>
+      <div class="cell"><input type="text" class="mono" data-vk="sku" data-i="${i}" value="${c.sku}" placeholder="SKU"><div class="err-msg" hidden></div></div>
+      <div class="cell"><input type="text" class="mono" data-vk="barcode" data-i="${i}" value="${c.barcode}" placeholder="Barcode"><div class="err-msg" hidden></div></div>
+      <div class="cell"><input type="number" class="mono" data-vk="cost" data-i="${i}" value="${c.cost}" min="0" step="0.01" placeholder="${num('cost')||'0.00'}"></div>
+      <div class="cell"><input type="number" class="mono" data-vk="retail" data-i="${i}" value="${c.retail}" min="0" step="0.01" placeholder="${num('retail')||'0.00'}"></div>
+      <div class="cell"><input type="number" class="mono" data-vk="stock" data-i="${i}" value="${stockLocked ? variantUnitCount(c.key) : c.stock}" min="0" step="1" placeholder="0" ${stockLocked?'readonly title="Counted from inventory items"':''}></div>
+      <button type="button" class="row-del" data-del="${i}" aria-label="Remove variant">${delIco}</button>
+    </div>`).join('');
+  wrap.querySelectorAll('[data-vk]').forEach(inp=> inp.oninput = ()=>{
+    combos[+inp.dataset.i][inp.dataset.vk] = inp.value.trim();
+    refresh();
+  });
+  wrap.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=>{
+    combos.splice(+b.dataset.del,1); renderCombos(); refresh();
+  });
+  refreshItemVariantOptions();
+}
+
+function variantUnitCount(key){
+  return items().filter(i=> i.variant === key && i.id).length;
+}
+function variantStock(){
+  if(!varOn() || !combos.length) return null;
+  if(track() === 'quantity') return combos.reduce((s,c)=> s + (parseFloat(c.stock)||0), 0);
+  return combos.reduce((s,c)=> s + variantUnitCount(c.key), 0);
+}
+
+function validateVariants(){
+  if(!varOn() || !combos.length) return true;
+  let bad = false;
+  const seenS = {}, seenB = {};
+  Array.from($('#varRows').children).forEach((row,i)=>{
+    const s = row.querySelector('[data-vk=sku]'), b = row.querySelector('[data-vk=barcode]');
+    const sv = s.value.trim().toUpperCase();
+    let m = !sv ? 'Every variant needs its own SKU.'
+          : seenS[sv] ? 'Duplicated in this form.'
+          : EXISTING.sku.includes(sv) ? 'Already used by another product.'
+          : sv === val('sku').toUpperCase() ? 'Cannot match the parent SKU.' : '';
+    if(sv) seenS[sv] = true;
+    setErrorEl(s, m); if(m) bad = true;
+
+    const bv = b.value.trim();
+    let mb = '';
+    if(bv){
+      mb = seenB[bv] ? 'Duplicated in this form.'
+         : EXISTING.barcode.includes(bv) ? 'Already in use.'
+         : bv === val('barcode') ? 'Cannot match the parent barcode.' : '';
+      seenB[bv] = true;
+    }
+    setErrorEl(b, mb); if(mb) bad = true;
+  });
+  return !bad;
+}
+
+function refreshItemVariantOptions(){
+  $$('#itemRows [data-key=variant]').forEach(sel=>{
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Unassigned</option>' +
+      combos.map(c=>`<option${keep === c.key ? ' selected' : ''}>${c.key}</option>`).join('');
+  });
+}
+
+/* ---------- documents ---------- */
+const DOC_TYPES = ['Product specification','Warranty document','Manufacturer document','Certificate','Other'];
+function addDocs(list){
+  Array.from(list).forEach(f=>{
+    if(f.size > 10*1024*1024) return toast(f.name + ' is over the 10 MB limit','warn');
+    docs.push({name:f.name, size:f.size, type:DOC_TYPES[0], url:URL.createObjectURL(f)});
+  });
+  renderDocs();
+}
+function renderDocs(){
+  const wrap = $('#docList');
+  if(!docs.length){ wrap.innerHTML = `<div class="doc-empty">No documents attached yet.</div>`; return; }
+  wrap.innerHTML = docs.map((d,i)=>`
+    <div class="doc">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></div>
+      <div class="info"><b>${d.name}</b><small>${(d.size/1024).toFixed(0)} KB</small></div>
+      <select data-doc="${i}">${DOC_TYPES.map(t=>`<option${d.type===t?' selected':''}>${t}</option>`).join('')}</select>
+      <a class="btn btn-sm" href="${d.url}" target="_blank" rel="noopener">Preview</a>
+      <a class="btn btn-sm" href="${d.url}" download="${d.name}">Download</a>
+      <button type="button" class="row-del" data-del="${i}" aria-label="Delete document">${delIco}</button>
+    </div>`).join('');
+  wrap.querySelectorAll('[data-doc]').forEach(s=> s.onchange = e=>{ docs[+e.target.dataset.doc].type = e.target.value; });
+  wrap.querySelectorAll('[data-del]').forEach(b=> b.onclick = e=>{ docs.splice(+e.currentTarget.dataset.del,1); renderDocs(); });
+}
+
+/* ---------- generators ---------- */
+function genSku(){
+  const map = {motorcycle:'MC',car:'CAR',truck:'TRK',parts:'SP',tyres:'TY',lubricants:'LUB',accessories:'ACC',phones:'PH',electronics:'EL',general:'GEN'};
+  const cat = map[val('category')] || 'GEN';
+  const brand = (val('brand').replace(/[^a-z]/gi,'').slice(0,3) || 'XXX').toUpperCase();
+  const model = val('model').replace(/[^a-z0-9]/gi,'').slice(0,4).toUpperCase();
+  let sku, guard = 0;
+  do{ sku = [cat,brand,model,String(Math.floor(1000+Math.random()*8999))].filter(Boolean).join('-'); }
+  while(EXISTING.sku.includes(sku) && ++guard < 20);
+  $('#sku').value = sku; flash($('#sku')); validateSku(); refresh();
+}
+function genBarcode(){
+  let d = '885'; for(let i=0;i<9;i++) d += Math.floor(Math.random()*10);
+  let s = 0; d.split('').forEach((c,i)=> s += (+c) * (i%2?3:1));
+  return d + ((10 - s%10) % 10);
+}
+function genVin(){
+  const c = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789'; let v = '';
+  for(let i=0;i<17;i++) v += c[Math.floor(Math.random()*c.length)];
+  return v;
+}
+function genImei(){
+  let d = '35693803'; for(let i=0;i<6;i++) d += Math.floor(Math.random()*10);
+  let s = 0; for(let i=0;i<14;i++){ let n = +d[i]; if(i%2){ n*=2; if(n>9) n-=9; } s += n; }
+  return d + ((10 - s%10) % 10);
+}
+function flash(el){ el.classList.remove('scan-flash'); void el.offsetWidth; el.classList.add('scan-flash'); }
+
+/* ---------- validation ---------- */
+function imeiProblem(v){
+  if(!/^\d{15}$/.test(v)) return 'An IMEI is 15 digits.';
+  let s = 0;
+  for(let i=0;i<15;i++){ let d = +v[i]; if(i%2){ d*=2; if(d>9) d-=9; } s += d; }
+  return s % 10 ? 'Check digit does not match — re-scan.' : '';
+}
+function validateSku(){
+  const v = val('sku'); if(!v) return setError('sku','');
+  setError('sku', EXISTING.sku.includes(v.toUpperCase()) ? 'This SKU is already used by another product.' : '');
+}
+function validateBarcode(){
+  const v = val('barcode'); if(!v) return setError('barcode','');
+  setError('barcode', EXISTING.barcode.includes(v) ? 'This barcode belongs to another product.' : '');
+}
+function validateVin(){
+  const v = val('vin').toUpperCase(); if(!v) return setError('vin','');
+  if(EXISTING.vin.includes(v)) return setError('vin','A vehicle with this VIN is already in stock.');
+  setError('vin', v.length !== 17 ? 'A VIN is 17 characters.' : '');
+}
+function validateEngine(){
+  const v = val('engineNo').toUpperCase(); if(!v) return setError('engineNo','');
+  setError('engineNo', EXISTING.engine.includes(v) ? 'This engine number is already recorded.' : '');
+}
+function validatePackBarcodes(){
+  const b = val('barcode'), c = val('caseBarcode'), x = val('boxBarcode');
+  setError('caseBarcode', c && (c === b || EXISTING.barcode.includes(c)) ? 'Barcode already in use.' : '');
+  setError('boxBarcode', x && (x === b || x === c || EXISTING.barcode.includes(x)) ? 'Barcode already in use.' : '');
+}
+function validateItems(){
+  let bad = false;
+  const seenId = {}, seenEng = {};
+  Array.from($('#itemRows').children).forEach(row=>{
+    const idIn  = row.querySelector('[data-key=id]');
+    const engIn = row.querySelector('[data-key=engine]');
+    let msg = '';
+    const v = idIn.value.trim().toUpperCase();
+    if(v){
+      if(seenId[v]) msg = 'Duplicated in this form.';
+      else if(isVehicle()){
+        msg = EXISTING.vin.includes(v) ? 'Already in stock under another record.'
+            : v.length !== 17 ? 'A VIN is 17 characters.' : '';
+      } else if(isPhone()){
+        msg = EXISTING.serial.includes(v) ? 'Already registered to another unit.' : imeiProblem(v);
+      } else {
+        msg = EXISTING.serial.includes(v) ? 'Already received into stock.' : '';
+      }
+      seenId[v] = true;
+    }
+    setErrorEl(idIn, msg); if(msg) bad = true;
+
+    let emsg = '';
+    const e = engIn.value.trim().toUpperCase();
+    if(e && isVehicle()){
+      if(seenEng[e]) emsg = 'Duplicated in this form.';
+      else if(EXISTING.engine.includes(e)) emsg = 'Already recorded on another unit.';
+      seenEng[e] = true;
+    }
+    setErrorEl(engIn, emsg); if(emsg) bad = true;
+    row.classList.toggle('err', !!(msg || emsg));
+  });
+  return !bad;
+}
+
+/* ---------- derived ---------- */
+function openingQty(){
+  const t = track();
+  if(t === 'batch') return $$('.batch-qty').reduce((s,i)=> s + (parseFloat(i.value)||0), 0);
+  if(t === 'serialized') return filledItems().length;
+  const vs = variantStock();
+  return vs === null ? num('opening') : vs;
+}
+function stockValue(){
+  const t = track();
+  if(t === 'serialized') return filledItems().reduce((s,i)=> s + (parseFloat(i.cost) || num('cost')), 0);
+  if(t === 'batch') return Array.from($('#batchRows').children).reduce((s,r)=>{
+    const q = parseFloat(r.querySelector('.batch-qty').value) || 0;
+    const c = parseFloat(r.querySelector('.batch-cost').value) || num('cost');
+    return s + q * c;
+  }, 0);
+  if(varOn() && combos.length) return combos.reduce((s,c)=>
+    s + (parseFloat(c.stock)||0) * (parseFloat(c.cost) || num('cost')), 0);
+  return openingQty() * num('cost');
+}
+const marginAmt = () => (num('retail') && num('cost')) ? num('retail') - num('cost') : null;
+const marginPct = () => (num('retail') && num('cost')) ? ((num('retail') - num('cost')) / num('retail')) * 100 : null;
+function afterDiscount(){
+  const r = num('retail'), d = num('discVal');
+  if(!r) return null;
+  return val('discType') === 'percent' ? r * (1 - d/100) : Math.max(0, r - d);
+}
+const catText = () => $('#category').selectedIndex > 0 ? $('#category').options[$('#category').selectedIndex].text : '';
+
+/* ---------- visibility ---------- */
+function applyVisibility(){
+  if(needsIdentity() && !trackTouched && track() === 'quantity'){
+    $('input[name=track][value=serialized]').checked = true;
+    toast(isPhone() ? 'Phones switched to serialized — one record per IMEI'
+                    : 'Vehicles switched to serialized — one record per VIN');
+  }
+  const t = track(), serial = t === 'serialized';
+
+  $('#secVehicle').hidden = !isVehicle();
+  $('#secItems').hidden   = !serial;
+  $('#secBatch').hidden   = t !== 'batch';
+  $('#barcodeReq').hidden = isVehicle() || isService();
+
+  $$('.per-unit').forEach(el => el.hidden = serial);
+  $('#vinNote').hidden = !(isVehicle() && serial);
+  $('#colorHint').hidden = !serial;
+  $('#colorHint').textContent = serial ? '— default; per-unit colour is set on each item' : '';
+
+  $('#trackNote').textContent =
+    serial ? 'Each physical item gets its own record with its own identity number, cost and status.'
+    : t === 'batch' ? 'Stock is grouped into lots so expiry and recalls can be traced.'
+    : needsIdentity() ? 'Pooled counting cannot trace an individual unit through sale, loan or delivery.'
+    : 'Stock is counted as a single pooled quantity.';
+  $('#trackNote').style.color = (t === 'quantity' && needsIdentity()) ? 'var(--danger)' : '';
+
+  const opening = $('#opening');
+  const varQty = varOn() && combos.length && t === 'quantity';
+  opening.readOnly = t !== 'quantity' || varQty;
+  opening.disabled = t !== 'quantity' || varQty;
+  $('#openingHelp').textContent = t === 'quantity'
+      ? (varQty ? 'Calculated from the stock entered against each variant.' : 'Quantity on hand at go-live.')
+    : t === 'batch' ? 'Calculated from batch quantities below.'
+    : 'Calculated from the inventory items below.';
+
+  $('#varBody').hidden = !varOn();
+  $('#varIntro').hidden = varOn();
+  if(varOn()){ renderVarPicker(); renderVarValues(); renderCombos(); }
+  $$('#itemRows [data-variant-cell]').forEach(c=> c.hidden = !(varOn() && combos.length));
+
+  if(t === 'batch' && !$('#batchRows').children.length) addBatch();
+  if(serial){
+    rebuildItems();
+    if(!$('#itemRows').children.length) addItem();
+    $('#itemsTitle').textContent = isVehicle() ? 'Inventory items — vehicles' : isPhone() ? 'Inventory items — handsets' : 'Inventory items';
+    $('#itemsHint').textContent = isVehicle()
+      ? 'One record per physical bike. VIN, engine number and colour live here, not on the product.'
+      : 'One record per physical item';
+  }
+  $('#docHint').textContent = isVehicle()
+    ? 'Model-level papers. Registration and invoices attach to each unit.'
+    : 'Specifications, warranty terms, certificates';
+
+  renderAttrs();
+  refresh();
+}
+
+/* ---------- live summary ---------- */
+function refresh(){
+  const t = track(), serial = t === 'serialized';
+
+  $$('.cur').forEach(s=> s.textContent = cur());
+  $('#baseUnit').value = val('unit');
+  $('#baseBarcode').value = val('barcode');
+  if(serial) $('#opening').value = openingQty();
+  if(t === 'batch') $('#opening').value = openingQty();
+  if(t === 'quantity' && varOn() && combos.length) $('#opening').value = openingQty();
+
+  /* packaging ladder */
+  const cq = num('caseQty'), bq = num('boxQty'), u = val('unit') || 'Piece';
+  const cn = val('caseName') || 'Case', bn = val('boxName') || 'Box';
+  const parts = [];
+  if(cq > 0) parts.push(`<b>1 ${cn}</b> <span class="eq">=</span> <b>${cq} ${u}${cq>1?'s':''}</b>`);
+  if(cq > 0 && bq > 0) parts.push(`<b>1 ${bn}</b> <span class="eq">=</span> <b>${bq} ${cn}${bq>1?'s':''}</b> <span class="eq">=</span> <b>${cq*bq} ${u}${cq*bq>1?'s':''}</b>`);
+  $('#packPreview').innerHTML = parts.length ? parts.join('<span style="color:#3C525E">│</span>') : 'Set a conversion quantity to see the pack ladder.';
+
+  /* pricing calcs */
+  const ma = marginAmt(), mp = marginPct(), ad = afterDiscount();
+  $('#cMargin').textContent = ma === null ? '—' : money(ma);
+  $('#cMargin').className = ma === null ? '' : (ma < 0 ? 'neg' : 'pos');
+  $('#cMarginPct').textContent = mp === null ? '—' : mp.toFixed(1) + '%';
+  $('#cMarginPct').className = mp === null ? '' : (mp < 0 ? 'neg' : 'pos');
+  $('#cAfter').textContent = ad === null ? '—' : money(ad);
+  const below = num('retail') && num('cost') && num('retail') < num('cost');
+  $('#retailWarn').hidden = !below;
+  if(below) $('#retailWarn').textContent = 'Retail is below cost — this product will sell at a loss.';
+
+  /* plate */
+  const name = val('name');
+  $('#sName').textContent = name || 'Untitled product';
+  $('#sName').classList.toggle('empty', !name);
+  $('#sSub').textContent = (val('sku') || 'SKU —');
+
+  const chips = [];
+  if(catText()) chips.push(`<span class="chip">${catText()}</span>`);
+  if(val('brand')) chips.push(`<span class="chip">${val('brand')}</span>`);
+  chips.push(`<span class="chip">${t}</span>`);
+  const st = val('status');
+  chips.push(`<span class="chip ${st==='active'?'live':'hot'}">${st}</span>`);
+  const qty = openingQty(), reorder = num('reorder');
+  if(varOn() && combos.length) chips.push(`<span class="chip">${combos.length} variants</span>`);
+  if(reorder && qty <= reorder) chips.push(`<span class="chip hot">at reorder level</span>`);
+  $('#sChips').innerHTML = chips.join('');
+
+  $('#sRetail').textContent = num('retail') ? money(num('retail')) : '—';
+  $('#sCost').textContent   = num('cost') ? money(num('cost')) : '—';
+  const mEl = $('#sMargin');
+  mEl.textContent = mp === null ? '—' : mp.toFixed(1) + '%';
+  mEl.className = mp === null ? '' : (mp < 0 ? 'neg' : 'pos');
+  $('#sStock').textContent = qty.toLocaleString();
+  $('#sValue').textContent = stockValue() ? money(stockValue()) : '—';
+  $('#sItemsLbl').textContent = serial ? 'Inventory items' : t === 'batch' ? 'Batches'
+    : (varOn() && combos.length) ? 'Variants' : 'Tracked units';
+  $('#sItems').textContent = serial ? filledItems().length
+    : t === 'batch' ? $('#batchRows').children.length
+    : (varOn() && combos.length) ? combos.length : '—';
+
+  /* status split */
+  const split = $('#sSplit');
+  if(serial && filledItems().length){
+    const counts = {};
+    filledItems().forEach(i=> counts[i.status||'available'] = (counts[i.status||'available']||0) + 1);
+    split.hidden = false;
+    $('#sSplitRows').innerHTML = STATUSES.filter(s=>counts[s.v]).map(s=>
+      `<div class="ln"><span class="sw"><i style="background:${s.c}"></i>${s.l}</span><b>${counts[s.v]}</b></div>`).join('');
+  } else split.hidden = true;
+
+  if(serial){
+    const total = $('#itemRows').children.length;
+    $('#itemCount').textContent = filledItems().length + ' of ' + total + ' row' + (total===1?'':'s') + ' identified';
+  }
+
+  drawBarcode(val('barcode'));
+  drawChecks();
+}
+
+function drawBarcode(code){
+  const wrap = $('#sBarcodeWrap');
+  if(!code){ wrap.hidden = true; return; }
+  wrap.hidden = false;
+  let seed = 0; for(const ch of code) seed = (seed*31 + ch.charCodeAt(0)) % 99991;
+  let html = '';
+  for(let i=0;i<46;i++){
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    const w = 1 + (seed >> 7) % 3, gap = (seed >> 5) % 4 === 0;
+    html += `<i style="width:${w}px;height:${gap?'70%':'100%'};opacity:${gap?.35:1}"></i>`;
+  }
+  $('#sBars').innerHTML = html;
+  $('#sBarNum').textContent = code;
+}
+
+function drawChecks(){
+  const t = track();
+  const items_ = [
+    ['Name', !!val('name')],
+    ['SKU', !!val('sku') && !$('#sku').closest('.field').classList.contains('error')],
+    ['Category', !!val('category')],
+    ['Unit', !!val('unit')],
+    ['Retail price', num('retail') > 0]
+  ];
+  if(!isVehicle() && !isService()) items_.push(['Barcode', !!val('barcode')]);
+  if(isVehicle() && t !== 'serialized') items_.push(['VIN', !!val('vin')]);
+  if(t === 'batch') items_.push(['At least one batch', $$('.batch-no').some(i=>i.value.trim())]);
+  if(t === 'serialized'){
+    const rows = $('#itemRows').children.length, ok = filledItems().length;
+    items_.push([itemCols()[0].l + ' on every item', rows > 0 && ok === rows]);
+  }
+  if(varOn()) items_.push(['Variant SKUs', combos.length > 0 && combos.every(c=>c.sku)]);
+  const done = items_.filter(i=>i[1]).length, pending = items_.filter(i=>!i[1]);
+  const tick = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>`;
+  const dot  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
+  let html = `<div class="check ${pending.length?'todo':'done'}">${pending.length?dot:tick}<span>${done} of ${items_.length} required fields complete</span></div>`;
+  pending.slice(0,3).forEach(p=> html += `<div class="check">${dot}<span>${p[0]} still needed</span></div>`);
+  $('#sChecks').innerHTML = html;
+}
+
+/* ---------- save ---------- */
+function validateAll(){
+  clearErrors();
+  let firstBad = null;
+  const need = (id,msg)=>{ if(!val(id)){ setError(id,msg); firstBad = firstBad || $('#'+id); } };
+  need('name','Enter a product name.');
+  need('sku','SKU is required — use generate if you need one.');
+  need('category','Choose a category.');
+  need('unit','Choose a unit.');
+  if(!isVehicle() && !isService()) need('barcode','Barcode is required for this product type.');
+
+  validateSku(); validateBarcode(); validatePackBarcodes();
+
+  const serial = track() === 'serialized';
+  if(isVehicle() && !serial){
+    if(!val('vin')){ setError('vin','VIN is required when the product is a single unit.'); firstBad = firstBad || $('#vin'); }
+    else validateVin();
+    validateEngine();
+  }
+  if(num('maxStock') && num('minStock') > num('maxStock')){
+    setError('maxStock','Maximum must be higher than minimum.'); firstBad = firstBad || $('#maxStock');
+  }
+  if(serial){
+    const rows = Array.from($('#itemRows').children);
+    const blanks = rows.filter(r=>!r.querySelector('[data-key=id]').value.trim());
+    if(!rows.length || blanks.length === rows.length){
+      const first = (blanks[0] || rows[0]).querySelector('[data-key=id]');
+      setErrorEl(first, itemCols()[0].l + ' is required — add at least one item.');
+      firstBad = firstBad || first;
+    } else if(blanks.length){
+      const first = blanks[0].querySelector('[data-key=id]');
+      setErrorEl(first, 'Every item needs its ' + itemCols()[0].l.toLowerCase() + ', or remove the row.');
+      firstBad = firstBad || first;
+    }
+  }
+  if(track() === 'batch'){
+    const rows = Array.from($('#batchRows').children);
+    const blank = rows.find(r=>!r.querySelector('.batch-no').value.trim());
+    if(!rows.length || blank){
+      const el = (blank || rows[0]).querySelector('.batch-no');
+      setErrorEl(el,'Batch number is required.'); firstBad = firstBad || el;
+    }
+  }
+  validateItems();
+  if(varOn()){
+    if(!combos.length){
+      $('#varEmpty').hidden = false;
+      $('#varEmpty').textContent = 'Variants are enabled but no combinations have been generated.';
+      $('#varEmpty').style.color = 'var(--danger)';
+      firstBad = firstBad || $('#btnGenCombos');
+    } else if(!validateVariants()){
+      firstBad = firstBad || $('#varRows .error input');
+    }
+  }
+
+  const bad = $$('.error')[0];
+  const target = firstBad || (bad ? bad.querySelector('input,select') : null);
+  if(target){
+    const card = target.closest('.card'); if(card) card.hidden = false;
+    const row = target.closest('.item-row'); if(row) row.classList.add('open');
+    target.scrollIntoView({behavior:'smooth',block:'center'});
+    target.focus({preventScroll:true});
+    return false;
+  }
+  return true;
+}
+
+function openReview(){
+  const t = track(), rows = [];
+  const push = (k,v,mono)=> rows.push(`<dt>${k}</dt><dd class="${mono?'mono':''}">${v || '—'}</dd>`);
+  const sec = s => rows.push(`<div class="sec">${s}</div>`);
+
+  sec('Product');
+  push('Name', val('name'));
+  push('SKU', val('sku'), true);
+  push('Barcode', val('barcode'), true);
+  push('Category', catText());
+  push('Brand / model', [val('brand'), val('model'), val('year')].filter(Boolean).join(' · '));
+  push('Status', val('status'));
+  push('Supplier', val('supplier'));
+
+  sec('Pricing');
+  push('Currency', val('currency'));
+  push('Cost', num('cost') ? money(num('cost')) : '—', true);
+  push('Retail', num('retail') ? money(num('retail')) : '—', true);
+  push('Wholesale / VIP', [num('wholesale') && money(num('wholesale')), num('vip') && money(num('vip'))].filter(Boolean).join(' · '), true);
+  const mp = marginPct();
+  push('Margin', mp === null ? '—' : money(marginAmt()) + ' · ' + mp.toFixed(1) + '%', true);
+  if(num('discVal')) push('After discount', money(afterDiscount()), true);
+
+  sec('Inventory');
+  push('Tracking type', t.charAt(0).toUpperCase() + t.slice(1));
+  push('Opening stock', openingQty() + ' ' + (val('unit') || ''), true);
+  push('Stock value', stockValue() ? money(stockValue()) : '—', true);
+  push('Warehouse', val('warehouse'));
+  push('Location', val('location'), true);
+
+  if(isVehicle()){
+    sec('Vehicle');
+    if(t !== 'serialized'){
+      push('VIN', val('vin').toUpperCase(), true);
+      push('Engine no.', val('engineNo'), true);
+    }
+    push('Specification', [num('cc') && num('cc')+' cc', val('fuel'), val('trans'), val('vYear')].filter(Boolean).join(' · '));
+    push('Condition', [val('condition'), val('warranty')].filter(Boolean).join(' · '));
+  }
+
+  if(varOn() && combos.length){
+    sec('Variants');
+    push('Attributes', varPicked.join(' × '));
+    push('Combinations', combos.length, true);
+    combos.slice(0,10).forEach(c=> push(c.key, [c.sku, c.barcode, c.retail && money(c.retail),
+      (track()==='quantity' ? c.stock : variantUnitCount(c.key)) + ' in stock'].filter(Boolean).join(' · '), true));
+    if(combos.length > 10) push('', '+' + (combos.length - 10) + ' more variants');
+  }
+
+  const attrs = collectAttrs();
+  if(attrs.length){ sec('Attributes'); attrs.forEach(a=> push(a[0], a[1])); }
+
+  if(t === 'serialized'){
+    sec('Inventory items');
+    const list = filledItems();
+    push('Items', list.length + (val('unit') ? ' × ' + val('unit') : ''), true);
+    list.slice(0,8).forEach((it,i)=>{
+      const s = STATUSES.find(x=>x.v === (it.status||'available'));
+      push('#' + String(i+1).padStart(2,'0'),
+        [it.id, it.engine, it.color, it.cost && money(it.cost), s && s.l].filter(Boolean).join(' · '), true);
+    });
+    if(list.length > 8) push('', '+' + (list.length - 8) + ' more items');
+  }
+  if(t === 'batch'){
+    sec('Batches');
+    Array.from($('#batchRows').children).forEach((r,i)=>{
+      push('Batch ' + (i+1), [
+        r.querySelector('.batch-no').value,
+        r.querySelector('.batch-qty').value && r.querySelector('.batch-qty').value + ' ' + (val('unit')||''),
+        r.querySelector('.batch-exp').value && 'exp ' + r.querySelector('.batch-exp').value
+      ].filter(Boolean).join(' · '), true);
+    });
+  }
+  if(num('caseQty')){ sec('Packaging'); push('Conversions', $('#packPreview').textContent.replace(/│/g,' · '), true); }
+  if(docs.length){ sec('Documents'); docs.forEach(d=> push(d.type, d.name)); }
+
+  $('#reviewList').innerHTML = rows.join('');
+  $('#modal').hidden = false;
+  $('#btnConfirm').focus();
+}
+
+function toast(msg,kind){
+  const t = $('#toast');
+  $('#toastIcon').innerHTML = kind === 'warn'
+    ? `<svg class="warn" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>`
+    : `<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>`;
+  $('#toastMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> t.classList.remove('show'), 3600);
+}
+
+/* ---------- wiring ---------- */
+$('#form').addEventListener('input', e=>{
+  if(e.target.id === 'year') $('#vYear').value = val('year');
+  if(e.target.id === 'vYear') $('#year').value = val('vYear');
+  refresh();
+});
+$('#form').addEventListener('change', e=>{
+  if(['category','ptype'].includes(e.target.id) || e.target.name === 'track') applyVisibility();
+  else refresh();
+});
+$('#trackSeg').addEventListener('change', ()=>{ trackTouched = true; });
+$('#sku').addEventListener('blur', ()=>{ validateSku(); drawChecks(); });
+$('#barcode').addEventListener('blur', ()=>{ validateBarcode(); validatePackBarcodes(); drawChecks(); });
+$('#vin').addEventListener('blur', ()=>{ validateVin(); drawChecks(); });
+$('#engineNo').addEventListener('blur', validateEngine);
+$('#caseBarcode').addEventListener('blur', validatePackBarcodes);
+$('#boxBarcode').addEventListener('blur', validatePackBarcodes);
+$('#itemRows').addEventListener('blur', e=>{
+  if(e.target.classList.contains('item-in')){ validateItems(); drawChecks(); }
+}, true);
+
+$('#btnSku').onclick = genSku;
+$('#btnScan').onclick = ()=>{ $('#barcode').value = genBarcode(); flash($('#barcode')); validateBarcode(); refresh(); toast('Barcode captured from reader'); };
+$('#btnScanVin').onclick = ()=>{ $('#vin').value = genVin(); flash($('#vin')); validateVin(); refresh(); toast('VIN captured from reader'); };
+$$('.scan-btn').forEach(b=> b.onclick = ()=>{ const el = $('#'+b.dataset.target); el.value = genBarcode(); flash(el); validatePackBarcodes(); toast('Barcode captured from reader'); });
+
+$('#btnAddBatch').onclick = ()=>{ addBatch(); refresh(); };
+$('#btnAddItem').onclick = ()=>{ addItem(); refresh(); };
+$('#btnAddAttr').onclick = addCustomAttr;
+
+$('#varOn').onchange = ()=>{
+  $('#varBody').hidden = !varOn();
+  $('#varIntro').hidden = varOn();
+  if(varOn()){ renderVarPicker(); renderVarValues(); renderCombos(); }
+  refresh();
+};
+$('#btnGenCombos').onclick = ()=>{
+  $('#varEmpty').style.color = '';
+  generateCombos(); refresh();
+};
+$('#btnFillSku').onclick = ()=>{
+  if(!combos.length) return toast('Generate the combinations first','warn');
+  if(!val('sku')) return toast('Set the parent SKU first — variants extend it','warn');
+  combos.forEach(c=> c.sku = val('sku') + '-' + c.parts.map(p=>code(p[1])).join('-'));
+  renderCombos(); validateVariants(); refresh();
+  toast('SKUs rebuilt from the parent SKU');
+};
+$('#btnFillBar').onclick = ()=>{
+  if(!combos.length) return toast('Generate the combinations first','warn');
+  combos.forEach(c=>{ if(!c.barcode) c.barcode = genBarcode(); });
+  renderCombos(); validateVariants(); refresh();
+  toast('Barcodes assigned to every variant');
+};
+
+$('#btnScanMulti').onclick = ()=>{
+  const gen = isVehicle() ? genVin : isPhone() ? genImei
+            : ()=> 'SN-' + Math.floor(1000+Math.random()*8999) + '-' + Math.floor(1000+Math.random()*8999);
+  for(let i=0;i<5;i++){
+    const seed = {id:gen(), cost:num('cost') || '', status:'available'};
+    if(isVehicle()) seed.engine = 'JC41E-' + Math.floor(1000000+Math.random()*8999999);
+    addItem(seed);
+  }
+  validateItems(); refresh(); toast('5 items added from the reader');
+};
+
+/* bulk import */
+$('#btnBulkImport').onclick = ()=>{
+  const c = itemCols();
+  $('#bulkFormat').textContent = 'One item per line: ' + c.map(x=>x.l).join(', ') + ', cost, status.';
+  $('#bulkText').placeholder = isVehicle()
+    ? 'HN001, ENG001, Black, 1200, available\nHN002, ENG002, Red, 1200, available\nHN003, ENG003, White, 1200, reserved'
+    : 'SN-0001, REF-1, Black, 120, available\nSN-0002, REF-2, White, 120, available';
+  $('#bulkErr').hidden = true;
+  $('#bulkModal').hidden = false;
+  $('#bulkText').focus();
+};
+$('#btnBulkCancel').onclick = ()=> $('#bulkModal').hidden = true;
+$('#btnBulkAdd').onclick = ()=>{
+  const lines = $('#bulkText').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){ $('#bulkErr').textContent = 'Paste at least one line.'; $('#bulkErr').hidden = false; return; }
+  let added = 0;
+  lines.forEach(line=>{
+    const p = line.split(/[,\t;]/).map(x=>x.trim());
+    if(!p[0]) return;
+    const status = (STATUSES.find(s=> s.v === (p[4]||'').toLowerCase() || s.l.toLowerCase() === (p[4]||'').toLowerCase()) || {}).v || 'available';
+    addItem({id:p[0], engine:p[1]||'', color:p[2]||'', cost:p[3]||num('cost')||'', status:status});
+    added++;
+  });
+  $('#bulkModal').hidden = true;
+  $('#bulkText').value = '';
+  validateItems(); refresh();
+  toast(added + ' item' + (added===1?'':'s') + ' imported');
+};
+
+/* image */
+const dz = $('#dropZone'), file = $('#file');
+dz.onclick = ()=> file.click();
+dz.onkeydown = e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); file.click(); } };
+['dragenter','dragover'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('over'); }));
+['dragleave','drop'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove('over'); }));
+dz.addEventListener('drop', e=>{ if(e.dataTransfer.files[0]) showImage(e.dataTransfer.files[0]); });
+file.onchange = ()=>{ if(file.files[0]) showImage(file.files[0]); };
+function showImage(f){
+  if(!f.type.startsWith('image/')) return toast('That file is not an image','warn');
+  if(f.size > 5*1024*1024) return toast('Image is over the 5 MB limit','warn');
+  const r = new FileReader();
+  r.onload = e=>{
+    $('#thumbImg').src = e.target.result;
+    $('#thumbName').textContent = f.name;
+    $('#thumbSize').textContent = (f.size/1024).toFixed(0) + ' KB';
+    $('#thumbWrap').hidden = false; dz.hidden = true;
+  };
+  r.readAsDataURL(f);
+}
+$('#btnRemoveImg').onclick = ()=>{ file.value = ''; $('#thumbWrap').hidden = true; dz.hidden = false; };
+
+/* documents */
+const ddz = $('#docDrop'), dfile = $('#docFile');
+ddz.onclick = ()=> dfile.click();
+ddz.onkeydown = e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); dfile.click(); } };
+['dragenter','dragover'].forEach(ev=> ddz.addEventListener(ev, e=>{ e.preventDefault(); ddz.classList.add('over'); }));
+['dragleave','drop'].forEach(ev=> ddz.addEventListener(ev, e=>{ e.preventDefault(); ddz.classList.remove('over'); }));
+ddz.addEventListener('drop', e=> addDocs(e.dataTransfer.files));
+dfile.onchange = ()=> addDocs(dfile.files);
+
+/* actions */
+function save(){
+  if(validateAll()) openReview();
+  else toast('Fix the highlighted fields to continue','warn');
+}
+$('#btnSave').onclick = save;
+$('#btnSave2').onclick = save;
+function draft(){
+  if(!val('name')){ setError('name','Give the draft a name so you can find it later.'); $('#name').focus(); return toast('A draft still needs a name','warn'); }
+  $('#status').value = 'draft'; refresh();
+  toast('Draft saved — "' + val('name') + '"');
+}
+$('#btnDraft').onclick = draft;
+$('#btnDraft2').onclick = draft;
+$('#btnCancel').onclick = ()=> toast('Nothing was saved','warn');
+$('#btnBack').onclick = ()=> $('#modal').hidden = true;
+$('#modal').onclick = e=>{ if(e.target.id === 'modal') $('#modal').hidden = true; };
+$('#bulkModal').onclick = e=>{ if(e.target.id === 'bulkModal') $('#bulkModal').hidden = true; };
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ $('#modal').hidden = true; $('#bulkModal').hidden = true; } });
+$('#btnConfirm').onclick = ()=>{
+  $('#modal').hidden = true;
+  if(val('status') === 'draft') $('#status').value = 'active';
+  const n = track() === 'serialized' ? filledItems().length : 0;
+  refresh();
+  toast(val('name') + ' saved' + (n ? ' with ' + n + ' inventory item' + (n===1?'':'s') : ''));
+};
+$('#form').addEventListener('submit', e=>{ e.preventDefault(); save(); });
+
+renderDocs();
+renderItemsHead();
+applyVisibility();
+})();
+</script>

@@ -32,7 +32,19 @@ public final class TenantAssignablePermissions {
         // Collections
         "collections.view", "collections.manage",
         // Dashboard & Reports
-        "dashboard.view", "reports.view"
+        "dashboard.view", "reports.view",
+        // Inventory & Catalog
+        "inventory.products.view", "inventory.products.create", "inventory.products.update", "inventory.products.delete",
+        "inventory.attributes.view", "inventory.attributes.manage",
+        "inventory.warehouses.view", "inventory.warehouses.manage",
+        "inventory.items.view", "inventory.items.create", "inventory.items.update",
+        "inventory.batches.view", "inventory.batches.manage",
+        "inventory.movements.view", "inventory.stock.adjust",
+        // Sales & Financing
+        "inventory.sales.view", "inventory.sales.create", "inventory.sales.confirm", "inventory.sales.cancel", "inventory.sales.deliver",
+        "inventory.reserve.create", "inventory.reserve.release",
+        "inventory.financing.view", "inventory.financing.submit", "inventory.financing.approve", "inventory.financing.reject",
+        "inventory.docs.view", "inventory.docs.upload", "inventory.docs.verify", "inventory.docs.delete"
     );
 
     // Default role permission sets seeded for new tenants

@@ -1,0 +1,664 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data model — Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --canvas:#ECEFF2; --surface:#FFFFFF;
+  --ink:#0F1A22; --ink-2:#33454F; --muted:#6C7C88;
+  --line:#D6DDE3; --line-2:#E7ECF0;
+  --primary:#0B5265; --primary-700:#084252; --primary-soft:#E4EFF3;
+  --accent:#D97D00; --accent-soft:#FDF2E1;
+  --ok:#147A4E; --ok-soft:#E4F3EB;
+  --danger:#C0342B; --danger-soft:#FBEAE8;
+  --violet:#7A5AF8;
+  --sans:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--canvas);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.topbar{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1420px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.crumb{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.crumb b{color:var(--ink-2);font-weight:600}
+.topbar h1{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:0}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.btn{font-family:var(--sans);font-size:13px;font-weight:600;height:36px;padding:0 16px;border-radius:8px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;text-decoration:none;transition:background .15s,border-color .15s,color .15s}
+.btn:hover{background:#F5F7F9;border-color:#C3CDD5}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-700);border-color:var(--primary-700)}
+.btn svg{width:15px;height:15px;stroke-width:1.9}
+
+.tabs{display:flex;gap:3px;background:#EFF2F5;border:1px solid var(--line);border-radius:8px;padding:3px}
+.tabs button{font-family:var(--sans);font-size:12.5px;font-weight:600;border:none;background:none;color:var(--ink-2);
+  padding:6px 14px;border-radius:5px;cursor:pointer}
+.tabs button.on{background:var(--primary);color:#fff}
+
+.wrap{max-width:1420px;margin:0 auto;padding:20px 24px 80px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.card-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line-2);background:#FBFCFD}
+.card-head h2{margin:0;font-size:14px;font-weight:700}
+.card-head .hint{font-size:12px;color:var(--muted);margin-left:auto}
+.card-body{padding:20px}
+
+/* diagram */
+.map{width:100%;height:auto;display:block;overflow:visible}
+.node rect{fill:#fff;stroke:var(--line);stroke-width:1.5;rx:9}
+.node .bar{fill:var(--primary)}
+.node .t{font-family:var(--sans);font-size:14px;font-weight:700;fill:var(--ink)}
+.node .s{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.node .k{font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:.12em;fill:var(--muted)}
+.node{cursor:pointer}
+.node:hover rect{stroke:var(--primary)}
+.node.on rect{stroke:var(--primary);stroke-width:2.5;filter:drop-shadow(0 6px 14px rgba(11,82,101,.22))}
+.node.on .t{fill:var(--primary)}
+.node.opt rect{stroke-dasharray:5 4}
+.link{stroke:#A9B7C1;stroke-width:1.6;fill:none}
+.link.dash{stroke-dasharray:5 5;stroke:#C3CDD5}
+.card-lbl{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:11.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:0;border-top:1.6px solid #A9B7C1;display:inline-block}
+.legend i.d{border-top-style:dashed}
+
+/* layout */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.rail{position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+
+/* fields table */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;
+  padding:0 10px 8px;border-bottom:1px solid var(--line-2)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td.f{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+.tbl td.ty{color:var(--muted);font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+.tbl td.n{color:var(--ink-2);font-size:12.5px}
+.tag{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-left:6px;
+  background:var(--primary-soft);color:var(--primary);white-space:nowrap}
+.tag.fk{background:var(--accent-soft);color:#9C5A00}
+.tag.uq{background:var(--ok-soft);color:var(--ok)}
+
+.rules{margin:0;padding:0;list-style:none}
+.rules li{position:relative;padding:7px 0 7px 24px;font-size:13px;color:var(--ink-2);border-bottom:1px solid var(--line-2)}
+.rules li:last-child{border-bottom:none}
+.rules li:before{content:"";position:absolute;left:6px;top:14px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.rules li.warn:before{background:var(--danger)}
+.rules li b{color:var(--ink)}
+
+.rel{display:flex;flex-direction:column;gap:8px}
+.rel a{display:flex;align-items:center;gap:10px;border:1px solid var(--line-2);border-radius:8px;padding:9px 12px;background:#FBFCFD;
+  text-decoration:none;color:inherit;cursor:pointer}
+.rel a:hover{border-color:var(--primary);background:var(--primary-soft)}
+.rel .card-n{font-family:var(--mono);font-size:11px;color:var(--primary);background:var(--primary-soft);border-radius:5px;padding:3px 7px;flex:0 0 auto}
+.rel .lbl2{font-size:13px;font-weight:600}
+.rel .sub{font-size:11.5px;color:var(--muted);margin-left:auto;text-align:right}
+
+/* plate */
+.plate{background:var(--ink);border-radius:10px;overflow:hidden;color:#E6EDF0;border:1px solid #0A1218;box-shadow:0 8px 24px -12px rgba(15,26,34,.55)}
+.plate-top{padding:12px 16px;border-bottom:1px solid #24333C;display:flex;align-items:center;gap:8px}
+.plate-top span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7E939E;font-weight:600}
+.plate-dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.plate-body{padding:16px}
+.plate-name{font-size:16px;font-weight:700;color:#fff}
+.plate-sub{font-family:var(--mono);font-size:11.5px;color:#8FA6B1;margin-top:4px}
+.rec{margin-top:14px;border:1px solid #24333C;border-radius:7px;overflow:hidden}
+.rec .ln{display:flex;gap:10px;justify-content:space-between;padding:7px 11px;border-bottom:1px solid #1D2C34;font-size:12px;color:#8FA6B1}
+.rec .ln:last-child{border-bottom:none}
+.rec .ln b{font-family:var(--mono);color:#fff;font-weight:500;text-align:right;word-break:break-word}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+.chip{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:20px;
+  background:#1E2E37;color:#A9C0CB;border:1px solid #2C3D47}
+.chip.ok{background:rgba(20,122,78,.18);color:#5FD3A0;border-color:rgba(20,122,78,.4)}
+.chip.hot{background:rgba(217,125,0,.16);color:#F0B45E;border-color:rgba(217,125,0,.35)}
+.chip.vio{background:rgba(122,90,248,.18);color:#B9A6FF;border-color:rgba(122,90,248,.4)}
+
+/* trace */
+.trace{position:relative;padding-left:26px}
+.trace:before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.step{position:relative;padding:0 0 20px}
+.step:last-child{padding-bottom:0}
+.step .dot{position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--line)}
+.step.done .dot{border-color:var(--ok);background:var(--ok)}
+.step.now .dot{border-color:var(--accent);background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.step h4{margin:0;font-size:13.5px;font-weight:700}
+.step p{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.step .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.pill{font-size:11px;font-weight:600;border-radius:20px;padding:3px 9px;background:#EFF2F5;color:var(--ink-2);border:1px solid var(--line)}
+.pill.st{background:var(--primary-soft);color:var(--primary);border-color:#C9DDE4}
+.pill.doc{background:var(--accent-soft);color:#9C5A00;border-color:#F0DCBB}
+.pill.ent{font-family:var(--mono);font-size:10.5px;background:#fff}
+
+/* doc matrix */
+.matrix{width:100%;border-collapse:collapse;font-size:12.5px}
+.matrix th{text-align:left;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:0 10px 8px}
+.matrix td{padding:10px;border-top:1px solid var(--line-2);vertical-align:top}
+.matrix td.o{font-weight:600;white-space:nowrap}
+.matrix .d{display:flex;flex-wrap:wrap;gap:5px}
+
+.hide{display:none}
+@media (max-width:1120px){ .layout{grid-template-columns:minmax(0,1fr)} .rail{position:static;order:-1} }
+@media (max-width:760px){
+  .wrap{padding:16px 14px 60px} .topbar-inner{padding:10px 14px}
+  .topbar-actions{width:100%}
+  .map-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .map{min-width:820px}
+  .tbl td.n{font-size:12px}
+}
+</style>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div>
+      <div class="crumb">Inventory <b>›</b> Architecture <b>›</b> Data model</div>
+      <h1>Product &amp; inventory data model</h1>
+    </div>
+    <div class="topbar-actions">
+      <div class="tabs" id="tabs">
+        <button class="on" data-tab="model">Model</button>
+        <button data-tab="trace">Trace a unit</button>
+        <button data-tab="docs">Documents</button>
+      </div>
+      <a class="btn btn-primary" href="create-product.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+        Create product
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ MODEL TAB ============ -->
+  <div id="tab-model">
+    <section class="card">
+      <div class="card-head">
+        <h2>Entity map</h2>
+        <span class="hint">Select an entity to see its fields and rules</span>
+      </div>
+      <div class="card-body">
+        <div class="map-scroll">
+          <svg class="map" viewBox="0 0 1020 400" id="map" role="group" aria-label="Entity relationship map"></svg>
+        </div>
+        <div class="legend">
+          <span><i></i> Owns / one to many</span>
+          <span><i class="d"></i> References — polymorphic or optional</span>
+          <span style="font-family:var(--mono);font-size:11px">Dashed border = optional layer</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <div>
+        <section class="card">
+          <div class="card-head">
+            <h2 id="dName">Product</h2>
+            <span class="hint" id="dOne"></span>
+          </div>
+          <div class="card-body">
+            <p style="margin:0 0 16px;color:var(--ink-2)" id="dDesc"></p>
+            <table class="tbl">
+              <thead><tr><th style="width:210px">Field</th><th style="width:120px">Type</th><th>Notes</th></tr></thead>
+              <tbody id="dFields"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Rules that matter</h2></div>
+          <div class="card-body"><ul class="rules" id="dRules"></ul></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Relationships</h2><span class="hint">Click to follow</span></div>
+          <div class="card-body"><div class="rel" id="dRel"></div></div>
+        </section>
+      </div>
+
+      <aside class="rail">
+        <div class="plate">
+          <div class="plate-top"><i class="plate-dot"></i><span>Example record</span></div>
+          <div class="plate-body">
+            <div class="plate-name" id="eName"></div>
+            <div class="plate-sub" id="eSub"></div>
+            <div class="chips" id="eChips"></div>
+            <div class="rec" id="eRec"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ TRACE TAB ============ -->
+  <div id="tab-trace" class="hide">
+    <div class="layout">
+      <div>
+        <section class="card">
+          <div class="card-head">
+            <h2>Lifecycle of one physical bike</h2>
+            <span class="hint">Inventory item MLHJC4110M5000891</span>
+          </div>
+          <div class="card-body"><div class="trace" id="traceList"></div></div>
+        </section>
+      </div>
+      <aside class="rail">
+        <div class="plate">
+          <div class="plate-top"><i class="plate-dot"></i><span>Unit record</span></div>
+          <div class="plate-body">
+            <div class="plate-name">Honda Dream 2026</div>
+            <div class="plate-sub">MLHJC4110M5000891</div>
+            <div class="chips">
+              <span class="chip">Black / 125cc</span>
+              <span class="chip vio">Loan pending</span>
+            </div>
+            <div class="rec">
+              <div class="ln"><span>Product</span><b>Honda Dream 2026</b></div>
+              <div class="ln"><span>Variant</span><b>Black / 125cc</b></div>
+              <div class="ln"><span>Engine no.</span><b>JC41E-1000891</b></div>
+              <div class="ln"><span>Cost</span><b>$1,200.00</b></div>
+              <div class="ln"><span>Sale price</span><b>$2,100.00</b></div>
+              <div class="ln"><span>Customer</span><b>Sok Dara</b></div>
+              <div class="ln"><span>Loan</span><b>LN-2026-0042</b></div>
+              <div class="ln"><span>Documents</span><b>6 attached</b></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ DOCUMENTS TAB ============ -->
+  <div id="tab-docs" class="hide">
+    <section class="card">
+      <div class="card-head">
+        <h2>Where documents attach</h2>
+        <span class="hint">One document table, four possible owners</span>
+      </div>
+      <div class="card-body">
+        <p style="margin:0 0 18px;color:var(--ink-2);max-width:76ch">
+          Documents are stored once with a polymorphic owner — <code style="font-family:var(--mono);font-size:12.5px">owner_type</code>
+          plus <code style="font-family:var(--mono);font-size:12.5px">owner_id</code> — rather than copied onto each record. A bank
+          statement belongs to the customer, not to the bike, so it stays available when that customer buys a second one.
+        </p>
+        <table class="matrix">
+          <thead><tr><th style="width:180px">Owner</th><th>Typical documents</th><th style="width:210px">Uploaded during</th></tr></thead>
+          <tbody id="docMatrix"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Document table</h2></div>
+      <div class="card-body">
+        <table class="tbl">
+          <thead><tr><th style="width:210px">Field</th><th style="width:120px">Type</th><th>Notes</th></tr></thead>
+          <tbody id="docFields"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+/* ---------------- model ---------------- */
+const M = {
+  product:{
+    name:'Product', one:'One row per model you sell',
+    desc:'The catalogue entry. It describes a model — what it is, what it costs, how it is tracked — and never refers to a physical object. Honda Dream 2026 is one product whether you hold zero bikes or forty.',
+    fields:[
+      ['product_id','uuid','Primary key','pk'],
+      ['sku','string','Parent SKU. Unique across products','uq'],
+      ['name','string','Honda Dream 2026'],
+      ['category_id','fk','Drives which attributes and sections apply','fk'],
+      ['brand / model / model_year','string','Honda · Dream · 2026'],
+      ['unit_id','fk','Base unit of measure','fk'],
+      ['tracking_type','enum','quantity · batch · serialized'],
+      ['status','enum','draft · active · inactive'],
+      ['cost_price / retail_price','decimal','Defaults inherited by variants'],
+      ['wholesale_price / vip_price','decimal','Price levels'],
+      ['tax_rule_id','fk','Inclusive or exclusive','fk'],
+      ['reorder_level / min_stock / max_stock','int','Planning thresholds'],
+      ['attributes','json','Category-driven specification'],
+      ['has_variants','bool','Whether the variant layer is used']
+    ],
+    rules:[
+      ['A product holds <b>no VIN, serial or engine number</b>. Those identify objects, not models.',1],
+      ['Stock is never stored on the product — it is derived from inventory items or batch quantities.'],
+      ['Product status is independent of any unit status. A product stays Active while every bike is sold.'],
+      ['Deactivating a product hides it from new sales but leaves history intact.']
+    ],
+    rel:[['1 → N','Variant','Colour and engine options'],['1 → N','Inventory item','Direct, when variants are off']],
+    ex:{name:'Honda Dream 2026', sub:'MC-HON-DREA-0001',
+      chips:[['Motorcycle',''],['Active','ok'],['Serialized','']],
+      rec:[['product_id','prd_01H8…'],['category','Motorcycle'],['brand','Honda'],['model_year','2026'],['tracking','serialized'],['retail','$2,100.00'],['variants','4']]}
+  },
+
+  variant:{
+    name:'Variant', one:'One row per sellable option', optional:true,
+    desc:'The layer between a model and a physical object. Black / 125cc is a thing a customer can ask for and a price list can quote, but it is still not a specific bike. Optional — a product without options gets one implicit default variant so everything downstream keeps a single shape.',
+    fields:[
+      ['variant_id','uuid','Primary key','pk'],
+      ['product_id','fk','Parent product','fk'],
+      ['attributes','json','{ colour: Black, engine_cc: 125 }'],
+      ['sku','string','Own SKU, unique across all products','uq'],
+      ['barcode','string','Own barcode, unique','uq'],
+      ['cost_price / retail_price','decimal','Null falls back to the product'],
+      ['image_id','fk','Optional variant photo','fk'],
+      ['is_default','bool','True for the implicit single variant']
+    ],
+    rules:[
+      ['A variant carries its own SKU, barcode and price — that is the whole point of the layer.'],
+      ['Blank price means <b>inherit from the product</b>, which is different from zero.'],
+      ['Changing a variant attribute after units exist would rewrite history — add a new variant instead.',1],
+      ['Three attributes is the practical ceiling. Four attributes with four values each is 256 SKUs.']
+    ],
+    rel:[['N → 1','Product','Belongs to'],['1 → N','Inventory item','Physical units of this option']],
+    ex:{name:'Black / 125cc', sub:'MC-HON-DREA-0001-BLAC-125',
+      chips:[['Colour: Black',''],['Engine: 125cc',''],['12 in stock','ok']],
+      rec:[['variant_id','var_01H8…'],['product_id','prd_01H8…'],['colour','Black'],['engine_cc','125'],['barcode','8850123456796'],['retail','inherits $2,100.00']]}
+  },
+
+  item:{
+    name:'Inventory item', one:'One row per physical object',
+    desc:'The bike you can put your hand on. It has a VIN stamped into the frame and an engine number stamped into the casing, and from here on everything — sale, loan, warranty, registration — hangs off this row rather than off the product.',
+    fields:[
+      ['item_id','uuid','Primary key','pk'],
+      ['variant_id','fk','Which option this unit is','fk'],
+      ['vin','string','VIN / chassis. Unique system-wide','uq'],
+      ['engine_no','string','Unique system-wide','uq'],
+      ['colour','string','Actual colour of this unit'],
+      ['purchase_cost','decimal','What this unit cost — not the product average'],
+      ['status','enum','available · reserved · loan_pending · sold · delivered · returned · damaged'],
+      ['warehouse_id / location','fk','Where it physically sits','fk'],
+      ['supplier_id / po_ref','fk','Where it came from','fk'],
+      ['received_at','date','Arrival date, drives ageing reports'],
+      ['reserved_by / reserved_until','fk','Salesperson hold','fk']
+    ],
+    rules:[
+      ['VIN and engine number are unique across the <b>entire system</b>, not per product.'],
+      ['Item status is never the same field as product status. Product = Active, VIN001 = Loan pending.'],
+      ['Purchase cost lives here, so margin is calculated per unit — two identical bikes bought months apart cost different amounts.'],
+      ['An item can have at most one open sale. Returning it releases the item back to Available.'],
+      ['Never delete a sold item. Status carries it out of stock while keeping the audit trail.',1]
+    ],
+    rel:[['N → 1','Variant','Which option'],['1 → 1','Sale','At most one open sale'],['1 → N','Document','Registration, invoice, inspection']],
+    ex:{name:'MLHJC4110M5000891', sub:'Engine JC41E-1000891',
+      chips:[['Black / 125cc',''],['Loan pending','vio'],['Showroom','']],
+      rec:[['item_id','itm_01H8…'],['variant_id','var_01H8…'],['vin','MLHJC4110M5000891'],['engine_no','JC41E-1000891'],['purchase_cost','$1,200.00'],['status','loan_pending'],['received_at','2026-07-14']]}
+  },
+
+  sale:{
+    name:'Sale', one:'One row per unit sold',
+    desc:'A sale points at a specific inventory item and a specific customer. Because the item is identified, you can answer "who bought VIN 891 and what did they pay" years later without reconstructing anything.',
+    fields:[
+      ['sale_id','uuid','Primary key','pk'],
+      ['item_id','fk','The exact unit sold','fk'],
+      ['customer_id','fk','Buyer','fk'],
+      ['salesperson_id','fk','Commission and accountability','fk'],
+      ['sale_date','datetime','Contract date'],
+      ['sale_price','decimal','Agreed price, may differ from retail'],
+      ['discount / tax','decimal','As applied at the till'],
+      ['payment_type','enum','cash · installment · bank_loan'],
+      ['down_payment','decimal','Zero for a cash sale'],
+      ['status','enum','quotation · confirmed · delivered · cancelled · returned'],
+      ['invoice_no','string','Sequential, unique','uq']
+    ],
+    rules:[
+      ['A sale references one item. Selling three bikes to one customer creates three sales, because each has its own VIN and warranty.'],
+      ['Confirming a sale moves the item to Sold. Delivering it moves the item to Delivered.'],
+      ['Cancelling returns the item to Available and leaves the cancelled sale on record.'],
+      ['<b>payment_type = bank_loan</b> is what makes a Loan row possible — no loan can exist without it.']
+    ],
+    rel:[['N → 1','Inventory item','What was sold'],['N → 1','Customer','Who bought it'],['1 → 0..1','Loan','Only when financed'],['1 → N','Document','Invoice, contract, delivery note']],
+    ex:{name:'INV-2026-01184', sub:'Sale of MLHJC4110M5000891',
+      chips:[['Bank loan','hot'],['Confirmed','ok']],
+      rec:[['sale_id','sal_01H8…'],['item_id','itm_01H8…'],['customer','Sok Dara'],['sale_price','$2,100.00'],['down_payment','$400.00'],['payment_type','bank_loan'],['salesperson','Chan Nita']]}
+  },
+
+  loan:{
+    name:'Loan', one:'One row per financed sale', optional:true,
+    desc:'Financing sits beside the sale rather than inside it, because a loan has its own lifecycle with the bank — submitted, under review, approved or rejected — that runs on a different clock from the sale itself.',
+    fields:[
+      ['loan_id','uuid','Primary key','pk'],
+      ['sale_id','fk','The sale being financed','fk'],
+      ['customer_id','fk','Borrower — usually the buyer, not always','fk'],
+      ['lender_id','fk','Bank or microfinance partner','fk'],
+      ['principal','decimal','Sale price less down payment'],
+      ['interest_rate','decimal','Annual rate'],
+      ['term_months','int','12 · 18 · 24 · 36'],
+      ['installment','decimal','Monthly amount'],
+      ['application_status','enum','draft · submitted · under_review · approved · rejected'],
+      ['approved_at / reference_no','date','Bank reference once approved'],
+      ['guarantor_id','fk','Optional co-signer','fk']
+    ],
+    rules:[
+      ['A loan cannot exist without a sale. The borrower is reached through the sale, never invented separately.'],
+      ['While the application is open the item sits at <b>Loan pending</b> — reserved but not yet sold.'],
+      ['Rejection returns the item to Available and keeps the rejected loan for reporting.'],
+      ['The borrower may differ from the buyer — a parent financing a child\u2019s bike. Two customer references, one sale.']
+    ],
+    rel:[['N → 1','Sale','What is being financed'],['N → 1','Customer','Borrower'],['1 → N','Document','Application, approval letter, schedule']],
+    ex:{name:'LN-2026-0042', sub:'Financing INV-2026-01184',
+      chips:[['Under review','hot'],['24 months','']],
+      rec:[['loan_id','lon_01H8…'],['sale_id','sal_01H8…'],['lender','ACLEDA Bank'],['principal','$1,700.00'],['term','24 months'],['installment','$78.50'],['status','under_review']]}
+  },
+
+  customer:{
+    name:'Customer', one:'One row per person or business',
+    desc:'A customer exists independently of any sale, which is what lets a returning buyer keep their history, their ID documents and their credit record instead of being re-entered each time.',
+    fields:[
+      ['customer_id','uuid','Primary key','pk'],
+      ['type','enum','individual · business'],
+      ['name / phone','string','Phone is the practical unique key','uq'],
+      ['national_id','string','Used for loan applications'],
+      ['address / commune','string','Delivery and registration'],
+      ['credit_flag','enum','clear · watch · blocked'],
+      ['created_at','datetime','First contact']
+    ],
+    rules:[
+      ['One customer, many sales and many loans. Never duplicate a person to record a second purchase.'],
+      ['Identity documents belong to the customer, not to a sale — they stay valid across purchases.'],
+      ['A blocked credit flag should stop a new loan application, not a cash sale.']
+    ],
+    rel:[['1 → N','Sale','Purchases'],['1 → N','Loan','Financing history'],['1 → N','Document','ID card, family book, income proof']],
+    ex:{name:'Sok Dara', sub:'CUS-004182 · 012 345 678',
+      chips:[['Individual',''],['Clear','ok'],['2 purchases','']],
+      rec:[['customer_id','cus_01H8…'],['type','individual'],['phone','012 345 678'],['national_id','012345678'],['credit_flag','clear'],['since','2024-03-11']]}
+  },
+
+  document:{
+    name:'Document', one:'One row per uploaded file',
+    desc:'A single table serving four owners through a polymorphic reference. Storing files once and pointing at the right owner keeps a customer ID card from being duplicated onto every bike they ever buy.',
+    fields:[
+      ['document_id','uuid','Primary key','pk'],
+      ['owner_type','enum','customer · loan · sale · inventory_item · product'],
+      ['owner_id','uuid','Points into the owner table','fk'],
+      ['doc_type','enum','id_card · invoice · registration · loan_application · warranty · certificate · other'],
+      ['file_path / mime / size','string','Storage reference'],
+      ['issued_at / expires_at','date','Drives expiry reminders'],
+      ['uploaded_by','fk','Staff accountability','fk'],
+      ['is_verified','bool','Checked against the original']
+    ],
+    rules:[
+      ['<b>owner_type + owner_id</b> is the whole design. No document_customer, document_sale, document_item tables.'],
+      ['A document is attached to the narrowest owner it truly belongs to — registration to the item, ID to the customer.'],
+      ['Expiry dates make documents actionable: an expiring insurance certificate should raise a task.'],
+      ['Deleting an owner must not orphan files. Archive instead.',1]
+    ],
+    rel:[['N → 1','Customer','ID and income proof'],['N → 1','Loan','Application and approval'],['N → 1','Sale','Invoice and contract'],['N → 1','Inventory item','Registration and inspection']],
+    ex:{name:'Registration certificate', sub:'owner: inventory_item / itm_01H8…',
+      chips:[['registration',''],['Verified','ok']],
+      rec:[['document_id','doc_01H8…'],['owner_type','inventory_item'],['owner_id','itm_01H8…'],['doc_type','registration'],['issued_at','2026-08-02'],['uploaded_by','Chan Nita']]}
+  }
+};
+
+const KEY_OF = {Product:'product', Variant:'variant', 'Inventory item':'item', Sale:'sale', Loan:'loan', Customer:'customer', Document:'document'};
+
+/* ---------------- diagram ---------------- */
+const NODES = [
+  {k:'product', x:15,  y:150, w:170, h:66, t:'Product',        s:'Honda Dream 2026', kd:'MODEL'},
+  {k:'variant', x:220, y:150, w:170, h:66, t:'Variant',        s:'Black / 125cc',    kd:'OPTION', opt:true},
+  {k:'item',    x:425, y:150, w:170, h:66, t:'Inventory item', s:'VIN + engine no.', kd:'PHYSICAL'},
+  {k:'sale',    x:630, y:150, w:170, h:66, t:'Sale',           s:'Item + customer',  kd:'EVENT'},
+  {k:'loan',    x:835, y:150, w:170, h:66, t:'Loan',           s:'Sale + customer',  kd:'FINANCE', opt:true},
+  {k:'customer',x:630, y:36,  w:170, h:58, t:'Customer',       s:'Sok Dara',         kd:'PARTY'},
+  {k:'document',x:15,  y:320, w:990, h:60, t:'Document',       s:'owner_type + owner_id', kd:'ATTACHMENT'}
+];
+
+const LINKS = [
+  {d:'M185 183 H214', lbl:'1→N', lx:191, ly:176},
+  {d:'M390 183 H419', lbl:'1→N', lx:396, ly:176},
+  {d:'M595 183 H624', lbl:'1→1', lx:601, ly:176},
+  {d:'M800 183 H829', lbl:'1→0..1', lx:800, ly:176},
+  {d:'M715 94 V150', lbl:'1→N', lx:722, ly:126},
+  {d:'M800 65 H1010 V150', lbl:'1→N', lx:930, ly:58, dash:true},
+  {d:'M300 216 V260 H510 V320', dash:true},
+  {d:'M510 216 V320', dash:true},
+  {d:'M715 216 V320', dash:true},
+  {d:'M920 216 V320', dash:true},
+  {d:'M608 320 V72 H624', dash:true}
+];
+
+function drawMap(){
+  const svg = $('#map');
+  let h = '';
+  LINKS.forEach(l=>{
+    h += `<path class="link ${l.dash?'dash':''}" d="${l.d}"/>`;
+    if(l.lbl) h += `<text class="card-lbl" x="${l.lx}" y="${l.ly}">${l.lbl}</text>`;
+  });
+  NODES.forEach(n=>{
+    h += `<g class="node ${n.opt?'opt':''}" data-k="${n.k}" tabindex="0" role="button" aria-label="${n.t}">
+      <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}"/>
+      <rect class="bar" x="${n.x}" y="${n.y}" width="${n.w}" height="4" rx="2"/>
+      <text class="k" x="${n.x+14}" y="${n.y+22}">${n.kd}</text>
+      <text class="t" x="${n.x+14}" y="${n.y+42}">${n.t}</text>
+      <text class="s" x="${n.x+14}" y="${n.y+58}">${n.s}</text>
+    </g>`;
+  });
+  svg.innerHTML = h;
+  $$('#map .node').forEach(g=>{
+    g.addEventListener('click', ()=> select(g.dataset.k));
+    g.addEventListener('keydown', e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); select(g.dataset.k); } });
+  });
+}
+
+/* ---------------- detail ---------------- */
+function select(k){
+  const m = M[k]; if(!m) return;
+  $$('#map .node').forEach(g=> g.classList.toggle('on', g.dataset.k === k));
+
+  $('#dName').textContent = m.name;
+  $('#dOne').textContent = m.one;
+  $('#dDesc').textContent = m.desc;
+
+  $('#dFields').innerHTML = m.fields.map(f=>`
+    <tr>
+      <td class="f">${f[0]}${f[3] ? `<span class="tag ${f[3]}">${f[3]}</span>` : ''}</td>
+      <td class="ty">${f[1]}</td>
+      <td class="n">${f[2]}</td>
+    </tr>`).join('');
+
+  $('#dRules').innerHTML = m.rules.map(r=>`<li class="${r[1]?'warn':''}">${r[0]}</li>`).join('');
+
+  $('#dRel').innerHTML = m.rel.map(r=>`
+    <a tabindex="0" data-go="${KEY_OF[r[1]] || ''}">
+      <span class="card-n">${r[0]}</span>
+      <span class="lbl2">${r[1]}</span>
+      <span class="sub">${r[2]}</span>
+    </a>`).join('');
+  $$('#dRel a').forEach(a=>{
+    const go = a.dataset.go;
+    if(!go) return;
+    a.addEventListener('click', ()=> select(go));
+    a.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); select(go); } });
+  });
+
+  const e = m.ex;
+  $('#eName').textContent = e.name;
+  $('#eSub').textContent = e.sub;
+  $('#eChips').innerHTML = e.chips.map(c=>`<span class="chip ${c[1]}">${c[0]}</span>`).join('');
+  $('#eRec').innerHTML = e.rec.map(r=>`<div class="ln"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+}
+
+/* ---------------- trace ---------------- */
+const TRACE = [
+  {t:'Purchase order raised', p:'40 units ordered from Honda Cambodia. No inventory items exist yet — only a PO.',
+   meta:[['ent','Purchase order'],['doc','Proforma invoice']], state:'done'},
+  {t:'Goods received', p:'Each frame is scanned in. One inventory item row is created per VIN, with its own purchase cost.',
+   meta:[['st','Received'],['ent','Inventory item × 40'],['doc','Supplier invoice'],['doc','Customs declaration']], state:'done'},
+  {t:'Available in showroom', p:'Unit MLHJC4110M5000891 sits at Showroom — Toul Kork and appears in stock reports and on the POS.',
+   meta:[['st','Available'],['ent','Warehouse: Showroom']], state:'done'},
+  {t:'Reserved by salesperson', p:'Chan Nita holds the unit for 48 hours while the customer decides. It leaves available stock without being sold.',
+   meta:[['st','Reserved'],['ent','Salesperson: Chan Nita']], state:'done'},
+  {t:'Customer confirmed', p:'Sok Dara agrees the price at $2,100 with $400 down. A sale row is created against this VIN.',
+   meta:[['st','Reserved'],['ent','Sale INV-2026-01184'],['doc','Quotation'],['doc','Customer ID card']], state:'done'},
+  {t:'Loan application submitted', p:'Payment type is bank_loan, so a loan row is opened for the $1,700 balance over 24 months.',
+   meta:[['st','Loan pending'],['ent','Loan LN-2026-0042'],['doc','Loan application'],['doc','Income proof']], state:'done'},
+  {t:'Bank review', p:'ACLEDA is assessing. The bike is neither available nor sold — this is exactly why loan_pending is its own status.',
+   meta:[['st','Loan pending'],['ent','Lender: ACLEDA Bank']], state:'now'},
+  {t:'Loan approved', p:'Approval reference recorded against the loan. The sale can now be confirmed.',
+   meta:[['st','Loan pending'],['doc','Approval letter'],['doc','Repayment schedule']]},
+  {t:'Sale confirmed', p:'Invoice issued. The unit leaves stock and margin is booked against its own purchase cost.',
+   meta:[['st','Sold'],['doc','Tax invoice'],['doc','Sales contract']]},
+  {t:'Delivered', p:'Handover signed, registration filed against the VIN and the warranty clock starts on this unit.',
+   meta:[['st','Delivered'],['doc','Delivery note'],['doc','Registration certificate'],['doc','Warranty card']]}
+];
+
+function drawTrace(){
+  $('#traceList').innerHTML = TRACE.map(s=>`
+    <div class="step ${s.state||''}">
+      <span class="dot"></span>
+      <h4>${s.t}</h4>
+      <p>${s.p}</p>
+      <div class="meta">${s.meta.map(m=>`<span class="pill ${m[0]}">${m[1]}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+/* ---------------- documents ---------------- */
+const DOCS = [
+  ['Customer', ['National ID card','Family book','Income proof','Bank statement','Photograph'], 'Customer onboarding and loan application'],
+  ['Loan',     ['Loan application','Approval letter','Repayment schedule','Guarantor form'],    'Financing, before the sale is confirmed'],
+  ['Sale',     ['Quotation','Tax invoice','Sales contract','Delivery note'],                    'Sale confirmation and handover'],
+  ['Inventory item', ['Registration certificate','Import / customs paper','Inspection report','Warranty card','Unit photos'], 'Goods receipt and delivery'],
+  ['Product',  ['Specification sheet','Manufacturer brochure','Warranty policy','Certificate'], 'Product setup — shared by every unit']
+];
+
+function drawDocs(){
+  $('#docMatrix').innerHTML = DOCS.map(d=>`
+    <tr>
+      <td class="o">${d[0]}</td>
+      <td><div class="d">${d[1].map(x=>`<span class="pill doc">${x}</span>`).join('')}</div></td>
+      <td style="color:var(--muted)">${d[2]}</td>
+    </tr>`).join('');
+  $('#docFields').innerHTML = M.document.fields.map(f=>`
+    <tr><td class="f">${f[0]}${f[3]?`<span class="tag ${f[3]}">${f[3]}</span>`:''}</td>
+    <td class="ty">${f[1]}</td><td class="n">${f[2]}</td></tr>`).join('');
+}
+
+/* ---------------- tabs ---------------- */
+$$('#tabs button').forEach(b=> b.onclick = ()=>{
+  $$('#tabs button').forEach(x=> x.classList.toggle('on', x === b));
+  ['model','trace','docs'].forEach(t=> $('#tab-'+t).classList.toggle('hide', t !== b.dataset.tab));
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+drawMap();
+drawTrace();
+drawDocs();
+select('product');
+})();
+</script>
