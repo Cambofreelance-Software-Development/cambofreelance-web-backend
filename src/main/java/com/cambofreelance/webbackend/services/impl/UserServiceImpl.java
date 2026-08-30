@@ -69,6 +69,10 @@ public class UserServiceImpl implements UserService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    /** Excludes visually-ambiguous characters (0/O, 1/I) — this code gets typed in by hand. */
+    private static final String REFERRAL_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final int REFERRAL_CODE_LENGTH = 8;
+
     @Override
     public UserEntity authUser(OAuthRequest authRequest) throws AppException {
         UserEntity username = userRepository.findByUsernameAndStatus(
@@ -130,6 +134,7 @@ public class UserServiceImpl implements UserService {
         userEntity.setPhoneNumber(request.getPhoneNumber());
         userEntity.setApplicationId(request.getApplicationType());
         userEntity.setUserType(request.getUserType());
+        userEntity.setReferralCode(generateReferralCode());
         userRepository.save(userEntity);
         return userEntity;
     }
@@ -212,6 +217,14 @@ public class UserServiceImpl implements UserService {
         // log in — see OAuthAuthenticator.
         userEntity.setPhoneVerified(false);
         userEntity.setEmailVerified(false);
+
+        userEntity.setReferralCode(generateReferralCode());
+        if (StringUtils.hasText(request.getReferralCode())) {
+            UserEntity referrer = userRepository
+                .findByReferralCodeAndStatus(request.getReferralCode().trim().toUpperCase(), Constants.STATUS_ACTIVE)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REFERRAL_CODE, "Invalid referral code"));
+            userEntity.setReferredBy(referrer.getUserId());
+        }
 
         // Assign PUBLIC_USER role automatically on self-registration
         roleRepository.findByCode("PUBLIC_USER").ifPresent(role -> {
@@ -313,6 +326,7 @@ public class UserServiceImpl implements UserService {
         userEntity.setPassword(bCryptPasswordEncoder.encode(Base64.getEncoder().encodeToString(randomBytes)));
         userEntity.setUserType(Constants.USER);
         userEntity.setRegisterChannel(RegisterChannel.GOOGLE);
+        userEntity.setReferralCode(generateReferralCode());
         // Google verifies the email, so unlike self-registration these accounts don't need admin approval.
         userEntity.setApprovalStatus(Constants.APPROVAL_APPROVED);
         // Google verifies the email, and there's no phone number to verify on this path anyway.
@@ -335,6 +349,18 @@ public class UserServiceImpl implements UserService {
         while (userRepository.findByUsernameAndStatus(candidate, Constants.STATUS_ACTIVE).isPresent()) {
             candidate = localPart + RANDOM.nextInt(10000, 100000);
         }
+        return candidate;
+    }
+
+    private String generateReferralCode() {
+        String candidate;
+        do {
+            StringBuilder sb = new StringBuilder(REFERRAL_CODE_LENGTH);
+            for (int i = 0; i < REFERRAL_CODE_LENGTH; i++) {
+                sb.append(REFERRAL_CODE_CHARS.charAt(RANDOM.nextInt(REFERRAL_CODE_CHARS.length())));
+            }
+            candidate = sb.toString();
+        } while (userRepository.existsByReferralCode(candidate));
         return candidate;
     }
 
@@ -365,6 +391,7 @@ public class UserServiceImpl implements UserService {
             .userType(user.getUserType())
             .status(user.getStatus())
             .approvalStatus(user.getApprovalStatus())
+            .referralCode(user.getReferralCode())
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -439,6 +466,7 @@ public class UserServiceImpl implements UserService {
             .userType(user.getUserType())
             .status(user.getStatus())
             .approvalStatus(user.getApprovalStatus())
+            .referralCode(user.getReferralCode())
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -522,6 +550,7 @@ public class UserServiceImpl implements UserService {
         ));
         user.setUserType(StringUtils.hasText(request.getUserType()) ? request.getUserType() : Constants.USER);
         user.setStatus(Constants.STATUS_ACTIVE);
+        user.setReferralCode(generateReferralCode());
         // Admin-created accounts are trusted, no separate approval step needed
         user.setApprovalStatus(Constants.APPROVAL_APPROVED);
         // Admin-created, so there's no self-service OTP step to gate on

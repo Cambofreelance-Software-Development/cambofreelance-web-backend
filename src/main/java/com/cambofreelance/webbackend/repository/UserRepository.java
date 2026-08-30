@@ -21,6 +21,10 @@ public interface UserRepository extends JpaRepository<UserEntity, String>, JpaSp
 
     Optional<UserEntity> findByEmailAndStatus(String email, String status);
 
+    Optional<UserEntity> findByReferralCodeAndStatus(String referralCode, String status);
+
+    boolean existsByReferralCode(String referralCode);
+
     @Query("SELECT DISTINCT p.code FROM UserEntity u " +
            "JOIN u.roles r " +
            "JOIN r.permissions p " +

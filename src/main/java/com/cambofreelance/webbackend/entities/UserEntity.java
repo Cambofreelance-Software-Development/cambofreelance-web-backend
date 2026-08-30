@@ -90,6 +90,14 @@ public class UserEntity extends BaseEntity implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date invalidOtpAt;
 
+    /** This user's own shareable code — other users enter it at registration to be attributed to them. */
+    @Column(name = "referral_code")
+    private String referralCode;
+
+    /** userId of whoever referred this user in, resolved from the referral code entered at registration. */
+    @Column(name = "referred_by")
+    private String referredBy;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "USER_ROLES",
         joinColumns = @JoinColumn(name = "USER_ID"),

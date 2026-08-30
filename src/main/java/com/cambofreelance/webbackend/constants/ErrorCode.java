@@ -45,4 +45,5 @@ public final class ErrorCode {
     public static final String OTP_EMAIL_SEND_FAILED = "ERR-0025";
     public static final String NOTIFICATION_NOT_FOUND = "ERR-0026";
     public static final String TEST_EMAIL_SEND_FAILED = "ERR-0027";
+    public static final String INVALID_REFERRAL_CODE = "ERR-0028";
 }

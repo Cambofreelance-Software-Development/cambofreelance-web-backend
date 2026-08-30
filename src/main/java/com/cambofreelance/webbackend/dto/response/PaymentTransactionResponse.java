@@ -21,6 +21,8 @@ public class PaymentTransactionResponse {
     private String apv;
     /** USER or AUTO_RENEW */
     private String initiatedBy;
+    /** userId of whoever referred this transaction's payer, snapshotted from the subscription. */
+    private String referrerId;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date createdAt;

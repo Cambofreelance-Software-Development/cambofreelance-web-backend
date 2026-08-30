@@ -83,4 +83,9 @@ public class UserSubscriptionEntity extends BaseEntity implements Serializable {
 
     @Column(name = "notice_1d_sent")
     private Boolean notice1dSent = false;
+
+    /** userId of the user who referred this subscription's owner, snapshotted at first checkout
+     *  (from UserEntity.referredBy) — stays fixed for the subscription's lifetime. */
+    @Column(name = "referrer_id")
+    private String referrerId;
 }

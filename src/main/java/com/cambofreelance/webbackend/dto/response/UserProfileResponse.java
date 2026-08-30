@@ -38,6 +38,10 @@ public class UserProfileResponse {
     @JsonProperty("approvalStatus")
     private String approvalStatus;
 
+    /** This user's own shareable referral code. */
+    @JsonProperty("referralCode")
+    private String referralCode;
+
     @JsonProperty("createdAt")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date createdAt;

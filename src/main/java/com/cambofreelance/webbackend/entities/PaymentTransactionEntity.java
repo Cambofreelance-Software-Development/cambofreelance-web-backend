@@ -98,4 +98,10 @@ public class PaymentTransactionEntity extends BaseEntity implements Serializable
     /** USER (checkout/renewal by the customer) or AUTO_RENEW (unattended Card-on-File charge). */
     @Column(name = "initiated_by")
     private String initiatedBy = com.cambofreelance.webbackend.constants.Constants.PAY_INITIATED_USER;
+
+    /** Copied from the subscription's referrerId at the time this transaction was created — kept
+     *  on every transaction (not just the first) so a future commission job doesn't need to join
+     *  back through the subscription/user chain. */
+    @Column(name = "referrer_id")
+    private String referrerId;
 }

@@ -34,4 +34,7 @@ public class UserRegisterRequest {
 
     @NotBlank(message = "Confirm password is required")
     private String confirmPassword;
+
+    /** Optional — another user's referral code, credits that user as this account's referrer. */
+    private String referralCode;
 }

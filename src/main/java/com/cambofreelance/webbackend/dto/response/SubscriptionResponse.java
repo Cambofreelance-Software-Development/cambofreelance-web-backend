@@ -29,6 +29,9 @@ public class SubscriptionResponse {
     private Date createdAt;
 
     private boolean autoRenew;
+    /** userId of whoever referred this subscription's owner — null if none. */
+    private String referrerId;
+    private String referrerUsername;
     /** Whether a Card-on-File token is stored — the raw token itself is never serialized. */
     private boolean hasPaymentToken;
     private Integer autoRenewFailureCount;

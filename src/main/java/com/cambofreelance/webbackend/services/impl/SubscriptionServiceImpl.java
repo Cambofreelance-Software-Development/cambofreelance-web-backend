@@ -177,6 +177,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             sub.setCurrency("USD");
             sub.setSubStatus(Constants.SUB_PENDING_PAYMENT);
             sub.setAutoRenew(requestLifetimeToken);
+            sub.setReferrerId(user.getReferredBy());
             sub.setCreatedBy(userId);
             subscriptionRepository.save(sub);
         }
@@ -193,6 +194,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         tx.setTargetPlanId(plan.getId());
         tx.setProrated(planChange);
         tx.setInitiatedBy(Constants.PAY_INITIATED_USER);
+        tx.setReferrerId(sub.getReferrerId());
         tx.setCreatedBy(userId);
         if (freePlan) {
             tx.setVerifiedAt(new Date());
@@ -518,6 +520,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         tx.setPaymentStatus(Constants.PAY_PENDING);
         tx.setTargetPlanId(sub.getPlanId());
         tx.setInitiatedBy(Constants.PAY_INITIATED_AUTO_RENEW);
+        tx.setReferrerId(sub.getReferrerId());
         tx.setCreatedBy(Constants.SYSTEM);
         transactionRepository.save(tx);
         logEvent(tx, null, Constants.PAY_PENDING, Constants.PAY_SRC_AUTO_RENEW, "Auto-renew charge attempt", Constants.SYSTEM);
@@ -917,6 +920,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private SubscriptionResponse toSubscriptionResponse(UserSubscriptionEntity s) {
         String planName = planRepository.findById(s.getPlanId())
             .map(PricingPlanEntity::getName).orElse(null);
+        String referrerUsername = StringUtils.hasText(s.getReferrerId())
+            ? userRepository.findById(s.getReferrerId()).map(UserEntity::getUsername).orElse(null)
+            : null;
         return SubscriptionResponse.builder()
             .id(s.getId())
             .userId(s.getUserId())
@@ -930,6 +936,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .expiresAt(s.getExpiresAt())
             .createdAt(s.getCreatedAt())
             .autoRenew(Boolean.TRUE.equals(s.getAutoRenew()))
+            .referrerId(s.getReferrerId())
+            .referrerUsername(referrerUsername)
             .hasPaymentToken(StringUtils.hasText(s.getPaymentToken()))
             .autoRenewFailureCount(s.getAutoRenewFailureCount())
             .paymentTokenCapturedAt(s.getPaymentTokenCapturedAt())
@@ -951,6 +959,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .paymentStatus(t.getPaymentStatus())
             .apv(t.getApv())
             .initiatedBy(t.getInitiatedBy())
+            .referrerId(t.getReferrerId())
             .createdAt(t.getCreatedAt())
             .verifiedAt(t.getVerifiedAt())
             .refundedBy(t.getRefundedBy())
