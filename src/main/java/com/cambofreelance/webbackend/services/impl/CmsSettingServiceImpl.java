@@ -12,6 +12,7 @@ import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
 import com.cambofreelance.webbackend.dto.request.PageCtasRequest;
 import com.cambofreelance.webbackend.dto.request.PageHeroesRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerCtaSettingRequest;
+import com.cambofreelance.webbackend.dto.request.SmtpSettingRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
@@ -25,6 +26,7 @@ import com.cambofreelance.webbackend.dto.response.PartnerCtaSettingResponse;
 import com.cambofreelance.webbackend.dto.response.IpWhitelistResponse;
 import com.cambofreelance.webbackend.dto.response.SitePublicConfigResponse;
 import com.cambofreelance.webbackend.dto.response.SiteStatsResponse;
+import com.cambofreelance.webbackend.dto.response.SmtpSettingResponse;
 import com.cambofreelance.webbackend.dto.response.StorageSettingResponse;
 import com.cambofreelance.webbackend.entities.CmsSettingEntity;
 import com.cambofreelance.webbackend.repository.CmsSettingRepository;
@@ -114,6 +116,54 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     @Override
     public void sendTestEmail(String to) {
         emailService.sendTestEmail(to);
+    }
+
+    // ── SMTP ─────────────────────────────────────────────────────────────────
+
+    @Override
+    public SmtpSettingResponse getSmtpSettings() {
+        Map<String, String> m = loadGroup(SettingGroup.SMTP);
+        String host = m.getOrDefault("smtp_host", "");
+        String portStr = m.getOrDefault("smtp_port", "587");
+        int port = 587;
+        try {
+            port = Integer.parseInt(portStr);
+        } catch (NumberFormatException ignored) {}
+
+        String pass = m.getOrDefault("smtp_password", "");
+        return SmtpSettingResponse.builder()
+            .host(host)
+            .port(port)
+            .username(m.getOrDefault("smtp_username", ""))
+            .hasPassword(!pass.isBlank())
+            .fromEmail(m.getOrDefault("smtp_from_email", ""))
+            .fromName(m.getOrDefault("smtp_from_name", ""))
+            .encryption(m.getOrDefault("smtp_encryption", "STARTTLS"))
+            .auth(Boolean.parseBoolean(m.getOrDefault("smtp_auth", "true")))
+            .build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated SMTP email settings")
+    public SmtpSettingResponse updateSmtpSettings(SmtpSettingRequest req) {
+        Map<String, String> existing = loadGroup(SettingGroup.SMTP);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("smtp_host", req.getHost() != null ? req.getHost().trim() : "");
+        values.put("smtp_port", req.getPort() != null ? String.valueOf(req.getPort()) : "587");
+        values.put("smtp_username", req.getUsername() != null ? req.getUsername().trim() : "");
+        if (req.getPassword() != null && !req.getPassword().isBlank()) {
+            values.put("smtp_password", req.getPassword());
+        } else if (existing.containsKey("smtp_password")) {
+            values.put("smtp_password", existing.get("smtp_password"));
+        }
+        values.put("smtp_from_email", req.getFromEmail() != null ? req.getFromEmail().trim() : "");
+        values.put("smtp_from_name", req.getFromName() != null ? req.getFromName().trim() : "");
+        values.put("smtp_encryption", req.getEncryption() != null ? req.getEncryption().trim() : "STARTTLS");
+        values.put("smtp_auth", req.getAuth() != null ? String.valueOf(req.getAuth()) : "true");
+
+        batchUpsert(SettingGroup.SMTP, values);
+        return getSmtpSettings();
     }
 
     @Override

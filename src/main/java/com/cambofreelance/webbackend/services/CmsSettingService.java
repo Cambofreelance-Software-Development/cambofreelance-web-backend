@@ -11,6 +11,7 @@ import com.cambofreelance.webbackend.dto.request.HomepagePageSettingRequest;
 import com.cambofreelance.webbackend.dto.request.PageCtasRequest;
 import com.cambofreelance.webbackend.dto.request.PageHeroesRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerCtaSettingRequest;
+import com.cambofreelance.webbackend.dto.request.SmtpSettingRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.dto.response.CdnSettingResponse;
 import com.cambofreelance.webbackend.dto.response.CmsGeneralSettingResponse;
@@ -24,6 +25,7 @@ import com.cambofreelance.webbackend.dto.response.PartnerCtaSettingResponse;
 import com.cambofreelance.webbackend.dto.response.IpWhitelistResponse;
 import com.cambofreelance.webbackend.dto.response.SitePublicConfigResponse;
 import com.cambofreelance.webbackend.dto.response.SiteStatsResponse;
+import com.cambofreelance.webbackend.dto.response.SmtpSettingResponse;
 import com.cambofreelance.webbackend.dto.response.StorageSettingResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +37,9 @@ public interface CmsSettingService {
 
     /** Sends a one-off test email to confirm outgoing SMTP is actually working. Throws on failure. */
     void sendTestEmail(String to);
+
+    SmtpSettingResponse getSmtpSettings();
+    SmtpSettingResponse updateSmtpSettings(SmtpSettingRequest request);
 
     CmsSeoSettingResponse getSeoSettings();
     CmsSeoSettingResponse updateSeoSettings(CmsSeoSettingRequest request);

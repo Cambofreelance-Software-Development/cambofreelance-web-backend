@@ -12,6 +12,7 @@ import com.cambofreelance.webbackend.dto.request.IpWhitelistRequest;
 import com.cambofreelance.webbackend.dto.request.PageCtasRequest;
 import com.cambofreelance.webbackend.dto.request.PageHeroesRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerCtaSettingRequest;
+import com.cambofreelance.webbackend.dto.request.SmtpSettingRequest;
 import com.cambofreelance.webbackend.dto.request.StorageSettingRequest;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
 import com.cambofreelance.webbackend.services.CmsSettingService;
@@ -60,6 +61,31 @@ public class CmsSettingController {
     @PostMapping("/general/test-email")
     @PreAuthorize("hasAuthority('settings.update')")
     public ResponseEntity<Object> sendTestEmail(@RequestParam String to) {
+        cmsSettingService.sendTestEmail(to);
+        return new ResponseEntity<>(new MessageResponse("Test email sent.", ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    // ── SMTP ─────────────────────────────────────────────────────────────────
+
+    @GetMapping("/smtp")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getSmtpSettings() {
+        var result = cmsSettingService.getSmtpSettings();
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/smtp")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updateSmtpSettings(
+        @Valid @RequestBody SmtpSettingRequest request
+    ) {
+        var result = cmsSettingService.updateSmtpSettings(request);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PostMapping("/smtp/test-email")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> sendSmtpTestEmail(@RequestParam String to) {
         cmsSettingService.sendTestEmail(to);
         return new ResponseEntity<>(new MessageResponse("Test email sent.", ErrorCode.SUCCESS), HttpStatus.OK);
     }

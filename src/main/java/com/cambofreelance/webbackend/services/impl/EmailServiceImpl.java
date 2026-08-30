@@ -1,15 +1,20 @@
 package com.cambofreelance.webbackend.services.impl;
 
 import com.cambofreelance.webbackend.constants.ErrorCode;
+import com.cambofreelance.webbackend.entities.CmsSettingEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
+import com.cambofreelance.webbackend.repository.CmsSettingRepository;
 import com.cambofreelance.webbackend.services.EmailService;
+import jakarta.mail.internet.InternetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +23,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+    private final JavaMailSender defaultMailSender;
+    private final CmsSettingRepository settingRepository;
 
     @Override
     public void sendVerificationOtp(String to, String otp) {
@@ -120,22 +126,87 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private void doSend(String to, String subject, String body) throws Exception {
-        var message = mailSender.createMimeMessage();
+        JavaMailSender sender = getMailSender();
+        var message = sender.createMimeMessage();
         var helper = new MimeMessageHelper(message, false, "UTF-8");
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(body, false);
-        mailSender.send(message);
+        applyFromAddress(helper);
+        sender.send(message);
         log.info("Email sent to {} ({})", to, subject);
     }
 
     private void doSend(String[] to, String subject, String body) throws Exception {
-        var message = mailSender.createMimeMessage();
+        JavaMailSender sender = getMailSender();
+        var message = sender.createMimeMessage();
         var helper = new MimeMessageHelper(message, false, "UTF-8");
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(body, false);
-        mailSender.send(message);
+        applyFromAddress(helper);
+        sender.send(message);
         log.info("Email sent to {} ({})", String.join(",", to), subject);
+    }
+
+    private JavaMailSender getMailSender() {
+        var hostOpt = settingRepository.findBySettingKey("smtp_host");
+        if (hostOpt.isPresent() && hostOpt.get().getSettingValue() != null && !hostOpt.get().getSettingValue().isBlank()) {
+            String host = hostOpt.get().getSettingValue().trim();
+            String portStr = settingRepository.findBySettingKey("smtp_port").map(CmsSettingEntity::getSettingValue).orElse("587");
+            int port = 587;
+            try {
+                port = Integer.parseInt(portStr);
+            } catch (NumberFormatException ignored) {}
+
+            String username = settingRepository.findBySettingKey("smtp_username").map(CmsSettingEntity::getSettingValue).orElse("");
+            String password = settingRepository.findBySettingKey("smtp_password").map(CmsSettingEntity::getSettingValue).orElse("");
+            String encryption = settingRepository.findBySettingKey("smtp_encryption").map(CmsSettingEntity::getSettingValue).orElse("STARTTLS");
+            String authStr = settingRepository.findBySettingKey("smtp_auth").map(CmsSettingEntity::getSettingValue).orElse("true");
+
+            JavaMailSenderImpl impl = new JavaMailSenderImpl();
+            impl.setHost(host);
+            impl.setPort(port);
+            if (!username.isBlank()) {
+                impl.setUsername(username);
+            }
+            if (!password.isBlank()) {
+                impl.setPassword(password);
+            }
+            impl.setDefaultEncoding("UTF-8");
+
+            Properties props = impl.getJavaMailProperties();
+            props.put("mail.transport.protocol", "smtp");
+            props.put("mail.smtp.auth", authStr);
+            if ("SSL".equalsIgnoreCase(encryption) || "TLS".equalsIgnoreCase(encryption)) {
+                props.put("mail.smtp.ssl.enable", "true");
+            } else if ("STARTTLS".equalsIgnoreCase(encryption)) {
+                props.put("mail.smtp.starttls.enable", "true");
+                props.put("mail.smtp.starttls.required", "true");
+            } else {
+                props.put("mail.smtp.starttls.enable", "false");
+                props.put("mail.smtp.ssl.enable", "false");
+            }
+            props.put("mail.smtp.connectiontimeout", "10000");
+            props.put("mail.smtp.timeout", "10000");
+            props.put("mail.smtp.writetimeout", "10000");
+            return impl;
+        }
+        return defaultMailSender;
+    }
+
+    private void applyFromAddress(MimeMessageHelper helper) throws Exception {
+        String fromEmail = settingRepository.findBySettingKey("smtp_from_email")
+            .map(CmsSettingEntity::getSettingValue)
+            .filter(s -> !s.isBlank())
+            .orElse(null);
+        String fromName = settingRepository.findBySettingKey("smtp_from_name")
+            .map(CmsSettingEntity::getSettingValue)
+            .filter(s -> !s.isBlank())
+            .orElse("SOPPOS");
+
+        if (fromEmail != null) {
+            helper.setFrom(new InternetAddress(fromEmail, fromName, "UTF-8"));
+        }
     }
 }
