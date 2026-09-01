@@ -163,7 +163,7 @@ payway:
   success-url: https://soppossytem.cambofreelance.com/en/payment/result
   cancel-url: https://soppossytem.cambofreelance.com/en/payment/result
   cof-enabled: false
-
+  
 otp:
   ttl-minutes: 5
   resend-cooldown-seconds: 60
