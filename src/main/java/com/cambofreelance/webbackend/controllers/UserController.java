@@ -212,4 +212,24 @@ public class UserController {
         sessionService.adminRevokeAllSessions(userId);
         return new ResponseEntity<>(new MessageResponse("All sessions revoked successfully", ErrorCode.SUCCESS), HttpStatus.OK);
     }
+
+    // ── Admin referral management ───────────────────────────────────────────
+
+    @GetMapping("/cms/users/{userId}/referral-stats")
+    @PreAuthorize("hasAuthority('users.view')")
+    public ResponseEntity<Object> adminGetReferralStats(@PathVariable String userId) {
+        var stats = userService.getReferralStats(userId);
+        return new ResponseEntity<>(new MessageResponse(stats, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/cms/users/{userId}/referrals")
+    @PreAuthorize("hasAuthority('users.view')")
+    public ResponseEntity<Object> adminGetReferrals(
+        @PathVariable String userId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        var result = userService.getMyReferrals(userId, page, size);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
 }
