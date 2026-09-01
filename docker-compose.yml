@@ -105,6 +105,9 @@ services:
       - PLASGATE_SENDER=${PLASGATE_SENDER:-}
       - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
       - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      - PAYWAY_BASE_URL=${PAYWAY_BASE_URL:-}
+      - PAYWAY_MERCHANT_ID=${PAYWAY_MERCHANT_ID:-}
+      - PAYWAY_API_KEY=${PAYWAY_API_KEY:-}
     networks:
       - cm-network
     restart: unless-stopped
