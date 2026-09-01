@@ -27,4 +27,9 @@ public class SmtpSettingRequest {
 
     @Builder.Default
     private Boolean auth = true;
+
+    // Trusts the configured host's TLS cert even if validation fails (expired/self-signed).
+    // Off by default — only meant as a stopgap until a bad cert is renewed.
+    @Builder.Default
+    private Boolean trustInvalidCert = false;
 }

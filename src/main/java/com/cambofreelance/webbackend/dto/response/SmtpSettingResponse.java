@@ -18,4 +18,5 @@ public class SmtpSettingResponse {
     private String fromName;
     private String encryption;
     private Boolean auth;
+    private Boolean trustInvalidCert;
 }

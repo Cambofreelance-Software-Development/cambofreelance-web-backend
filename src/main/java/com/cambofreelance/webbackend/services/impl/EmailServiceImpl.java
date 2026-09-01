@@ -163,6 +163,8 @@ public class EmailServiceImpl implements EmailService {
             String password = settingRepository.findBySettingKey("smtp_password").map(CmsSettingEntity::getSettingValue).orElse("");
             String encryption = settingRepository.findBySettingKey("smtp_encryption").map(CmsSettingEntity::getSettingValue).orElse("STARTTLS");
             String authStr = settingRepository.findBySettingKey("smtp_auth").map(CmsSettingEntity::getSettingValue).orElse("true");
+            boolean trustInvalidCert = settingRepository.findBySettingKey("smtp_trust_invalid_cert")
+                .map(CmsSettingEntity::getSettingValue).map(Boolean::parseBoolean).orElse(false);
 
             JavaMailSenderImpl impl = new JavaMailSenderImpl();
             impl.setHost(host);
@@ -186,6 +188,12 @@ public class EmailServiceImpl implements EmailService {
             } else {
                 props.put("mail.smtp.starttls.enable", "false");
                 props.put("mail.smtp.ssl.enable", "false");
+            }
+            // Trusts this host's cert even if validation fails (expired/self-signed) — an admin-
+            // toggled stopgap (Settings > Email) for a bad cert, not a default. Only bypasses
+            // validation for this one configured host, not TLS globally.
+            if (trustInvalidCert) {
+                props.put("mail.smtp.ssl.trust", host);
             }
             props.put("mail.smtp.connectiontimeout", "10000");
             props.put("mail.smtp.timeout", "10000");

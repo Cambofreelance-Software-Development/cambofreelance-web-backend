@@ -140,6 +140,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
             .fromName(m.getOrDefault("smtp_from_name", ""))
             .encryption(m.getOrDefault("smtp_encryption", "STARTTLS"))
             .auth(Boolean.parseBoolean(m.getOrDefault("smtp_auth", "true")))
+            .trustInvalidCert(Boolean.parseBoolean(m.getOrDefault("smtp_trust_invalid_cert", "false")))
             .build();
     }
 
@@ -161,6 +162,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         values.put("smtp_from_name", req.getFromName() != null ? req.getFromName().trim() : "");
         values.put("smtp_encryption", req.getEncryption() != null ? req.getEncryption().trim() : "STARTTLS");
         values.put("smtp_auth", req.getAuth() != null ? String.valueOf(req.getAuth()) : "true");
+        values.put("smtp_trust_invalid_cert", req.getTrustInvalidCert() != null ? String.valueOf(req.getTrustInvalidCert()) : "false");
 
         batchUpsert(SettingGroup.SMTP, values);
         return getSmtpSettings();

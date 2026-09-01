@@ -160,8 +160,8 @@ payway:
   api-key: fd5607aa-06d6-4ccf-a977-ea754b4c73fb
   # ABA sandbox can't reach localhost; verification still works via /subscriptions/transactions/{tranId}/status polling.
   callback-url: https://soppossytem.api.cambofreelance.com/payway/callback
-  success-url: https://soppossytem.cambofreelance.com/en/en/payment/result
-  cancel-url: https://soppossytem.cambofreelance.com/en/en/payment/result
+  success-url: https://soppossytem.cambofreelance.com/en/payment/result
+  cancel-url: https://soppossytem.cambofreelance.com/en/payment/result
   cof-enabled: false
 
 otp:
