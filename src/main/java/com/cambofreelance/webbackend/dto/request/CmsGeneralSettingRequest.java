@@ -27,7 +27,8 @@ public class CmsGeneralSettingRequest {
 
     private String siteDescription;
 
-    /** Recipient for admin-facing notifications (contact form, subscription-expiry alerts, etc). */
+    /** Recipient for contact-form submissions. Not used for subscription-expiry alerts — those go
+     *  to every user with the ADMIN/SUPER_ADMIN role (see SubscriptionServiceImpl#resolveAdminEmails). */
     @Email
     private String siteEmail;
 }

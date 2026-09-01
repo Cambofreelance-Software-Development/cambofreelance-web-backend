@@ -569,9 +569,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         List<UserSubscriptionEntity> candidates = subscriptionRepository.findExpiryReminderCandidates(
             Constants.SUB_ACTIVE, now, windowEndCal.getTime());
+        List<String> adminEmails = resolveAdminEmails();
         for (UserSubscriptionEntity sub : candidates) {
             try {
-                maybeNotifyExpiry(sub, now);
+                maybeNotifyExpiry(sub, now, adminEmails);
             } catch (Exception e) {
                 // One candidate's failure must never abort the batch.
                 log.error("[ExpiryReminder] unexpected error for sub={}", sub.getId(), e);
@@ -579,7 +580,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
     }
 
-    private void maybeNotifyExpiry(UserSubscriptionEntity sub, Date now) {
+    private void maybeNotifyExpiry(UserSubscriptionEntity sub, Date now, List<String> adminEmails) {
         long daysRemaining = daysBetween(now, sub.getExpiresAt());
         Integer threshold = null;
         for (int t : EXPIRY_NOTICE_THRESHOLDS) {
@@ -615,7 +616,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             sub.getId(), Constants.NOTIF_REF_SUBSCRIPTION);
 
         if (user != null) {
-            List<String> adminEmails = resolveAdminEmails();
             if (!adminEmails.isEmpty()) {
                 emailService.sendSubscriptionExpiringAlert(
                     adminEmails, user.getUsername(), user.getEmail(), planName, sub.getExpiresAt(), daysRemaining);
