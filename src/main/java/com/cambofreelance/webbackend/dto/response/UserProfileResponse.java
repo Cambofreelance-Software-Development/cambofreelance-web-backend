@@ -42,6 +42,14 @@ public class UserProfileResponse {
     @JsonProperty("referralCode")
     private String referralCode;
 
+    /** userId of whoever referred this user in — null if they registered without a referral code. */
+    @JsonProperty("referredBy")
+    private String referredBy;
+
+    /** Username of the referrer, resolved for display — null if referredBy is null. */
+    @JsonProperty("referredByUsername")
+    private String referredByUsername;
+
     @JsonProperty("createdAt")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date createdAt;

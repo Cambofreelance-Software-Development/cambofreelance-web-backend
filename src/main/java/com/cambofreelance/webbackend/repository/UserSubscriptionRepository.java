@@ -39,4 +39,12 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
          + "AND (s.notice7dSent = false OR s.notice3dSent = false OR s.notice1dSent = false)")
     List<UserSubscriptionEntity> findExpiryReminderCandidates(
         @Param("status") String status, @Param("from") Date from, @Param("to") Date to);
+
+    /** Count of distinct referred users who have gone on to create at least one subscription. */
+    @Query("SELECT COUNT(DISTINCT s.userId) FROM UserSubscriptionEntity s WHERE s.referrerId = :referrerId")
+    long countDistinctUsersByReferrerId(@Param("referrerId") String referrerId);
+
+    /** userIds of referred users who have gone on to create at least one subscription. */
+    @Query("SELECT DISTINCT s.userId FROM UserSubscriptionEntity s WHERE s.referrerId = :referrerId")
+    List<String> findDistinctUserIdsByReferrerId(@Param("referrerId") String referrerId);
 }

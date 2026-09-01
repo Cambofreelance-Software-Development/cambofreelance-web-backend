@@ -187,3 +187,4 @@ app:
     authorized-redirect-uris:
       - https://soppossytem.cambofreelance.com/en/auth/google/callback
     default-redirect-uri: https://soppossytem.cambofreelance.com/en/auth/google/callback
+  frontend-url: https://soppossytem.cambofreelance.com

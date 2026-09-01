@@ -17,16 +17,21 @@ import com.cambofreelance.webbackend.services.SmsService;
 import com.cambofreelance.webbackend.dto.request.ForgotPasswordRequest;
 import com.cambofreelance.webbackend.dto.request.ResetPasswordRequest;
 import com.cambofreelance.webbackend.dto.request.UserRegisterRequest;
+import com.cambofreelance.webbackend.dto.response.ReferralListResponse;
+import com.cambofreelance.webbackend.dto.response.ReferralStatsResponse;
 import com.cambofreelance.webbackend.dto.response.RoleResponse;
 import com.cambofreelance.webbackend.dto.response.UserListResponse;
 import com.cambofreelance.webbackend.dto.response.UserProfileResponse;
 import com.cambofreelance.webbackend.entities.RoleEntity;
 import com.cambofreelance.webbackend.entities.UserEntity;
+import com.cambofreelance.webbackend.repository.PaymentTransactionRepository;
+import com.cambofreelance.webbackend.repository.UserSubscriptionRepository;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +51,7 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -66,12 +72,18 @@ public class UserServiceImpl implements UserService {
     private final RegisterOtpCache registerOtpCache;
     private final EmailService emailService;
     private final SmsService smsService;
+    private final UserSubscriptionRepository userSubscriptionRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /** Excludes visually-ambiguous characters (0/O, 1/I) — this code gets typed in by hand. */
     private static final String REFERRAL_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int REFERRAL_CODE_LENGTH = 8;
+
+    /** Public site the referral link points registrants at. */
+    @Value("${app.frontend-url:https://soppossytem.cambofreelance.com}")
+    private String frontendUrl;
 
     @Override
     public UserEntity authUser(OAuthRequest authRequest) throws AppException {
@@ -374,27 +386,7 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse getUserProfile(String userId) throws AppException {
         UserEntity user = userRepository.findById(userId)
             .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "User not found"));
-
-        List<UserProfileResponse.RoleItem> roles = user.getRoles().stream()
-            .map(r -> UserProfileResponse.RoleItem.builder()
-                .roleId(r.getId())
-                .roleName(r.getName())
-                .roleCode(r.getCode())
-                .build())
-            .collect(Collectors.toList());
-
-        return UserProfileResponse.builder()
-            .userId(user.getUserId())
-            .username(user.getUsername())
-            .email(user.getEmail())
-            .phoneNumber(user.getPhoneNumber())
-            .userType(user.getUserType())
-            .status(user.getStatus())
-            .approvalStatus(user.getApprovalStatus())
-            .referralCode(user.getReferralCode())
-            .createdAt(user.getCreatedAt())
-            .roles(roles)
-            .build();
+        return toProfileResponse(user);
     }
 
     @Override
@@ -458,6 +450,10 @@ public class UserServiceImpl implements UserService {
                 .build())
             .collect(Collectors.toList());
 
+        String referredByUsername = StringUtils.hasText(user.getReferredBy())
+            ? userRepository.findById(user.getReferredBy()).map(UserEntity::getUsername).orElse(null)
+            : null;
+
         return UserProfileResponse.builder()
             .userId(user.getUserId())
             .username(user.getUsername())
@@ -467,6 +463,8 @@ public class UserServiceImpl implements UserService {
             .status(user.getStatus())
             .approvalStatus(user.getApprovalStatus())
             .referralCode(user.getReferralCode())
+            .referredBy(user.getReferredBy())
+            .referredByUsername(referredByUsername)
             .createdAt(user.getCreatedAt())
             .roles(roles)
             .build();
@@ -692,5 +690,54 @@ public class UserServiceImpl implements UserService {
         user.setPassword(bCryptPasswordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         passwordResetCache.delete(request.getEmail());
+    }
+
+    // ── Referral program ────────────────────────────────────────────────────
+
+    @Override
+    public ReferralStatsResponse getReferralStats(String userId) throws AppException {
+        UserEntity user = userRepository.findById(userId)
+            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "User not found"));
+
+        long totalReferred = userRepository.countByReferredBy(userId);
+        long totalSubscribed = userSubscriptionRepository.countDistinctUsersByReferrerId(userId);
+        BigDecimal totalRevenue = paymentTransactionRepository
+            .sumAmountByReferrerIdAndPaymentStatus(userId, Constants.PAY_APPROVED);
+
+        return ReferralStatsResponse.builder()
+            .referralCode(user.getReferralCode())
+            .referralLink(frontendUrl + "/en/register?ref=" + user.getReferralCode())
+            .totalReferred(totalReferred)
+            .totalSubscribed(totalSubscribed)
+            .totalRevenue(totalRevenue)
+            .build();
+    }
+
+    @Override
+    public ReferralListResponse getMyReferrals(String userId, int page, int size) throws AppException {
+        Page<UserEntity> referredPage = userRepository.findByReferredByOrderByCreatedAtDesc(
+            userId, PageRequest.of(page, size, Sort.by("createdAt").descending()));
+
+        Set<String> subscribedUserIds = new HashSet<>(
+            userSubscriptionRepository.findDistinctUserIdsByReferrerId(userId));
+
+        List<ReferralListResponse.ReferredUserItem> content = referredPage.getContent().stream()
+            .map(u -> ReferralListResponse.ReferredUserItem.builder()
+                .userId(u.getUserId())
+                .username(u.getUsername())
+                .createdAt(u.getCreatedAt())
+                .subscribed(subscribedUserIds.contains(u.getUserId()))
+                .build())
+            .collect(Collectors.toList());
+
+        return ReferralListResponse.builder()
+            .content(content)
+            .totalElements(referredPage.getTotalElements())
+            .totalPages(referredPage.getTotalPages())
+            .currentPage(page)
+            .pageSize(size)
+            .first(referredPage.isFirst())
+            .last(referredPage.isLast())
+            .build();
     }
 }

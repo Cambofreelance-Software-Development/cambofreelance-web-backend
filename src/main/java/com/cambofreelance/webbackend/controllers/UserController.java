@@ -170,6 +170,24 @@ public class UserController {
         return new ResponseEntity<>(new MessageResponse("", ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
+    @GetMapping("/user/referral-stats")
+    public ResponseEntity<Object> getReferralStats(
+        @RequestHeader(value = Constants.USER_ID) String userId
+    ) {
+        var stats = userService.getReferralStats(userId);
+        return new ResponseEntity<>(new MessageResponse(stats, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @GetMapping("/user/referrals")
+    public ResponseEntity<Object> getMyReferrals(
+        @RequestHeader(value = Constants.USER_ID) String userId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        var result = userService.getMyReferrals(userId, page, size);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
     // ── Admin session management ──────────────────────────────────────────────
 
     @GetMapping("/cms/users/{userId}/sessions")

@@ -11,6 +11,8 @@ import com.cambofreelance.webbackend.dto.request.UserCreateRequest;
 import com.cambofreelance.webbackend.dto.request.ForgotPasswordRequest;
 import com.cambofreelance.webbackend.dto.request.ResetPasswordRequest;
 import com.cambofreelance.webbackend.dto.request.UserRegisterRequest;
+import com.cambofreelance.webbackend.dto.response.ReferralListResponse;
+import com.cambofreelance.webbackend.dto.response.ReferralStatsResponse;
 import com.cambofreelance.webbackend.dto.response.RoleResponse;
 import com.cambofreelance.webbackend.dto.response.UserListResponse;
 import com.cambofreelance.webbackend.dto.response.UserProfileResponse;
@@ -80,4 +82,10 @@ public interface UserService {
     void forgotPassword(ForgotPasswordRequest request) throws AppException;
 
     void resetPassword(ResetPasswordRequest request) throws AppException;
+
+    /** This user's referral code/link plus aggregate counts of who they've referred so far. */
+    ReferralStatsResponse getReferralStats(String userId) throws AppException;
+
+    /** Paginated list of accounts registered with this user's referral code. */
+    ReferralListResponse getMyReferrals(String userId, int page, int size) throws AppException;
 }

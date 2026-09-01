@@ -4,6 +4,8 @@ import com.cambofreelance.webbackend.entities.UserEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -24,6 +26,12 @@ public interface UserRepository extends JpaRepository<UserEntity, String>, JpaSp
     Optional<UserEntity> findByReferralCodeAndStatus(String referralCode, String status);
 
     boolean existsByReferralCode(String referralCode);
+
+    /** Count of accounts registered with this user's referral code. */
+    long countByReferredBy(String referredBy);
+
+    /** Accounts registered with this user's referral code, newest first. */
+    Page<UserEntity> findByReferredByOrderByCreatedAtDesc(String referredBy, Pageable pageable);
 
     @Query("SELECT DISTINCT p.code FROM UserEntity u " +
            "JOIN u.roles r " +
