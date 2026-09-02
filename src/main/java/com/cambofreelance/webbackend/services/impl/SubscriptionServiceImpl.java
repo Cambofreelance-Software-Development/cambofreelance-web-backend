@@ -250,7 +250,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         if (!qr.isSuccess()) {
             log.error("[PayWay] purchase failed for tran_id={} code={} message={}",
                 tx.getTranId(), qr.getStatusCode(), qr.getStatusMessage());
-            AppException ex = new AppException(ErrorCode.GENERAL_ERROR,
+            AppException ex = new AppException(ErrorCode.PAYMENT_GATEWAY_ERROR,
                 "Payment gateway rejected the request: " + qr.getStatusMessage());
             ex.setHttpStatus(HttpStatus.BAD_GATEWAY);
             throw ex;

@@ -185,6 +185,12 @@ public class PaywayClient {
             + fn + ln + em + ph + type + po + returnB64 + cu + csu + /*return_deeplink*/ ""
             + cur + /*custom_fields*/ "" + rp + /*payout*/ "" + lifetime
             + /*additional_params*/ "" + /*google_pay_token*/ "" + /*skip_success_page*/ "";
+        // Field order verified against developer.payway.com.kh's purchase spec (2026-09). If ABA
+        // ever responds "Wrong Hash" again, diff this against ABA's sandbox hash-generator tool —
+        // this line never logs the api-key, only the plaintext that gets signed with it.
+        if (log.isDebugEnabled()) {
+            log.debug("[PayWay] tran_id={} string-to-sign=\"{}\"", tranId, toSign);
+        }
 
         Map<String, String> fields = new LinkedHashMap<>();
         fields.put("req_time", reqTime);
