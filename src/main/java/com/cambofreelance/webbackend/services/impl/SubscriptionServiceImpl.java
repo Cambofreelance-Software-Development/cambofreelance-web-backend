@@ -81,14 +81,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Value("${payway.callback-url:}")
     private String callbackUrl;
 
-    /** Frontend page the payer lands on after a successful payment */
-    @Value("${payway.success-url:}")
-    private String successUrl;
-
-    /** Frontend page the payer lands on after cancelling */
-    @Value("${payway.cancel-url:}")
-    private String cancelUrl;
-
     // ── Checkout ────────────────────────────────────────────────────────────
 
     @Override
@@ -243,9 +235,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             user.getUsername(), null, user.getEmail(), user.getPhoneNumber(),
             itemsJson, request.getPaymentOption(),
             StringUtils.hasText(callbackUrl) ? callbackUrl : null,
-            StringUtils.hasText(cancelUrl) ? cancelUrl : null,
-            StringUtils.hasText(successUrl) ? successUrl : null,
-            tx.getTranId(), requestLifetimeToken);
+            tx.getTranId());
 
         if (!qr.isSuccess()) {
             log.error("[PayWay] purchase failed for tran_id={} code={} message={}",
