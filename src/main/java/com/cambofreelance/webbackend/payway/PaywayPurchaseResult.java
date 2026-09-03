@@ -19,13 +19,13 @@ public class PaywayPurchaseResult {
     private String qrImage;
     /** Deep link to open the QR directly in the ABA Mobile app, when provided */
     private String abapayDeeplink;
-    /** "00" on success */
+    /** "0" on success */
     private String statusCode;
     private String statusMessage;
     /** Raw JSON body from PayWay, kept for audit */
     private String raw;
 
     public boolean isSuccess() {
-        return "00".equals(statusCode);
+        return "0".equals(statusCode);
     }
 }

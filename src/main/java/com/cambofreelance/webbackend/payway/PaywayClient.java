@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -28,26 +27,30 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 /**
  * Thin client for ABA PayWay.
  *
- * The `sopposstore` merchant profile is provisioned for the QR/Payment-Gateway flow: even
- * with view_type=hosted_view / payment_gate=0, ABA's purchase API never redirects to a hosted
- * page for this account — it always answers synchronously with a KHQR payload. So the purchase
- * call IS server-to-server here (unlike a typical hosted-checkout integration) and the backend
- * hands the frontend a QR image to render in-page. Status verification (transaction-detail)
- * is separately server-to-server and remains the only source of truth for settlement.
+ * The `sopposstore` merchant profile uses ABA's dedicated "QR API"
+ * ({@code POST /api/payment-gateway/v1/payments/generate-qr}) — a synchronous, server-to-server
+ * call that answers directly with an embedded KHQR payload (no hosted-page redirect), so the
+ * backend hands the frontend a QR image to render in-page. This is a different endpoint/hash
+ * spec than ABA's hosted-checkout "Purchase API" (which takes return_url/cancel_url/
+ * continue_success_url) — don't conflate the two. Status verification (transaction-detail) is
+ * separately server-to-server and remains the only source of truth for settlement.
  */
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class PaywayClient {
 
-    public static final String PURCHASE_PATH           = "/api/payment-gateway/v1/payments/purchase";
+    public static final String GENERATE_QR_PATH        = "/api/payment-gateway/v1/payments/generate-qr";
     public static final String TRANSACTION_DETAIL_PATH = "/api/payment-gateway/v1/payments/transaction-detail";
 
-    /**
-     * Selects ABA's branded KHQR image design (logo + colored ribbon baked into {@code qrImage}).
-     * Cosmetic only — not part of the signed hash string, so it's sent as a plain extra field.
-     */
+    /** Selects ABA's branded KHQR image design (logo + colored ribbon baked into {@code qrImage}). */
     private static final String QR_IMAGE_TEMPLATE = "template3_color";
+
+    /** Default payment network when the caller doesn't request a specific one. */
+    private static final String DEFAULT_PAYMENT_OPTION = "abapay_khqr";
+
+    /** QR validity window sent to PayWay. Spec allows 3 to 43200 minutes (30 days). */
+    private static final int QR_LIFETIME_MINUTES = 30;
 
     /** Bounds how long a checkout request waits on PayWay before failing fast with a clear error. */
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
@@ -75,42 +78,27 @@ public class PaywayClient {
     }
 
     /**
-     * Calls PayWay's purchase API server-to-server and returns the embedded KHQR payload.
+     * Calls PayWay's QR API server-to-server and returns the embedded KHQR payload.
      * Field order in the hash is fixed by PayWay's spec — do not reorder.
+     *
+     * @param callbackUrl  PayWay's webhook target for this transaction (never a browser
+     *                     redirect — the QR API has no return_url/cancel_url of its own; the
+     *                     frontend renders the QR in-page and polls/receives the callback).
      */
     public PaywayPurchaseResult purchase(String tranId, BigDecimal amount, String currency,
                                           String firstname, String lastname, String email, String phone,
                                           String itemsJson, String paymentOption,
-                                          String returnUrl, String cancelUrl, String continueSuccessUrl,
-                                          String returnParams) {
-        return purchase(tranId, amount, currency, firstname, lastname, email, phone, itemsJson, paymentOption,
-            returnUrl, cancelUrl, continueSuccessUrl, returnParams, false);
-    }
-
-    /**
-     * Same as {@link #purchase(String, BigDecimal, String, String, String, String, String, String, String,
-     * String, String, String, String)} but with the option to ask PayWay to tokenize the card
-     * (Card-on-File) for a future unattended charge. Only meaningful once ABA has enabled COF for
-     * this merchant — see {@link #chargeStoredToken}.
-     */
-    public PaywayPurchaseResult purchase(String tranId, BigDecimal amount, String currency,
-                                          String firstname, String lastname, String email, String phone,
-                                          String itemsJson, String paymentOption,
-                                          String returnUrl, String cancelUrl, String continueSuccessUrl,
-                                          String returnParams, boolean requestLifetimeToken) {
-        Map<String, String> fields = buildPurchaseFields(tranId, amount, currency, firstname, lastname, email, phone,
-            itemsJson, paymentOption, returnUrl, cancelUrl, continueSuccessUrl, returnParams, requestLifetimeToken);
-
-        MultipartBodyBuilder body = new MultipartBodyBuilder();
-        fields.forEach(body::part);
+                                          String callbackUrl, String returnParams) {
+        Map<String, Object> fields = buildPurchaseFields(tranId, amount, currency, firstname, lastname, email, phone,
+            itemsJson, paymentOption, callbackUrl, returnParams);
 
         String response;
         try {
             response = webClient.post()
-                .uri(baseUrl + PURCHASE_PATH)
-                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .uri(baseUrl + GENERATE_QR_PATH)
+                .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(body.build())
+                .bodyValue(fields)
                 .retrieve()
                 .bodyToMono(String.class)
                 .timeout(REQUEST_TIMEOUT)
@@ -153,64 +141,57 @@ public class PaywayClient {
     }
 
     /**
-     * Builds the signed field set for PayWay's purchase API.
+     * Builds the signed field set for PayWay's QR API ({@code generate-qr}).
      * Field order in the hash is fixed by PayWay's spec — do not reorder.
      */
-    private Map<String, String> buildPurchaseFields(String tranId, BigDecimal amount, String currency,
+    private Map<String, Object> buildPurchaseFields(String tranId, BigDecimal amount, String currency,
                                                    String firstname, String lastname, String email, String phone,
                                                    String itemsJson, String paymentOption,
-                                                   String returnUrl, String cancelUrl, String continueSuccessUrl,
-                                                   String returnParams, boolean requestLifetimeToken) {
+                                                   String callbackUrl, String returnParams) {
         requireConfig();
-        String reqTime   = utcNow();
-        String amountStr = amount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
-        String items     = itemsJson == null ? "" : b64(itemsJson);
-        String returnB64 = returnUrl == null ? "" : b64(returnUrl);
-        String type      = "purchase";
-        // TODO: verify against ABA's real COF spec — confirm the expected value/format for
-        // `lifetime` once ABA enables Card-on-File for this merchant. "1" is an unconfirmed
-        // placeholder; only reachable when requestLifetimeToken=true, which today requires
-        // payway.cof-enabled=true (never set in any live environment yet).
-        String lifetime  = requestLifetimeToken ? "1" : "";
+        String reqTime      = utcNow();
+        String amountStr    = amount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+        String items        = itemsJson == null ? "" : b64(itemsJson);
+        String callbackB64  = callbackUrl == null ? "" : b64(callbackUrl);
+        String purchaseType = "purchase";
+        String lifetime     = String.valueOf(QR_LIFETIME_MINUTES);
 
         String fn  = nz(firstname), ln = nz(lastname), em = nz(email), ph = nz(phone);
-        String po  = nz(paymentOption), cu = nz(cancelUrl), csu = nz(continueSuccessUrl), rp = nz(returnParams);
+        String po  = (paymentOption == null || paymentOption.isBlank()) ? DEFAULT_PAYMENT_OPTION : paymentOption;
+        String rp  = nz(returnParams);
         String cur = nz(currency);
 
-        // Spec order: req_time + merchant_id + tran_id + amount + items + shipping + firstname
-        // + lastname + email + phone + type + payment_option + return_url + cancel_url
-        // + continue_success_url + return_deeplink + currency + custom_fields + return_params
-        // + payout + lifetime + additional_params + google_pay_token + skip_success_page
-        String toSign = reqTime + merchantId + tranId + amountStr + items + /*shipping*/ ""
-            + fn + ln + em + ph + type + po + returnB64 + cu + csu + /*return_deeplink*/ ""
-            + cur + /*custom_fields*/ "" + rp + /*payout*/ "" + lifetime
-            + /*additional_params*/ "" + /*google_pay_token*/ "" + /*skip_success_page*/ "";
-        // Field order verified against developer.payway.com.kh's purchase spec (2026-09). If ABA
-        // ever responds "Wrong Hash" again, diff this against ABA's sandbox hash-generator tool —
-        // this line never logs the api-key, only the plaintext that gets signed with it.
+        // Spec order (ABA "QR API", POST /generate-qr): req_time + merchant_id + tran_id + amount
+        // + items + first_name + last_name + email + phone + purchase_type + payment_option
+        // + callback_url + return_deeplink + currency + custom_fields + return_params + payout
+        // + lifetime + qr_image_template. This is a different endpoint/hash spec than ABA's
+        // hosted-checkout "Purchase API" — don't merge the two field orders.
+        String toSign = reqTime + merchantId + tranId + amountStr + items
+            + fn + ln + em + ph + purchaseType + po + callbackB64 + /*return_deeplink*/ ""
+            + cur + /*custom_fields*/ "" + rp + /*payout*/ "" + lifetime + QR_IMAGE_TEMPLATE;
+        // If ABA ever responds "Wrong Hash" again, diff this against ABA's sandbox hash-generator
+        // tool — this line never logs the api-key, only the plaintext that gets signed with it.
         if (log.isDebugEnabled()) {
             log.debug("[PayWay] tran_id={} string-to-sign=\"{}\"", tranId, toSign);
         }
 
-        Map<String, String> fields = new LinkedHashMap<>();
+        Map<String, Object> fields = new LinkedHashMap<>();
         fields.put("req_time", reqTime);
         fields.put("merchant_id", merchantId);
         fields.put("tran_id", tranId);
         fields.put("amount", amountStr);
-        if (!items.isEmpty())     fields.put("items", items);
-        if (!fn.isEmpty())        fields.put("firstname", fn);
-        if (!ln.isEmpty())        fields.put("lastname", ln);
-        if (!em.isEmpty())        fields.put("email", em);
-        if (!ph.isEmpty())        fields.put("phone", ph);
-        fields.put("type", type);
-        if (!po.isEmpty())        fields.put("payment_option", po);
-        if (!returnB64.isEmpty()) fields.put("return_url", returnB64);
-        if (!cu.isEmpty())        fields.put("cancel_url", cu);
-        if (!csu.isEmpty())       fields.put("continue_success_url", csu);
-        if (!cur.isEmpty())       fields.put("currency", cur);
-        if (!rp.isEmpty())        fields.put("return_params", rp);
-        if (!lifetime.isEmpty())  fields.put("lifetime", lifetime);
+        fields.put("currency", cur);
+        fields.put("payment_option", po);
+        fields.put("purchase_type", purchaseType);
+        fields.put("lifetime", QR_LIFETIME_MINUTES);
         fields.put("qr_image_template", QR_IMAGE_TEMPLATE);
+        if (!items.isEmpty())      fields.put("items", items);
+        if (!fn.isEmpty())         fields.put("first_name", fn);
+        if (!ln.isEmpty())         fields.put("last_name", ln);
+        if (!em.isEmpty())         fields.put("email", em);
+        if (!ph.isEmpty())         fields.put("phone", ph);
+        if (!callbackB64.isEmpty()) fields.put("callback_url", callbackB64);
+        if (!rp.isEmpty())         fields.put("return_params", rp);
         fields.put("hash", hmacSha512B64(toSign));
         return fields;
     }
