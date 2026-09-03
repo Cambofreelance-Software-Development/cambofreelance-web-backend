@@ -231,7 +231,7 @@ public class PaywayClient {
     public void refund(String tranId, BigDecimal amount, String reason) {
         log.error("[PayWay] refund called but ABA's refund API is not implemented/spec'd — "
             + "refusing to guess at field names for tran_id={}", tranId);
-        AppException ex = new AppException(ErrorCode.GENERAL_ERROR,
+        AppException ex = new AppException(ErrorCode.REFUND_NOT_AVAILABLE,
             "Automatic refund via ABA PayWay is not available yet — process the refund in ABA's "
                 + "merchant portal, then this action can be extended to record it");
         ex.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);
