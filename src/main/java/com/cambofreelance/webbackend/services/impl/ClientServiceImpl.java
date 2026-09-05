@@ -12,6 +12,7 @@ import com.cambofreelance.webbackend.dto.response.PaymentEventResponse;
 import com.cambofreelance.webbackend.entities.ClientEntity;
 import com.cambofreelance.webbackend.entities.PaymentTransactionEntity;
 import com.cambofreelance.webbackend.entities.UserEntity;
+import com.cambofreelance.webbackend.entities.UserSubscriptionEntity;
 import com.cambofreelance.webbackend.logger.exceptions.AppException;
 import com.cambofreelance.webbackend.repository.ClientRepository;
 import com.cambofreelance.webbackend.repository.InvoiceRepository;
@@ -255,6 +256,8 @@ public class ClientServiceImpl implements ClientService {
 
     private ClientResponse toResponse(ClientEntity c) {
         UserEntity user = userRepository.findById(c.getUserId()).orElse(null);
+        UserSubscriptionEntity latestSub = subscriptionRepository.findByUserIdOrderByCreatedAtDesc(c.getUserId())
+            .stream().findFirst().orElse(null);
         return ClientResponse.builder()
             .id(c.getId())
             .userId(c.getUserId())
@@ -274,6 +277,8 @@ public class ClientServiceImpl implements ClientService {
             .clientStatus(c.getClientStatus())
             .onboardingStep(c.getOnboardingStep())
             .createdAt(c.getCreatedAt())
+            .subStatus(latestSub != null ? latestSub.getSubStatus() : null)
+            .expiresAt(latestSub != null ? latestSub.getExpiresAt() : null)
             .build();
     }
 }
