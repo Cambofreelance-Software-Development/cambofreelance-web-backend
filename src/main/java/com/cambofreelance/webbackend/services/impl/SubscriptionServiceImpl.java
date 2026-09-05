@@ -880,12 +880,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         return Math.round((to.getTime() - from.getTime()) / 86_400_000.0);
     }
 
+    /** Annual promo: pay for 10 months, get 12 (2 months free), unless a plan sets its own price_yearly. */
+    private static final int YEARLY_PROMO_MONTHS = 10;
+
     private BigDecimal priceFor(PricingPlanEntity plan, String cycle) {
         if (Constants.BILLING_YEARLY.equals(cycle)) {
-            // yearly = configured yearly price, or 12 months with the advertised 20% discount
             BigDecimal yearly = plan.getPriceYearly() != null
                 ? plan.getPriceYearly()
-                : plan.getPriceMonthly().multiply(BigDecimal.valueOf(12 * 0.8));
+                : plan.getPriceMonthly().multiply(BigDecimal.valueOf(YEARLY_PROMO_MONTHS));
             return yearly.setScale(2, RoundingMode.HALF_UP);
         }
         return plan.getPriceMonthly().setScale(2, RoundingMode.HALF_UP);
