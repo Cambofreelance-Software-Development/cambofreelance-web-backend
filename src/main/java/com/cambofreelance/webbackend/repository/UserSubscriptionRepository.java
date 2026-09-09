@@ -47,4 +47,10 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     /** userIds of referred users who have gone on to create at least one subscription. */
     @Query("SELECT DISTINCT s.userId FROM UserSubscriptionEntity s WHERE s.referrerId = :referrerId")
     List<String> findDistinctUserIdsByReferrerId(@Param("referrerId") String referrerId);
+
+    /** Distinct referred users holding a subscription in the given status — drives the partner tier. */
+    @Query("SELECT COUNT(DISTINCT s.userId) FROM UserSubscriptionEntity s "
+         + "WHERE s.referrerId = :referrerId AND s.subStatus = :subStatus")
+    long countDistinctUsersByReferrerIdAndSubStatus(
+        @Param("referrerId") String referrerId, @Param("subStatus") String subStatus);
 }

@@ -134,4 +134,6 @@ public final class Constants {
     // Admin notification types / reference types
     public static final String NOTIF_TYPE_SUBSCRIPTION_EXPIRING = "SUBSCRIPTION_EXPIRING";
     public static final String NOTIF_REF_SUBSCRIPTION = "SUBSCRIPTION";
+    public static final String NOTIF_TYPE_PARTNER_APPLICATION = "PARTNER_APPLICATION";
+    public static final String NOTIF_REF_PARTNER = "PARTNER";
 }
