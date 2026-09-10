@@ -38,4 +38,17 @@ public class SubscriptionResponse {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date paymentTokenCapturedAt;
+
+    // ── SOP POS tenant access ─────────────────────────────────────────────
+    private String posClientCode;
+    private String posBackendUrl;
+    private String posEmenuUrl;
+    private String posRootUser;
+    private String posRootPassword;
+    /** null (not provisioned) / SYNCED / FAILED */
+    private String posSyncStatus;
+    private String posSyncError;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
+    private Date posSyncedAt;
 }

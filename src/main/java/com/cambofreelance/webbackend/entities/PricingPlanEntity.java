@@ -72,4 +72,8 @@ public class PricingPlanEntity extends BaseEntity implements Serializable {
 
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
+
+    /** SOP POS plan tier code this plan provisions (one of 0,9,19,25,39,99,150,200,250). */
+    @Column(name = "pos_plan_code")
+    private Integer posPlanCode;
 }
