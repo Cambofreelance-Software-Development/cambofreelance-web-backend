@@ -169,7 +169,7 @@ soppos:
   # Inert until enabled=true AND base-url is set: no request is ever sent while disabled.
   enabled: false
   base-url: https://api7.soppossytem.com
-  api-key: {POPPOS_API_KEY}
+  api-key: ${POPPOS_API_KEY}
 
 otp:
   ttl-minutes: 5
