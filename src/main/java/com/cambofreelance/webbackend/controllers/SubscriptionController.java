@@ -137,4 +137,16 @@ public class SubscriptionController {
         var result = subscriptionService.adminSetAutoRenew(subscriptionId, Boolean.TRUE.equals(request.getAutoRenew()), adminId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
+
+    /** Admin re-runs SOP POS tenant provisioning for a subscription (after a failed/pending sync).
+     *  Returns the subscription with its current posSyncStatus / posSyncError. */
+    @PutMapping("/cms/subscriptions/{subscriptionId}/pos-sync")
+    @PreAuthorize("hasAuthority('subscription.manage')")
+    public ResponseEntity<Object> resyncPosTenant(
+        @PathVariable String subscriptionId,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = subscriptionService.resyncPosTenant(subscriptionId, adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
 }

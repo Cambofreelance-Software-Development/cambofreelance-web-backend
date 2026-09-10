@@ -91,4 +91,13 @@ public class SubscriptionJobs {
     public void notifyExpiringSubscriptions() {
         subscriptionService.notifyExpiringSubscriptions();
     }
+
+    /**
+     * Daily 00:30 — retry SOP POS tenant provisioning for ACTIVE subscriptions whose sync failed
+     * at activation time (POS API down / rejected). No-op while soppos.enabled=false.
+     */
+    @Scheduled(cron = "0 30 0 * * *")
+    public void retryFailedPosSyncs() {
+        subscriptionService.retryFailedPosSyncs();
+    }
 }

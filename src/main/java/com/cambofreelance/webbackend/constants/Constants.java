@@ -136,4 +136,9 @@ public final class Constants {
     public static final String NOTIF_REF_SUBSCRIPTION = "SUBSCRIPTION";
     public static final String NOTIF_TYPE_PARTNER_APPLICATION = "PARTNER_APPLICATION";
     public static final String NOTIF_REF_PARTNER = "PARTNER";
+    public static final String NOTIF_TYPE_POS_SYNC_FAILED = "POS_SYNC_FAILED";
+
+    // SOP POS tenant provisioning sync statuses
+    public static final String POS_SYNC_SYNCED = "SYNCED";
+    public static final String POS_SYNC_FAILED = "FAILED";
 }

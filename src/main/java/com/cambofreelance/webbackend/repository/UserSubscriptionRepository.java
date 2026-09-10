@@ -21,6 +21,15 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     Optional<UserSubscriptionEntity> findFirstByUserIdAndSubStatusAndExpiresAtAfterOrderByExpiresAtDesc(
         String userId, String subStatus, Date now);
 
+    /** Most recent subscription of this user that already has a SOP POS tenant — used to carry the
+     *  tenant identity forward when a lapsed subscriber re-subscribes (reactivate, don't duplicate). */
+    Optional<UserSubscriptionEntity> findFirstByUserIdAndPosRegistrationIdIsNotNullOrderByCreatedAtDesc(String userId);
+
+    /** ACTIVE subscriptions whose SOP POS sync failed — retried by SubscriptionJobs. */
+    @Query("SELECT s FROM UserSubscriptionEntity s WHERE s.posSyncStatus = :status AND s.subStatus = :subStatus")
+    List<UserSubscriptionEntity> findPosSyncRetryCandidates(
+        @Param("status") String status, @Param("subStatus") String subStatus);
+
     Page<UserSubscriptionEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     List<UserSubscriptionEntity> findBySubStatusAndExpiresAtBefore(String subStatus, Date cutoff);

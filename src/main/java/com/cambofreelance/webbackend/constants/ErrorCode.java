@@ -56,4 +56,6 @@ public final class ErrorCode {
     public static final String NOT_ACTIVE_PARTNER                = "ERR-0035";
     public static final String PARTNER_INVALID_STATE             = "ERR-0036";
     public static final String PARTNER_CLIENT_NOT_FOUND          = "ERR-0037";
+
+    public static final String POS_REGISTRATION_FAILED          = "ERR-0038";
 }
