@@ -170,7 +170,7 @@ soppos:
   # Inert until enabled=true AND base-url is set: no request is ever sent while disabled.
   enabled: false
   base-url: https://api7.soppossytem.com
-  api-key: ${POPPOS_API_KEY}
+  api-key: ${POPPOS_API_KEY:}
 
 otp:
   ttl-minutes: 5
@@ -196,10 +196,3 @@ app:
       - https://soppossytem.cambofreelance.com/en/auth/google/callback
     default-redirect-uri: https://soppossytem.cambofreelance.com/en/auth/google/callback
   frontend-url: https://soppossytem.cambofreelance.com
-
-soppos:
-  # SOP POS System — client registration / provisioning API.
-  # Inert until enabled=true AND base-url is set: no request is ever sent while disabled.
-  enabled: false
-  base-url: https://api7.soppossytem.com
-  api-key: ${POPPOS_API_KEY:}
