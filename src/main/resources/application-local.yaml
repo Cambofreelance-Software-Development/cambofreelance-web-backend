@@ -164,6 +164,13 @@ payway:
   cancel-url: https://soppossytem.cambofreelance.com/en/payment/result
   cof-enabled: false
 
+soppos:
+  # SOP POS System — client registration / provisioning API.
+  # Inert until enabled=true AND base-url is set: no request is ever sent while disabled.
+  enabled: false
+  base-url: https://api7.soppossytem.com
+  api-key: {POPPOS_API_KEY}
+
 otp:
   ttl-minutes: 5
   resend-cooldown-seconds: 60
