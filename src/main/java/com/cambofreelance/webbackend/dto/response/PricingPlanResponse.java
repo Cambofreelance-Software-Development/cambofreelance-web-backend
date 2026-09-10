@@ -31,6 +31,7 @@ public class PricingPlanResponse {
     private String ctaLabelKh;
     private String ctaLink;
     private Integer sortOrder;
+    private Integer posPlanCode;
     private String status;
     private Date createdAt;
     private Date updatedAt;
@@ -74,6 +75,7 @@ public class PricingPlanResponse {
             .ctaLabelKh(e.getCtaLabelKh())
             .ctaLink(e.getCtaLink())
             .sortOrder(e.getSortOrder())
+            .posPlanCode(e.getPosPlanCode())
             .status(e.getStatus())
             .createdAt(e.getCreatedAt())
             .updatedAt(e.getUpdatedAt())

@@ -81,6 +81,29 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendPosTenantProvisioned(String to, String customerName, String planName, String clientCode,
+            String backendUrl, String emenuUrl, String rootUser, String rootPassword) {
+        String greeting = customerName != null && !customerName.isBlank() ? "Hi " + customerName + "," : "Hello,";
+        String plan = planName != null && !planName.isBlank() ? planName + " " : "";
+        StringBuilder body = new StringBuilder()
+            .append(greeting).append("\n\n")
+            .append("Your ").append(plan).append("POS system has been set up and is ready to use.\n\n")
+            .append("  Sign-in URL:  ").append(withScheme(backendUrl)).append('\n')
+            .append("  Username:     ").append(nvl(rootUser)).append('\n')
+            .append("  Password:     ").append(nvl(rootPassword)).append('\n');
+        if (clientCode != null && !clientCode.isBlank()) {
+            body.append("  Client code:  ").append(clientCode).append('\n');
+        }
+        if (emenuUrl != null && !emenuUrl.isBlank()) {
+            body.append("  eMenu URL:    ").append(withScheme(emenuUrl)).append('\n');
+        }
+        body.append('\n')
+            .append("Please sign in and change your password after your first login. ")
+            .append("You can also find these details any time on the My Subscription page in your account.");
+        send(to, "Your POS system is ready - SOPPOS", body.toString());
+    }
+
+    @Override
     public void sendTestEmail(String to) {
         sendOrThrow(to, "Test email - SOPPOS",
             "This is a test email from the CamboFreelance admin dashboard to confirm outgoing "
@@ -90,6 +113,18 @@ public class EmailServiceImpl implements EmailService {
 
     private static String fmt(Date date) {
         return new SimpleDateFormat("yyyy-MM-dd").format(date);
+    }
+
+    private static String nvl(String s) {
+        return s == null || s.isBlank() ? "-" : s;
+    }
+
+    /** POS URLs come back without a scheme (e.g. "backend1.soppossystem.com") — make them clickable. */
+    private static String withScheme(String url) {
+        if (url == null || url.isBlank()) {
+            return "-";
+        }
+        return url.matches("(?i)^https?://.*") ? url : "https://" + url;
     }
 
     // Best-effort: failures are logged, not thrown, so an SMTP hiccup never aborts the caller's primary flow.

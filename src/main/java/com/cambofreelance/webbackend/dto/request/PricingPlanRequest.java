@@ -27,6 +27,9 @@ public class PricingPlanRequest {
     private String ctaLink;
     private Integer sortOrder = 0;
 
+    /** SOP POS plan tier this plan provisions (0,9,19,25,39,99,150,200,250). Null = not sold as a POS tenant. */
+    private Integer posPlanCode;
+
     private List<Feature> features;
 
     @Data

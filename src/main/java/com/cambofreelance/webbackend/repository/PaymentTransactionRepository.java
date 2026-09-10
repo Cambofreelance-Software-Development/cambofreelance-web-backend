@@ -27,4 +27,11 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
          + "WHERE p.referrerId = :referrerId AND p.paymentStatus = :paymentStatus")
     BigDecimal sumAmountByReferrerIdAndPaymentStatus(
         @Param("referrerId") String referrerId, @Param("paymentStatus") String paymentStatus);
+
+    /** Same, narrowed to one referred payer — per-client commission on the partner portal. */
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM PaymentTransactionEntity p "
+         + "WHERE p.referrerId = :referrerId AND p.userId = :userId AND p.paymentStatus = :paymentStatus")
+    BigDecimal sumAmountByReferrerIdAndUserIdAndPaymentStatus(
+        @Param("referrerId") String referrerId, @Param("userId") String userId,
+        @Param("paymentStatus") String paymentStatus);
 }

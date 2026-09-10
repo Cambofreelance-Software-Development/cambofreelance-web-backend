@@ -29,4 +29,10 @@ public class ClientResponse {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date createdAt;
+
+    /** Status/expiry of this client's most recent subscription (null if they've never subscribed). */
+    private String subStatus;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
+    private Date expiresAt;
 }

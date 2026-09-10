@@ -245,6 +245,7 @@ public class PricingServiceImpl implements PricingService {
         plan.setCtaLabelKh(r.getCtaLabelKh());
         plan.setCtaLink(r.getCtaLink());
         plan.setSortOrder(r.getSortOrder() != null ? r.getSortOrder() : 0);
+        plan.setPosPlanCode(r.getPosPlanCode());
     }
 
     private void saveBullets(String planId, PricingPlanRequest request, String createdBy) {

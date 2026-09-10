@@ -69,6 +69,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final com.cambofreelance.webbackend.repository.ClientRepository clientRepository;
     private final com.cambofreelance.webbackend.services.BillingService billingService;
     private final PaywayClient paywayClient;
+    private final com.cambofreelance.webbackend.soppos.SopPosClient sopPosClient;
     private final EmailService emailService;
     private final NotificationService notificationService;
     private final SecureRandom secureRandom = new SecureRandom();
@@ -171,6 +172,18 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             sub.setAutoRenew(requestLifetimeToken);
             sub.setReferrerId(user.getReferredBy());
             sub.setCreatedBy(userId);
+            // Reuse the SOP POS tenant from a previous (lapsed) subscription so re-subscribing
+            // reactivates it via PATCH instead of provisioning a duplicate client.
+            subscriptionRepository
+                .findFirstByUserIdAndPosRegistrationIdIsNotNullOrderByCreatedAtDesc(userId)
+                .ifPresent(prev -> {
+                    sub.setPosRegistrationId(prev.getPosRegistrationId());
+                    sub.setPosClientCode(prev.getPosClientCode());
+                    sub.setPosBackendUrl(prev.getPosBackendUrl());
+                    sub.setPosEmenuUrl(prev.getPosEmenuUrl());
+                    sub.setPosRootUser(prev.getPosRootUser());
+                    sub.setPosRootPassword(prev.getPosRootPassword());
+                });
             subscriptionRepository.save(sub);
         }
 
@@ -731,30 +744,173 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             subscriptionRepository.save(sub);
             log.info("[Subscription] upgraded sub={} user={} to plan={} (prorated), still expires {}",
                 sub.getId(), sub.getUserId(), tx.getTargetPlanId(), sub.getExpiresAt());
+        } else {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(stillActive ? sub.getExpiresAt() : now);
+            if (Constants.BILLING_YEARLY.equals(sub.getBillingCycle())) {
+                cal.add(Calendar.YEAR, 1);
+            } else {
+                cal.add(Calendar.MONTH, 1);
+            }
+            if (!stillActive) {
+                sub.setStartAt(now);
+            }
+            sub.setSubStatus(Constants.SUB_ACTIVE);
+            sub.setExpiresAt(cal.getTime());
+            // A fresh cycle starts here — re-arm the expiry reminder thresholds for it.
+            sub.setNotice7dSent(false);
+            sub.setNotice3dSent(false);
+            sub.setNotice1dSent(false);
+            sub.setUpdatedAt(now);
+            sub.setUpdatedBy(Constants.SYSTEM);
+            subscriptionRepository.save(sub);
+            log.info("[Subscription] {} sub={} user={} until {}",
+                stillActive ? "renewed" : "activated", sub.getId(), sub.getUserId(), sub.getExpiresAt());
+        }
+
+        // Provision / update the customer's SOP POS tenant for the (possibly new) plan and period.
+        // Never throws — a failure is recorded on the subscription and retried by the daily job
+        // or the admin re-sync endpoint, so it can't roll back an already-settled payment.
+        syncPosTenant(sub);
+    }
+
+    // ── SOP POS tenant provisioning ────────────────────────────────────────
+
+    /**
+     * POSTs a new SOP POS client for a brand-new tenant, or PATCHes plan/period onto an existing
+     * one. The register-vs-update decision keys off {@code posRegistrationId} (the UUID first sent
+     * to the POS API), which is carried forward across renewals, upgrades and re-subscriptions.
+     */
+    private void syncPosTenant(UserSubscriptionEntity sub) {
+        if (!sopPosClient.isEnabled()) {
+            return;
+        }
+        PricingPlanEntity plan = planRepository.findById(sub.getPlanId()).orElse(null);
+        Integer planCode = plan != null ? plan.getPosPlanCode() : null;
+        if (planCode == null) {
+            recordPosSyncFailure(sub, "Plan " + sub.getPlanId() + " has no SOP POS plan code configured");
             return;
         }
 
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(stillActive ? sub.getExpiresAt() : now);
-        if (Constants.BILLING_YEARLY.equals(sub.getBillingCycle())) {
-            cal.add(Calendar.YEAR, 1);
-        } else {
-            cal.add(Calendar.MONTH, 1);
+        com.cambofreelance.webbackend.soppos.SopPosClient.RegistrationResult freshRegistration = null;
+        try {
+            if (!StringUtils.hasText(sub.getPosRegistrationId())) {
+                var result = sopPosClient.register(sub.getId(), planCode, sub.getStartAt(), sub.getExpiresAt());
+                sub.setPosRegistrationId(sub.getId());
+                sub.setPosClientCode(result.clientCode());
+                sub.setPosBackendUrl(result.backendUrl());
+                sub.setPosEmenuUrl(result.emenuUrl());
+                sub.setPosRootUser(result.rootUser());
+                sub.setPosRootPassword(result.rootPassword());
+                freshRegistration = result;
+                log.info("[SopPos] registered tenant client={} for sub={} user={}",
+                    result.clientCode(), sub.getId(), sub.getUserId());
+            } else {
+                var result = sopPosClient.updatePlanAndPeriod(sub.getPosRegistrationId(), planCode,
+                    sub.getStartAt(), sub.getExpiresAt());
+                // Refresh access details in case the POS system moved the tenant's host.
+                if (StringUtils.hasText(result.clientCode())) sub.setPosClientCode(result.clientCode());
+                if (StringUtils.hasText(result.backendUrl())) sub.setPosBackendUrl(result.backendUrl());
+                if (StringUtils.hasText(result.emenuUrl())) sub.setPosEmenuUrl(result.emenuUrl());
+                if (StringUtils.hasText(result.rootUser())) sub.setPosRootUser(result.rootUser());
+                if (StringUtils.hasText(result.rootPassword())) sub.setPosRootPassword(result.rootPassword());
+                log.info("[SopPos] updated tenant registration={} for sub={} user={} (plan {}, until {})",
+                    sub.getPosRegistrationId(), sub.getId(), sub.getUserId(), planCode, sub.getExpiresAt());
+            }
+        } catch (Exception e) {
+            log.error("[SopPos] tenant sync failed for sub={} user={}", sub.getId(), sub.getUserId(), e);
+            recordPosSyncFailure(sub, truncate(e.getMessage(), 480));
+            return;
         }
-        if (!stillActive) {
-            sub.setStartAt(now);
-        }
-        sub.setSubStatus(Constants.SUB_ACTIVE);
-        sub.setExpiresAt(cal.getTime());
-        // A fresh cycle starts here — re-arm the expiry reminder thresholds for it.
-        sub.setNotice7dSent(false);
-        sub.setNotice3dSent(false);
-        sub.setNotice1dSent(false);
-        sub.setUpdatedAt(now);
-        sub.setUpdatedBy(Constants.SYSTEM);
+
+        sub.setPosSyncStatus(Constants.POS_SYNC_SYNCED);
+        sub.setPosSyncError(null);
+        sub.setPosSyncedAt(new Date());
+        sub.setPosLastAttemptAt(new Date());
         subscriptionRepository.save(sub);
-        log.info("[Subscription] {} sub={} user={} until {}",
-            stillActive ? "renewed" : "activated", sub.getId(), sub.getUserId(), sub.getExpiresAt());
+
+        // Email the customer their access details — only for a brand-new tenant, and only once the
+        // sync state is saved. Best-effort: a mail failure never re-fails the sync.
+        if (freshRegistration != null) {
+            emailPosCredentials(sub, plan, freshRegistration);
+        }
+    }
+
+    /** Emails the customer their new POS tenant access details. Best-effort — never blocks the sync. */
+    private void emailPosCredentials(UserSubscriptionEntity sub, PricingPlanEntity plan,
+            com.cambofreelance.webbackend.soppos.SopPosClient.RegistrationResult result) {
+        UserEntity user = userRepository.findById(sub.getUserId()).orElse(null);
+        if (user == null || !StringUtils.hasText(user.getEmail())) {
+            log.warn("[SopPos] no email on file for user={} — cannot send POS credentials for sub={}",
+                sub.getUserId(), sub.getId());
+            return;
+        }
+        emailService.sendPosTenantProvisioned(
+            user.getEmail(), user.getUsername(),
+            plan != null ? plan.getName() : null,
+            result.clientCode(), result.backendUrl(), result.emenuUrl(),
+            result.rootUser(), result.rootPassword());
+    }
+
+    private void recordPosSyncFailure(UserSubscriptionEntity sub, String error) {
+        sub.setPosSyncStatus(Constants.POS_SYNC_FAILED);
+        sub.setPosSyncError(error);
+        sub.setPosLastAttemptAt(new Date());
+        subscriptionRepository.save(sub);
+
+        UserEntity user = userRepository.findById(sub.getUserId()).orElse(null);
+        String who = user != null ? user.getUsername() + " (" + user.getEmail() + ")" : sub.getUserId();
+        notificationService.create(
+            Constants.NOTIF_TYPE_POS_SYNC_FAILED,
+            "POS provisioning failed",
+            who + " — the SOP POS tenant could not be synced: " + error
+                + ". It will be retried automatically; you can also re-sync it from the subscription's admin page.",
+            sub.getId(), Constants.NOTIF_REF_SUBSCRIPTION);
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "POS_SYNC", module = "SUBSCRIPTION")
+    public SubscriptionResponse resyncPosTenant(String subscriptionId, String adminId) {
+        UserSubscriptionEntity sub = subscriptionRepository.findById(subscriptionId)
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.ACTIVE_SUBSCRIPTION_NOT_FOUND, "Subscription not found");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+        if (!sopPosClient.isEnabled()) {
+            AppException ex = new AppException(ErrorCode.POS_REGISTRATION_FAILED,
+                "SOP POS integration is not enabled");
+            ex.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);
+            throw ex;
+        }
+        // syncPosTenant records failures on the entity rather than throwing, so the failure state
+        // (and its admin notification) still commit — the caller inspects posSyncStatus.
+        syncPosTenant(sub);
+        return toSubscriptionResponse(sub);
+    }
+
+    @Override
+    @Transactional
+    public void retryFailedPosSyncs() {
+        if (!sopPosClient.isEnabled()) {
+            return;
+        }
+        List<UserSubscriptionEntity> candidates = subscriptionRepository.findPosSyncRetryCandidates(
+            Constants.POS_SYNC_FAILED, Constants.SUB_ACTIVE);
+        for (UserSubscriptionEntity sub : candidates) {
+            try {
+                syncPosTenant(sub);
+            } catch (Exception e) {
+                // One candidate's failure must never abort the batch.
+                log.error("[SopPos] unexpected error retrying sync for sub={}", sub.getId(), e);
+            }
+        }
+    }
+
+    private static String truncate(String s, int max) {
+        if (s == null) return null;
+        return s.length() <= max ? s : s.substring(0, max);
     }
 
     private void completeClientOnboarding(String userId) {
@@ -880,12 +1036,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         return Math.round((to.getTime() - from.getTime()) / 86_400_000.0);
     }
 
+    /** Annual promo: pay for 10 months, get 12 (2 months free), unless a plan sets its own price_yearly. */
+    private static final int YEARLY_PROMO_MONTHS = 10;
+
     private BigDecimal priceFor(PricingPlanEntity plan, String cycle) {
         if (Constants.BILLING_YEARLY.equals(cycle)) {
-            // yearly = configured yearly price, or 12 months with the advertised 20% discount
             BigDecimal yearly = plan.getPriceYearly() != null
                 ? plan.getPriceYearly()
-                : plan.getPriceMonthly().multiply(BigDecimal.valueOf(12 * 0.8));
+                : plan.getPriceMonthly().multiply(BigDecimal.valueOf(YEARLY_PROMO_MONTHS));
             return yearly.setScale(2, RoundingMode.HALF_UP);
         }
         return plan.getPriceMonthly().setScale(2, RoundingMode.HALF_UP);
@@ -931,6 +1089,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .hasPaymentToken(StringUtils.hasText(s.getPaymentToken()))
             .autoRenewFailureCount(s.getAutoRenewFailureCount())
             .paymentTokenCapturedAt(s.getPaymentTokenCapturedAt())
+            .posClientCode(s.getPosClientCode())
+            .posBackendUrl(s.getPosBackendUrl())
+            .posEmenuUrl(s.getPosEmenuUrl())
+            .posRootUser(s.getPosRootUser())
+            .posRootPassword(s.getPosRootPassword())
+            .posSyncStatus(s.getPosSyncStatus())
+            .posSyncError(s.getPosSyncError())
+            .posSyncedAt(s.getPosSyncedAt())
             .build();
     }
 

@@ -24,6 +24,10 @@ public interface EmailService {
     void sendSubscriptionExpiringAlert(List<String> to, String customerUsername, String customerEmail,
         String planName, Date expiresAt, long daysRemaining);
 
+    /** Sends the customer their SOP POS tenant access details after provisioning succeeds. Best-effort. */
+    void sendPosTenantProvisioned(String to, String customerName, String planName, String clientCode,
+        String backendUrl, String emenuUrl, String rootUser, String rootPassword);
+
     /** Admin-triggered check that outgoing SMTP is actually working. Must throw on failure. */
     void sendTestEmail(String to);
 }

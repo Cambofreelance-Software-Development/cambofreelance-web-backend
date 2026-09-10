@@ -48,4 +48,14 @@ public final class ErrorCode {
     public static final String INVALID_REFERRAL_CODE = "ERR-0028";
     public static final String PAYMENT_GATEWAY_ERROR = "ERR-0029";
     public static final String REFUND_NOT_AVAILABLE = "ERR-0030";
+
+    public static final String PARTNER_APPLICATION_NOT_FOUND    = "ERR-0031";
+    public static final String PARTNER_APPLICATION_EXISTS       = "ERR-0032";
+    public static final String PARTNER_APPLICATION_NOT_EDITABLE = "ERR-0033";
+    public static final String PARTNER_AGREEMENT_REQUIRED       = "ERR-0034";
+    public static final String NOT_ACTIVE_PARTNER                = "ERR-0035";
+    public static final String PARTNER_INVALID_STATE             = "ERR-0036";
+    public static final String PARTNER_CLIENT_NOT_FOUND          = "ERR-0037";
+
+    public static final String POS_REGISTRATION_FAILED          = "ERR-0038";
 }

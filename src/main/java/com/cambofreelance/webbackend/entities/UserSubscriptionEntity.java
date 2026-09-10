@@ -88,4 +88,41 @@ public class UserSubscriptionEntity extends BaseEntity implements Serializable {
      *  (from UserEntity.referredBy) — stays fixed for the subscription's lifetime. */
     @Column(name = "referrer_id")
     private String referrerId;
+
+    // ── SOP POS System provisioning ────────────────────────────────────────
+
+    /** UUID sent as {@code id} on the original POST /api/registration — later PATCH calls address
+     *  /api/registration/{this}. Carried forward on re-subscribe so the tenant is reused, not duplicated. */
+    @Column(name = "pos_registration_id")
+    private String posRegistrationId;
+
+    @Column(name = "pos_client_code")
+    private String posClientCode;
+
+    @Column(name = "pos_backend_url")
+    private String posBackendUrl;
+
+    @Column(name = "pos_emenu_url")
+    private String posEmenuUrl;
+
+    @Column(name = "pos_root_user")
+    private String posRootUser;
+
+    @Column(name = "pos_root_password")
+    private String posRootPassword;
+
+    /** null (never attempted) / SYNCED / FAILED */
+    @Column(name = "pos_sync_status")
+    private String posSyncStatus;
+
+    @Column(name = "pos_sync_error")
+    private String posSyncError;
+
+    @Column(name = "pos_synced_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date posSyncedAt;
+
+    @Column(name = "pos_last_attempt_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date posLastAttemptAt;
 }
