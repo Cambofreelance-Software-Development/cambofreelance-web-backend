@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.services;
 
 import com.cambofreelance.webbackend.dto.request.PartnerApplicationRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCommissionRateRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerPayoutRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerReviewRequest;
 import com.cambofreelance.webbackend.dto.response.AdminReferredClientResponse;
@@ -39,6 +40,10 @@ public interface PartnerService {
     PartnerAdminDetailResponse adminGet(String id);
 
     PartnerApplicationResponse adminReview(String id, PartnerReviewRequest request, String adminId);
+
+    /** Pin (or clear, when {@code request.getRate()} is null) this partner's commission rate
+     *  to a custom value instead of the tier-derived default. */
+    PartnerAdminDetailResponse updateCommissionRate(String id, PartnerCommissionRateRequest request, String adminId);
 
     PartnerPayoutResponse recordPayout(String applicationId, PartnerPayoutRequest request, String adminId);
 

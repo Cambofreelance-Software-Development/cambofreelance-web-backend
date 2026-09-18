@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.dto.request.PartnerApplicationRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCommissionRateRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerPayoutRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerReviewRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
@@ -131,6 +132,17 @@ public class PartnerController {
         @RequestHeader(value = Constants.USER_ID, required = false) String adminId
     ) {
         var result = partnerService.adminReview(id, request, adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/cms/partners/{id}/commission-rate")
+    @PreAuthorize("hasAuthority('partner.review')")
+    public ResponseEntity<Object> updateCommissionRate(
+        @PathVariable String id,
+        @Valid @RequestBody PartnerCommissionRateRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = partnerService.updateCommissionRate(id, request, adminId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 

@@ -16,6 +16,9 @@ public class PartnerAdminDetailResponse {
 
     private java.math.BigDecimal commissionRate;
 
+    /** Non-null when an admin has pinned this partner to a custom rate instead of the tier default. */
+    private java.math.BigDecimal commissionRateOverride;
+
     private PartnerPortalResponse.Stats stats;
 
     private List<PartnerPayoutResponse> payouts;

@@ -6,6 +6,7 @@ import com.cambofreelance.webbackend.constants.ErrorCode;
 import com.cambofreelance.webbackend.constants.PartnerApplicationStatus;
 import com.cambofreelance.webbackend.constants.PartnerTier;
 import com.cambofreelance.webbackend.dto.request.PartnerApplicationRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCommissionRateRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerPayoutRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerReviewRequest;
 import com.cambofreelance.webbackend.dto.response.AdminReferredClientResponse;
@@ -191,7 +192,7 @@ public class PartnerServiceImpl implements PartnerService {
                 return ex;
             });
 
-        Metrics m = computeMetrics(userId, app.getId());
+        Metrics m = computeMetrics(app);
 
         return PartnerPortalResponse.builder()
             .partnerRef(app.getPartnerRef())
@@ -223,7 +224,10 @@ public class PartnerServiceImpl implements PartnerService {
 
         long activeCount = subscriptionRepository
             .countDistinctUsersByReferrerIdAndSubStatus(partnerId, Constants.SUB_ACTIVE);
-        BigDecimal rate = PartnerTier.rateOf(PartnerTier.tierFor(activeCount));
+        String tier = PartnerTier.tierFor(activeCount);
+        BigDecimal rate = applicationRepository.findByUserIdAndStatus(partnerId, Constants.STATUS_ACTIVE)
+            .map(partnerApp -> effectiveRate(partnerApp, tier))
+            .orElseGet(() -> PartnerTier.rateOf(tier));
         BigDecimal gross = nz(transactionRepository
             .sumAmountByReferrerIdAndUserIdAndPaymentStatus(partnerId, clientUserId, Constants.PAY_APPROVED))
             .setScale(2, RoundingMode.HALF_UP);
@@ -277,7 +281,7 @@ public class PartnerServiceImpl implements PartnerService {
             .findByIdAndStatus(id, Constants.STATUS_ACTIVE)
             .orElseThrow(() -> notFound());
 
-        Metrics m = computeMetrics(app.getUserId(), app.getId());
+        Metrics m = computeMetrics(app);
         List<PartnerPayoutResponse> payouts = payoutRepository
             .findByApplicationIdAndStatusOrderByPaidAtDesc(app.getId(), Constants.STATUS_ACTIVE)
             .stream().map(PartnerPayoutResponse::from).toList();
@@ -286,6 +290,7 @@ public class PartnerServiceImpl implements PartnerService {
             .application(PartnerApplicationResponse.from(app))
             .tier(m.tier)
             .commissionRate(m.rate)
+            .commissionRateOverride(app.getCommissionRateOverride())
             .stats(m.stats)
             .payouts(payouts)
             .build();
@@ -334,6 +339,28 @@ public class PartnerServiceImpl implements PartnerService {
 
         applicationRepository.save(app);
         return PartnerApplicationResponse.from(app);
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "PARTNER", entityClass = PartnerApplicationEntity.class)
+    public PartnerAdminDetailResponse updateCommissionRate(
+        String id, PartnerCommissionRateRequest request, String adminId) {
+        PartnerApplicationEntity app = applicationRepository
+            .findByIdAndStatus(id, Constants.STATUS_ACTIVE)
+            .orElseThrow(() -> notFound());
+
+        BigDecimal rate = request.getRate();
+        if (rate != null && (rate.compareTo(BigDecimal.ZERO) < 0 || rate.compareTo(BigDecimal.ONE) > 0)) {
+            throw new AppException(ErrorCode.INVALID_COMMISSION_RATE, "Commission rate must be between 0 and 1");
+        }
+
+        app.setCommissionRateOverride(rate);
+        app.setUpdatedBy(adminId);
+        app.setUpdatedAt(new Date());
+        applicationRepository.save(app);
+
+        return adminGet(id);
     }
 
     @Override
@@ -394,7 +421,7 @@ public class PartnerServiceImpl implements PartnerService {
         for (PartnerApplicationEntity app : partners) {
             long activeCount = subscriptionRepository
                 .countDistinctUsersByReferrerIdAndSubStatus(app.getUserId(), Constants.SUB_ACTIVE);
-            BigDecimal rate = PartnerTier.rateOf(PartnerTier.tierFor(activeCount));
+            BigDecimal rate = effectiveRate(app, PartnerTier.tierFor(activeCount));
 
             for (PartnerPortalResponse.ReferredClient c : buildReferredClients(app.getUserId(), rate)) {
                 boolean matchesSearch = q == null
@@ -476,18 +503,19 @@ public class PartnerServiceImpl implements PartnerService {
         throw new AppException(ErrorCode.GENERAL_ERROR, "Could not generate a unique partner ref");
     }
 
-    private Metrics computeMetrics(String userId, String applicationId) {
+    private Metrics computeMetrics(PartnerApplicationEntity app) {
+        String userId = app.getUserId();
         long totalReferred = userRepository.countVerifiedByReferredBy(userId);
         long activeSubs = subscriptionRepository
             .countDistinctUsersByReferrerIdAndSubStatus(userId, Constants.SUB_ACTIVE);
 
         String tier = PartnerTier.tierFor(activeSubs);
-        BigDecimal rate = PartnerTier.rateOf(tier);
+        BigDecimal rate = effectiveRate(app, tier);
 
         BigDecimal gross = nz(transactionRepository
             .sumAmountByReferrerIdAndPaymentStatus(userId, Constants.PAY_APPROVED));
         BigDecimal earned = gross.multiply(rate).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal paidOut = nz(payoutRepository.sumPaid(applicationId, Constants.STATUS_ACTIVE))
+        BigDecimal paidOut = nz(payoutRepository.sumPaid(app.getId(), Constants.STATUS_ACTIVE))
             .setScale(2, RoundingMode.HALF_UP);
         BigDecimal pending = earned.subtract(paidOut).max(BigDecimal.ZERO);
 
@@ -542,6 +570,11 @@ public class PartnerServiceImpl implements PartnerService {
 
     private static BigDecimal nz(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
+    }
+
+    /** The rate actually used for commission math: the admin's override if one is set, else the tier default. */
+    private static BigDecimal effectiveRate(PartnerApplicationEntity app, String tier) {
+        return app.getCommissionRateOverride() != null ? app.getCommissionRateOverride() : PartnerTier.rateOf(tier);
     }
 
     private record Metrics(String tier, BigDecimal rate, PartnerPortalResponse.Stats stats) {}
