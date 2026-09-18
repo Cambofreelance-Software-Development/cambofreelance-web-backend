@@ -27,11 +27,20 @@ public interface UserRepository extends JpaRepository<UserEntity, String>, JpaSp
 
     boolean existsByReferralCode(String referralCode);
 
-    /** Count of accounts registered with this user's referral code. */
-    long countByReferredBy(String referredBy);
+    /**
+     * Count of accounts registered with this user's referral code that finished signup
+     * verification (phone or email OTP). Excludes registrations still pending verification —
+     * referredBy is stamped at form submission, before the account is confirmed real.
+     */
+    @Query("SELECT COUNT(u) FROM UserEntity u WHERE u.referredBy = :referredBy "
+         + "AND (u.phoneVerified = true OR u.emailVerified = true)")
+    long countVerifiedByReferredBy(@Param("referredBy") String referredBy);
 
-    /** Accounts registered with this user's referral code, newest first. */
-    Page<UserEntity> findByReferredByOrderByCreatedAtDesc(String referredBy, Pageable pageable);
+    /** Verified accounts registered with this user's referral code, newest first. */
+    @Query("SELECT u FROM UserEntity u WHERE u.referredBy = :referredBy "
+         + "AND (u.phoneVerified = true OR u.emailVerified = true)")
+    Page<UserEntity> findVerifiedByReferredByOrderByCreatedAtDesc(
+        @Param("referredBy") String referredBy, Pageable pageable);
 
     @Query("SELECT DISTINCT p.code FROM UserEntity u " +
            "JOIN u.roles r " +

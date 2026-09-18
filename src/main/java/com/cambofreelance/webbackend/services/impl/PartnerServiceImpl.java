@@ -477,7 +477,7 @@ public class PartnerServiceImpl implements PartnerService {
     }
 
     private Metrics computeMetrics(String userId, String applicationId) {
-        long totalReferred = userRepository.countByReferredBy(userId);
+        long totalReferred = userRepository.countVerifiedByReferredBy(userId);
         long activeSubs = subscriptionRepository
             .countDistinctUsersByReferrerIdAndSubStatus(userId, Constants.SUB_ACTIVE);
 
@@ -509,7 +509,7 @@ public class PartnerServiceImpl implements PartnerService {
     }
 
     private List<PartnerPortalResponse.ReferredClient> buildReferredClients(String userId, BigDecimal rate) {
-        Page<UserEntity> referred = userRepository.findByReferredByOrderByCreatedAtDesc(
+        Page<UserEntity> referred = userRepository.findVerifiedByReferredByOrderByCreatedAtDesc(
             userId, PageRequest.of(0, REFERRED_CLIENTS_LIMIT, Sort.by("createdAt").descending()));
 
         List<PartnerPortalResponse.ReferredClient> out = new ArrayList<>();

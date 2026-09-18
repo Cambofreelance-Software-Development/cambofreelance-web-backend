@@ -699,7 +699,7 @@ public class UserServiceImpl implements UserService {
         UserEntity user = userRepository.findById(userId)
             .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "User not found"));
 
-        long totalReferred = userRepository.countByReferredBy(userId);
+        long totalReferred = userRepository.countVerifiedByReferredBy(userId);
         long totalSubscribed = userSubscriptionRepository.countDistinctUsersByReferrerId(userId);
         BigDecimal totalRevenue = paymentTransactionRepository
             .sumAmountByReferrerIdAndPaymentStatus(userId, Constants.PAY_APPROVED);
@@ -715,7 +715,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ReferralListResponse getMyReferrals(String userId, int page, int size) throws AppException {
-        Page<UserEntity> referredPage = userRepository.findByReferredByOrderByCreatedAtDesc(
+        Page<UserEntity> referredPage = userRepository.findVerifiedByReferredByOrderByCreatedAtDesc(
             userId, PageRequest.of(page, size, Sort.by("createdAt").descending()));
 
         Set<String> subscribedUserIds = new HashSet<>(
