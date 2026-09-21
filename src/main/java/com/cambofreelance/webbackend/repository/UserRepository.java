@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -41,6 +42,12 @@ public interface UserRepository extends JpaRepository<UserEntity, String>, JpaSp
          + "AND (u.phoneVerified = true OR u.emailVerified = true)")
     Page<UserEntity> findVerifiedByReferredByOrderByCreatedAtDesc(
         @Param("referredBy") String referredBy, Pageable pageable);
+
+    /** Same as above, but unbounded — every verified referral, not just one capped page. */
+    @Query("SELECT u FROM UserEntity u WHERE u.referredBy = :referredBy "
+         + "AND (u.phoneVerified = true OR u.emailVerified = true)")
+    List<UserEntity> findVerifiedByReferredByOrderByCreatedAtDesc(
+        @Param("referredBy") String referredBy, Sort sort);
 
     @Query("SELECT DISTINCT p.code FROM UserEntity u " +
            "JOIN u.roles r " +

@@ -263,6 +263,39 @@ public class PartnerServiceImpl implements PartnerService {
             .build();
     }
 
+    @Override
+    public Page<PartnerPortalResponse.ReferredClient> listMyReferredClients(
+        String userId, String search, String subStatus, int page, int size) {
+        PartnerApplicationEntity app = applicationRepository
+            .findByUserIdAndStatus(userId, Constants.STATUS_ACTIVE)
+            .filter(a -> PartnerApplicationStatus.APPROVED.equals(a.getAppStatus()))
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.NOT_ACTIVE_PARTNER, "Not an active partner");
+                ex.setHttpStatus(HttpStatus.FORBIDDEN);
+                return ex;
+            });
+
+        Metrics m = computeMetrics(app);
+        List<PartnerPortalResponse.ReferredClient> all = buildAllReferredClients(userId, m.rate);
+
+        String q = StringUtils.hasText(search) ? search.trim().toLowerCase() : null;
+        String statusFilter = StringUtils.hasText(subStatus) ? subStatus.trim().toUpperCase() : null;
+
+        List<PartnerPortalResponse.ReferredClient> filtered = new ArrayList<>();
+        for (PartnerPortalResponse.ReferredClient c : all) {
+            boolean matchesSearch = q == null
+                || containsIgnoreCase(c.getUsername(), q)
+                || containsIgnoreCase(c.getCompanyName(), q);
+            boolean matchesStatus = statusFilter == null || statusFilter.equals(c.getSubStatus());
+            if (!matchesSearch || !matchesStatus) continue;
+            filtered.add(c);
+        }
+
+        int from = Math.min(page * size, filtered.size());
+        int to = Math.min(from + size, filtered.size());
+        return new PageImpl<>(filtered.subList(from, to), PageRequest.of(page, size), filtered.size());
+    }
+
     // ── Admin ───────────────────────────────────────────────────────────────
 
     @Override
@@ -542,6 +575,42 @@ public class PartnerServiceImpl implements PartnerService {
 
         List<PartnerPortalResponse.ReferredClient> out = new ArrayList<>();
         for (UserEntity u : referred.getContent()) {
+            ClientEntity client = clientRepository.findByUserId(u.getUserId()).orElse(null);
+            List<UserSubscriptionEntity> subs =
+                subscriptionRepository.findByUserIdOrderByCreatedAtDesc(u.getUserId());
+            UserSubscriptionEntity latest = subs.isEmpty() ? null : subs.get(0);
+            String planName = latest == null ? null
+                : planRepository.findById(latest.getPlanId())
+                    .map(p -> p.getName()).orElse(null);
+
+            BigDecimal clientGross = nz(transactionRepository
+                .sumAmountByReferrerIdAndUserIdAndPaymentStatus(userId, u.getUserId(), Constants.PAY_APPROVED));
+
+            out.add(PartnerPortalResponse.ReferredClient.builder()
+                .userId(u.getUserId())
+                .username(u.getUsername())
+                .companyName(client != null ? client.getCompanyName() : null)
+                .city(client != null ? client.getCity() : null)
+                .businessType(client != null ? client.getBusinessType() : null)
+                .joinedDate(u.getCreatedAt())
+                .planName(planName)
+                .subStatus(latest != null ? latest.getSubStatus() : null)
+                .commission(clientGross.multiply(rate).setScale(2, RoundingMode.HALF_UP))
+                .build());
+        }
+        return out;
+    }
+
+    /** Same as {@link #buildReferredClients(String, BigDecimal)} but unbounded — every verified
+     *  referral, not capped at {@link #REFERRED_CLIENTS_LIMIT}. Used by the dedicated paginated
+     *  "my referred clients" endpoint; kept as a separate method so the capped helper's existing
+     *  callers (portal + admin directory) are untouched. */
+    private List<PartnerPortalResponse.ReferredClient> buildAllReferredClients(String userId, BigDecimal rate) {
+        List<UserEntity> referred = userRepository.findVerifiedByReferredByOrderByCreatedAtDesc(
+            userId, Sort.by("createdAt").descending());
+
+        List<PartnerPortalResponse.ReferredClient> out = new ArrayList<>();
+        for (UserEntity u : referred) {
             ClientEntity client = clientRepository.findByUserId(u.getUserId()).orElse(null);
             List<UserSubscriptionEntity> subs =
                 subscriptionRepository.findByUserIdOrderByCreatedAtDesc(u.getUserId());

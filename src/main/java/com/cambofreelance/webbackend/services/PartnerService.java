@@ -33,6 +33,12 @@ public interface PartnerService {
      *  actually be one of {@code partnerId}'s referrals. */
     PartnerReferredClientDetailResponse getReferredClientDetail(String partnerId, String clientUserId);
 
+    /** Paginated + searchable "referred clients" list for the caller's own partner portal —
+     *  unlike {@link #getMyPortal(String)}'s embedded (capped-at-50) list, this covers every
+     *  referred client. Search matches username or company name; subStatus is an exact match. */
+    Page<PartnerPortalResponse.ReferredClient> listMyReferredClients(
+        String userId, String search, String subStatus, int page, int size);
+
     // ── Admin ───────────────────────────────────────────────────────────────
 
     Page<PartnerApplicationResponse> adminList(String appStatus, int page, int size);
