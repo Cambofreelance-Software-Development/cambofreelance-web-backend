@@ -62,6 +62,7 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/business-type-catalog"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/business-type-catalog/*"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/business-type-catalog-categories"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/taxonomy-items"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/help-center-categories"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/pricing"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/media/*/view"),

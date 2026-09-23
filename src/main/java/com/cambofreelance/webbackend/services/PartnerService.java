@@ -1,6 +1,7 @@
 package com.cambofreelance.webbackend.services;
 
 import com.cambofreelance.webbackend.dto.request.PartnerApplicationRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCommissionRateRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerPayoutRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerReviewRequest;
 import com.cambofreelance.webbackend.dto.response.AdminReferredClientResponse;
@@ -32,6 +33,12 @@ public interface PartnerService {
      *  actually be one of {@code partnerId}'s referrals. */
     PartnerReferredClientDetailResponse getReferredClientDetail(String partnerId, String clientUserId);
 
+    /** Paginated + searchable "referred clients" list for the caller's own partner portal —
+     *  unlike {@link #getMyPortal(String)}'s embedded (capped-at-50) list, this covers every
+     *  referred client. Search matches username or company name; subStatus is an exact match. */
+    Page<PartnerPortalResponse.ReferredClient> listMyReferredClients(
+        String userId, String search, String subStatus, int page, int size);
+
     // ── Admin ───────────────────────────────────────────────────────────────
 
     Page<PartnerApplicationResponse> adminList(String appStatus, int page, int size);
@@ -39,6 +46,10 @@ public interface PartnerService {
     PartnerAdminDetailResponse adminGet(String id);
 
     PartnerApplicationResponse adminReview(String id, PartnerReviewRequest request, String adminId);
+
+    /** Pin (or clear, when {@code request.getRate()} is null) this partner's commission rate
+     *  to a custom value instead of the tier-derived default. */
+    PartnerAdminDetailResponse updateCommissionRate(String id, PartnerCommissionRateRequest request, String adminId);
 
     PartnerPayoutResponse recordPayout(String applicationId, PartnerPayoutRequest request, String adminId);
 
