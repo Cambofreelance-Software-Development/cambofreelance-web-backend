@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.dto.request.PartnerApplicationRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCommissionRateRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerPayoutRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerReviewRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
@@ -71,6 +72,20 @@ public class PartnerController {
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
+    /** Paginated + searchable "referred clients" list for the caller's own partner portal — unlike
+     *  {@code /partner/portal}'s embedded (capped-at-50) list, this covers every referred client. */
+    @GetMapping("/partner/portal/referred-clients")
+    public ResponseEntity<Object> myReferredClients(
+        @RequestHeader(value = Constants.USER_ID) String userId,
+        @RequestParam(required = false) String search,
+        @RequestParam(required = false) String subStatus,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        var result = partnerService.listMyReferredClients(userId, search, subStatus, page, size);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
     /** "View details" on a referred-clients row — {@code userId} in the path must be one of the caller's referrals. */
     @GetMapping("/partner/portal/clients/{userId}")
     public ResponseEntity<Object> referredClientDetail(
@@ -131,6 +146,17 @@ public class PartnerController {
         @RequestHeader(value = Constants.USER_ID, required = false) String adminId
     ) {
         var result = partnerService.adminReview(id, request, adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/cms/partners/{id}/commission-rate")
+    @PreAuthorize("hasAuthority('partner.review')")
+    public ResponseEntity<Object> updateCommissionRate(
+        @PathVariable String id,
+        @Valid @RequestBody PartnerCommissionRateRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = partnerService.updateCommissionRate(id, request, adminId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 

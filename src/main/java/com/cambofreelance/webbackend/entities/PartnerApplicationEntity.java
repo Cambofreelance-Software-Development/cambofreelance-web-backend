@@ -98,4 +98,8 @@ public class PartnerApplicationEntity extends BaseEntity implements Serializable
     @Column(name = "activated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date activatedAt;
+
+    /** Admin override of the tier-derived commission rate (e.g. 0.15 = 15%). Null = use PartnerTier.rateOf(tier). */
+    @Column(name = "commission_rate_override")
+    private java.math.BigDecimal commissionRateOverride;
 }

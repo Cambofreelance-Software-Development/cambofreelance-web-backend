@@ -6,6 +6,7 @@ import com.cambofreelance.webbackend.constants.ErrorCode;
 import com.cambofreelance.webbackend.constants.PartnerApplicationStatus;
 import com.cambofreelance.webbackend.constants.PartnerTier;
 import com.cambofreelance.webbackend.dto.request.PartnerApplicationRequest;
+import com.cambofreelance.webbackend.dto.request.PartnerCommissionRateRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerPayoutRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerReviewRequest;
 import com.cambofreelance.webbackend.dto.response.AdminReferredClientResponse;
@@ -191,7 +192,7 @@ public class PartnerServiceImpl implements PartnerService {
                 return ex;
             });
 
-        Metrics m = computeMetrics(userId, app.getId());
+        Metrics m = computeMetrics(app);
 
         return PartnerPortalResponse.builder()
             .partnerRef(app.getPartnerRef())
@@ -223,7 +224,10 @@ public class PartnerServiceImpl implements PartnerService {
 
         long activeCount = subscriptionRepository
             .countDistinctUsersByReferrerIdAndSubStatus(partnerId, Constants.SUB_ACTIVE);
-        BigDecimal rate = PartnerTier.rateOf(PartnerTier.tierFor(activeCount));
+        String tier = PartnerTier.tierFor(activeCount);
+        BigDecimal rate = applicationRepository.findByUserIdAndStatus(partnerId, Constants.STATUS_ACTIVE)
+            .map(partnerApp -> effectiveRate(partnerApp, tier))
+            .orElseGet(() -> PartnerTier.rateOf(tier));
         BigDecimal gross = nz(transactionRepository
             .sumAmountByReferrerIdAndUserIdAndPaymentStatus(partnerId, clientUserId, Constants.PAY_APPROVED))
             .setScale(2, RoundingMode.HALF_UP);
@@ -259,6 +263,39 @@ public class PartnerServiceImpl implements PartnerService {
             .build();
     }
 
+    @Override
+    public Page<PartnerPortalResponse.ReferredClient> listMyReferredClients(
+        String userId, String search, String subStatus, int page, int size) {
+        PartnerApplicationEntity app = applicationRepository
+            .findByUserIdAndStatus(userId, Constants.STATUS_ACTIVE)
+            .filter(a -> PartnerApplicationStatus.APPROVED.equals(a.getAppStatus()))
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.NOT_ACTIVE_PARTNER, "Not an active partner");
+                ex.setHttpStatus(HttpStatus.FORBIDDEN);
+                return ex;
+            });
+
+        Metrics m = computeMetrics(app);
+        List<PartnerPortalResponse.ReferredClient> all = buildAllReferredClients(userId, m.rate);
+
+        String q = StringUtils.hasText(search) ? search.trim().toLowerCase() : null;
+        String statusFilter = StringUtils.hasText(subStatus) ? subStatus.trim().toUpperCase() : null;
+
+        List<PartnerPortalResponse.ReferredClient> filtered = new ArrayList<>();
+        for (PartnerPortalResponse.ReferredClient c : all) {
+            boolean matchesSearch = q == null
+                || containsIgnoreCase(c.getUsername(), q)
+                || containsIgnoreCase(c.getCompanyName(), q);
+            boolean matchesStatus = statusFilter == null || statusFilter.equals(c.getSubStatus());
+            if (!matchesSearch || !matchesStatus) continue;
+            filtered.add(c);
+        }
+
+        int from = Math.min(page * size, filtered.size());
+        int to = Math.min(from + size, filtered.size());
+        return new PageImpl<>(filtered.subList(from, to), PageRequest.of(page, size), filtered.size());
+    }
+
     // ── Admin ───────────────────────────────────────────────────────────────
 
     @Override
@@ -277,7 +314,7 @@ public class PartnerServiceImpl implements PartnerService {
             .findByIdAndStatus(id, Constants.STATUS_ACTIVE)
             .orElseThrow(() -> notFound());
 
-        Metrics m = computeMetrics(app.getUserId(), app.getId());
+        Metrics m = computeMetrics(app);
         List<PartnerPayoutResponse> payouts = payoutRepository
             .findByApplicationIdAndStatusOrderByPaidAtDesc(app.getId(), Constants.STATUS_ACTIVE)
             .stream().map(PartnerPayoutResponse::from).toList();
@@ -286,6 +323,7 @@ public class PartnerServiceImpl implements PartnerService {
             .application(PartnerApplicationResponse.from(app))
             .tier(m.tier)
             .commissionRate(m.rate)
+            .commissionRateOverride(app.getCommissionRateOverride())
             .stats(m.stats)
             .payouts(payouts)
             .build();
@@ -334,6 +372,28 @@ public class PartnerServiceImpl implements PartnerService {
 
         applicationRepository.save(app);
         return PartnerApplicationResponse.from(app);
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "PARTNER", entityClass = PartnerApplicationEntity.class)
+    public PartnerAdminDetailResponse updateCommissionRate(
+        String id, PartnerCommissionRateRequest request, String adminId) {
+        PartnerApplicationEntity app = applicationRepository
+            .findByIdAndStatus(id, Constants.STATUS_ACTIVE)
+            .orElseThrow(() -> notFound());
+
+        BigDecimal rate = request.getRate();
+        if (rate != null && (rate.compareTo(BigDecimal.ZERO) < 0 || rate.compareTo(BigDecimal.ONE) > 0)) {
+            throw new AppException(ErrorCode.INVALID_COMMISSION_RATE, "Commission rate must be between 0 and 1");
+        }
+
+        app.setCommissionRateOverride(rate);
+        app.setUpdatedBy(adminId);
+        app.setUpdatedAt(new Date());
+        applicationRepository.save(app);
+
+        return adminGet(id);
     }
 
     @Override
@@ -394,7 +454,7 @@ public class PartnerServiceImpl implements PartnerService {
         for (PartnerApplicationEntity app : partners) {
             long activeCount = subscriptionRepository
                 .countDistinctUsersByReferrerIdAndSubStatus(app.getUserId(), Constants.SUB_ACTIVE);
-            BigDecimal rate = PartnerTier.rateOf(PartnerTier.tierFor(activeCount));
+            BigDecimal rate = effectiveRate(app, PartnerTier.tierFor(activeCount));
 
             for (PartnerPortalResponse.ReferredClient c : buildReferredClients(app.getUserId(), rate)) {
                 boolean matchesSearch = q == null
@@ -476,18 +536,19 @@ public class PartnerServiceImpl implements PartnerService {
         throw new AppException(ErrorCode.GENERAL_ERROR, "Could not generate a unique partner ref");
     }
 
-    private Metrics computeMetrics(String userId, String applicationId) {
-        long totalReferred = userRepository.countByReferredBy(userId);
+    private Metrics computeMetrics(PartnerApplicationEntity app) {
+        String userId = app.getUserId();
+        long totalReferred = userRepository.countVerifiedByReferredBy(userId);
         long activeSubs = subscriptionRepository
             .countDistinctUsersByReferrerIdAndSubStatus(userId, Constants.SUB_ACTIVE);
 
         String tier = PartnerTier.tierFor(activeSubs);
-        BigDecimal rate = PartnerTier.rateOf(tier);
+        BigDecimal rate = effectiveRate(app, tier);
 
         BigDecimal gross = nz(transactionRepository
             .sumAmountByReferrerIdAndPaymentStatus(userId, Constants.PAY_APPROVED));
         BigDecimal earned = gross.multiply(rate).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal paidOut = nz(payoutRepository.sumPaid(applicationId, Constants.STATUS_ACTIVE))
+        BigDecimal paidOut = nz(payoutRepository.sumPaid(app.getId(), Constants.STATUS_ACTIVE))
             .setScale(2, RoundingMode.HALF_UP);
         BigDecimal pending = earned.subtract(paidOut).max(BigDecimal.ZERO);
 
@@ -509,7 +570,7 @@ public class PartnerServiceImpl implements PartnerService {
     }
 
     private List<PartnerPortalResponse.ReferredClient> buildReferredClients(String userId, BigDecimal rate) {
-        Page<UserEntity> referred = userRepository.findByReferredByOrderByCreatedAtDesc(
+        Page<UserEntity> referred = userRepository.findVerifiedByReferredByOrderByCreatedAtDesc(
             userId, PageRequest.of(0, REFERRED_CLIENTS_LIMIT, Sort.by("createdAt").descending()));
 
         List<PartnerPortalResponse.ReferredClient> out = new ArrayList<>();
@@ -540,8 +601,49 @@ public class PartnerServiceImpl implements PartnerService {
         return out;
     }
 
+    /** Same as {@link #buildReferredClients(String, BigDecimal)} but unbounded — every verified
+     *  referral, not capped at {@link #REFERRED_CLIENTS_LIMIT}. Used by the dedicated paginated
+     *  "my referred clients" endpoint; kept as a separate method so the capped helper's existing
+     *  callers (portal + admin directory) are untouched. */
+    private List<PartnerPortalResponse.ReferredClient> buildAllReferredClients(String userId, BigDecimal rate) {
+        List<UserEntity> referred = userRepository.findVerifiedByReferredByOrderByCreatedAtDesc(
+            userId, Sort.by("createdAt").descending());
+
+        List<PartnerPortalResponse.ReferredClient> out = new ArrayList<>();
+        for (UserEntity u : referred) {
+            ClientEntity client = clientRepository.findByUserId(u.getUserId()).orElse(null);
+            List<UserSubscriptionEntity> subs =
+                subscriptionRepository.findByUserIdOrderByCreatedAtDesc(u.getUserId());
+            UserSubscriptionEntity latest = subs.isEmpty() ? null : subs.get(0);
+            String planName = latest == null ? null
+                : planRepository.findById(latest.getPlanId())
+                    .map(p -> p.getName()).orElse(null);
+
+            BigDecimal clientGross = nz(transactionRepository
+                .sumAmountByReferrerIdAndUserIdAndPaymentStatus(userId, u.getUserId(), Constants.PAY_APPROVED));
+
+            out.add(PartnerPortalResponse.ReferredClient.builder()
+                .userId(u.getUserId())
+                .username(u.getUsername())
+                .companyName(client != null ? client.getCompanyName() : null)
+                .city(client != null ? client.getCity() : null)
+                .businessType(client != null ? client.getBusinessType() : null)
+                .joinedDate(u.getCreatedAt())
+                .planName(planName)
+                .subStatus(latest != null ? latest.getSubStatus() : null)
+                .commission(clientGross.multiply(rate).setScale(2, RoundingMode.HALF_UP))
+                .build());
+        }
+        return out;
+    }
+
     private static BigDecimal nz(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
+    }
+
+    /** The rate actually used for commission math: the admin's override if one is set, else the tier default. */
+    private static BigDecimal effectiveRate(PartnerApplicationEntity app, String tier) {
+        return app.getCommissionRateOverride() != null ? app.getCommissionRateOverride() : PartnerTier.rateOf(tier);
     }
 
     private record Metrics(String tier, BigDecimal rate, PartnerPortalResponse.Stats stats) {}
