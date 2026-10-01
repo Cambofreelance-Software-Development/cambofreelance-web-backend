@@ -20,4 +20,5 @@ public class SitePublicConfigResponse {
     private String socialFacebook;
     private String socialTelegram;
     private String socialWhatsapp;
+    private String socialTiktok;
 }

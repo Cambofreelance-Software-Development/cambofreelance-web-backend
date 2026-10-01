@@ -16,4 +16,6 @@ public class CmsSocialSettingRequest {
     private String socialTelegram;
 
     private String socialWhatsapp;
+
+    private String socialTiktok;
 }

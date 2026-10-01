@@ -234,6 +234,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
             .socialFacebook(m.getOrDefault("social_facebook", ""))
             .socialTelegram(m.getOrDefault("social_telegram", ""))
             .socialWhatsapp(m.getOrDefault("social_whatsapp", ""))
+            .socialTiktok(m.getOrDefault("social_tiktok", ""))
             .build();
     }
 
@@ -247,6 +248,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
         values.put("social_facebook",  req.getSocialFacebook()  != null ? req.getSocialFacebook()  : "");
         values.put("social_telegram",  req.getSocialTelegram()  != null ? req.getSocialTelegram()  : "");
         values.put("social_whatsapp",  req.getSocialWhatsapp()  != null ? req.getSocialWhatsapp()  : "");
+        values.put("social_tiktok",    req.getSocialTiktok()    != null ? req.getSocialTiktok()    : "");
         batchUpsert(SettingGroup.SOCIAL, values);
         return getSocialSettings();
     }
@@ -427,6 +429,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
             .socialFacebook(social.getOrDefault("social_facebook", ""))
             .socialTelegram(social.getOrDefault("social_telegram", ""))
             .socialWhatsapp(social.getOrDefault("social_whatsapp", ""))
+            .socialTiktok(social.getOrDefault("social_tiktok", ""))
             .build();
     }
 
