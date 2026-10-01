@@ -46,6 +46,9 @@ public interface SubscriptionService {
     /** Admin re-runs SOP POS tenant provisioning for one subscription (e.g. after a failed sync). */
     SubscriptionResponse resyncPosTenant(String subscriptionId, String adminId);
 
+    /** Admin manually records a subscription's POS access details (backend URL, login, ...). */
+    SubscriptionResponse updatePosAccess(String subscriptionId, com.cambofreelance.webbackend.dto.request.PosAccessUpdateRequest request, String adminId);
+
     /** Scheduled by SubscriptionJobs — retries SOP POS provisioning for subscriptions whose sync failed. */
     void retryFailedPosSyncs();
 

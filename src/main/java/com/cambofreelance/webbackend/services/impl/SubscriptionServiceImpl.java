@@ -894,6 +894,33 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     @Transactional
+    @Auditable(action = "POS_ACCESS_UPDATE", module = "SUBSCRIPTION")
+    public SubscriptionResponse updatePosAccess(String subscriptionId,
+            com.cambofreelance.webbackend.dto.request.PosAccessUpdateRequest request, String adminId) {
+        UserSubscriptionEntity sub = subscriptionRepository.findById(subscriptionId)
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.ACTIVE_SUBSCRIPTION_NOT_FOUND, "Subscription not found");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+        sub.setPosBackendUrl(blankToNull(request.getBackendUrl()));
+        sub.setPosEmenuUrl(blankToNull(request.getEmenuUrl()));
+        sub.setPosClientCode(blankToNull(request.getClientCode()));
+        sub.setPosRootUser(blankToNull(request.getRootUser()));
+        sub.setPosRootPassword(blankToNull(request.getRootPassword()));
+        sub.setUpdatedAt(new Date());
+        sub.setUpdatedBy(adminId);
+        subscriptionRepository.save(sub);
+        log.info("[SopPos] admin={} manually set POS access for sub={} user={}", adminId, sub.getId(), sub.getUserId());
+        return toSubscriptionResponse(sub);
+    }
+
+    private static String blankToNull(String s) {
+        return StringUtils.hasText(s) ? s.trim() : null;
+    }
+
+    @Override
+    @Transactional
     public void retryFailedPosSyncs() {
         if (!sopPosClient.isEnabled()) {
             return;

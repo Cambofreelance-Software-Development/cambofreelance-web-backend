@@ -2,6 +2,7 @@ package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.dto.request.AutoRenewToggleRequest;
+import com.cambofreelance.webbackend.dto.request.PosAccessUpdateRequest;
 import com.cambofreelance.webbackend.dto.request.SubscriptionCheckoutRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
@@ -147,6 +148,18 @@ public class SubscriptionController {
         @RequestHeader(value = Constants.USER_ID, required = false) String adminId
     ) {
         var result = subscriptionService.resyncPosTenant(subscriptionId, adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    /** Admin manually enters a subscription's POS access details (backend URL, username, password, ...). */
+    @PutMapping("/cms/subscriptions/{subscriptionId}/pos-access")
+    @PreAuthorize("hasAuthority('subscription.manage')")
+    public ResponseEntity<Object> updatePosAccess(
+        @PathVariable String subscriptionId,
+        @Valid @RequestBody PosAccessUpdateRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = subscriptionService.updatePosAccess(subscriptionId, request, adminId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 }
