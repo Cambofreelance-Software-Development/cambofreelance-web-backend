@@ -783,6 +783,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
      */
     private void syncPosTenant(UserSubscriptionEntity sub) {
         if (!sopPosClient.isEnabled()) {
+            log.warn("[SopPos] skipped tenant sync for sub={} user={} — integration disabled "
+                + "(set soppos.enabled=true, soppos.base-url and soppos.api-key)", sub.getId(), sub.getUserId());
             return;
         }
         PricingPlanEntity plan = planRepository.findById(sub.getPlanId()).orElse(null);
