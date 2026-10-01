@@ -14,6 +14,7 @@ public class AppReleaseResponse {
 
     private String id;
     private String appName;
+    private String productKey;
     private String platform;
     private String versionName;
     private Integer versionCode;
@@ -33,6 +34,7 @@ public class AppReleaseResponse {
         return AppReleaseResponse.builder()
             .id(e.getId())
             .appName(e.getAppName())
+            .productKey(e.getProductKey())
             .platform(e.getPlatform())
             .versionName(e.getVersionName())
             .versionCode(e.getVersionCode())

@@ -13,21 +13,27 @@ import org.springframework.stereotype.Repository;
 public interface AppReleaseRepository extends JpaRepository<AppReleaseEntity, String> {
 
     @Query("SELECT r FROM AppReleaseEntity r WHERE r.status = 'ACT' " +
+           "AND (:product IS NULL OR r.productKey = :product) " +
            "ORDER BY r.releaseDate DESC NULLS LAST, r.createdAt DESC")
-    List<AppReleaseEntity> findAllActive();
+    List<AppReleaseEntity> findAllActive(@Param("product") String product);
 
     @Query("SELECT r FROM AppReleaseEntity r WHERE r.status = 'ACT' " +
            "AND (:search IS NULL OR LOWER(r.appName) LIKE :search " +
            "OR LOWER(r.platform) LIKE :search OR LOWER(r.versionName) LIKE :search) " +
            "AND (:platform IS NULL OR UPPER(r.platform) = :platform) " +
+           "AND (:product IS NULL OR r.productKey = :product) " +
            "ORDER BY r.releaseDate DESC NULLS LAST, r.createdAt DESC")
     Page<AppReleaseEntity> searchActive(
         @Param("search") String search,
         @Param("platform") String platform,
+        @Param("product") String product,
         Pageable pageable);
 
     @Query("SELECT r FROM AppReleaseEntity r WHERE r.status = 'ACT' " +
            "AND UPPER(r.platform) = UPPER(:platform) " +
+           "AND r.productKey = :product " +
            "ORDER BY r.releaseDate DESC NULLS LAST, r.createdAt DESC")
-    List<AppReleaseEntity> findActiveByPlatform(@Param("platform") String platform);
+    List<AppReleaseEntity> findActiveByPlatform(
+        @Param("platform") String platform,
+        @Param("product") String product);
 }

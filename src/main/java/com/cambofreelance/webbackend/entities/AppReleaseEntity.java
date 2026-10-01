@@ -31,6 +31,9 @@ public class AppReleaseEntity extends BaseEntity implements Serializable {
     @Column(name = "app_name", nullable = false, length = 150)
     private String appName;
 
+    @Column(name = "product_key", nullable = false, length = 30)
+    private String productKey = "SOPPOS_POS";
+
     @Column(name = "platform", nullable = false, length = 30)
     private String platform;
 

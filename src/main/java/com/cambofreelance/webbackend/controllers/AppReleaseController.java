@@ -29,14 +29,17 @@ public class AppReleaseController {
     // ── Public ────────────────────────────────────────────────────────────────
 
     @GetMapping("/app-releases")
-    public ResponseEntity<Object> publicList() {
-        var result = appReleaseService.listAll();
+    public ResponseEntity<Object> publicList(@RequestParam(required = false) String product) {
+        var result = appReleaseService.listPublic(product);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
     @GetMapping("/app-releases/latest")
-    public ResponseEntity<Object> latest(@RequestParam String platform) {
-        var result = appReleaseService.latestByPlatform(platform);
+    public ResponseEntity<Object> latest(
+        @RequestParam String platform,
+        @RequestParam(required = false) String product
+    ) {
+        var result = appReleaseService.latestByPlatform(platform, product);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
@@ -47,15 +50,16 @@ public class AppReleaseController {
     public ResponseEntity<Object> list(
         @RequestParam(required = false) String search,
         @RequestParam(required = false) String platform,
+        @RequestParam(required = false) String product,
         @RequestParam(required = false) Boolean all,
         @RequestParam(defaultValue = "0")  int page,
         @RequestParam(defaultValue = "50") int size
     ) {
         if (Boolean.TRUE.equals(all)) {
-            var result = appReleaseService.listAll();
+            var result = appReleaseService.listAll(product);
             return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
         }
-        var result = appReleaseService.search(search, platform, page, size);
+        var result = appReleaseService.search(search, platform, product, page, size);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 

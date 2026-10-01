@@ -29,17 +29,25 @@ public class AppReleaseServiceImpl implements AppReleaseService {
     private final AppReleaseRepository appReleaseRepository;
     private final MediaRepository      mediaRepository;
 
+    private static final String DEFAULT_PRODUCT = "SOPPOS_POS";
+
     @Override
-    public List<AppReleaseResponse> listAll() {
-        return appReleaseRepository.findAllActive()
+    public List<AppReleaseResponse> listPublic(String product) {
+        return listAll(normalizeProduct(product));
+    }
+
+    @Override
+    public List<AppReleaseResponse> listAll(String product) {
+        String productFilter = StringUtils.hasText(product) ? product.trim().toUpperCase() : null;
+        return appReleaseRepository.findAllActive(productFilter)
             .stream()
             .map(AppReleaseResponse::from)
             .collect(Collectors.toList());
     }
 
     @Override
-    public AppReleaseResponse latestByPlatform(String platform) {
-        return appReleaseRepository.findActiveByPlatform(platform)
+    public AppReleaseResponse latestByPlatform(String platform, String product) {
+        return appReleaseRepository.findActiveByPlatform(platform, normalizeProduct(product))
             .stream()
             .findFirst()
             .map(AppReleaseResponse::from)
@@ -47,14 +55,17 @@ public class AppReleaseServiceImpl implements AppReleaseService {
     }
 
     @Override
-    public Page<AppReleaseResponse> search(String search, String platform, int page, int size) {
+    public Page<AppReleaseResponse> search(String search, String platform, String product, int page, int size) {
         String searchFilter = StringUtils.hasText(search)
             ? "%" + search.trim().toLowerCase() + "%"
             : null;
         String platformFilter = StringUtils.hasText(platform)
             ? platform.trim().toUpperCase()
             : null;
-        return appReleaseRepository.searchActive(searchFilter, platformFilter, PageRequest.of(page, size))
+        String productFilter = StringUtils.hasText(product)
+            ? product.trim().toUpperCase()
+            : null;
+        return appReleaseRepository.searchActive(searchFilter, platformFilter, productFilter, PageRequest.of(page, size))
             .map(AppReleaseResponse::from);
     }
 
@@ -99,6 +110,10 @@ public class AppReleaseServiceImpl implements AppReleaseService {
 
     private void applyRequest(AppReleaseEntity entity, AppReleaseRequest request) {
         entity.setAppName(request.getAppName().trim());
+        // Blank keeps the current product (SOPPOS_POS for new rows) so a partial update can't re-home a release.
+        if (StringUtils.hasText(request.getProductKey())) {
+            entity.setProductKey(normalizeProduct(request.getProductKey()));
+        }
         entity.setPlatform(request.getPlatform().trim().toUpperCase());
         entity.setVersionName(request.getVersionName().trim());
         entity.setVersionCode(request.getVersionCode());
@@ -110,6 +125,10 @@ public class AppReleaseServiceImpl implements AppReleaseService {
         entity.setForceUpdate(Boolean.TRUE.equals(request.getForceUpdate()));
         entity.setReleaseDate(request.getReleaseDate());
         resolveFile(entity, request.getFileId());
+    }
+
+    private String normalizeProduct(String product) {
+        return StringUtils.hasText(product) ? product.trim().toUpperCase() : DEFAULT_PRODUCT;
     }
 
     private void resolveFile(AppReleaseEntity entity, String fileId) {

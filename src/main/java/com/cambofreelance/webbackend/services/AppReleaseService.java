@@ -7,11 +7,17 @@ import org.springframework.data.domain.Page;
 
 public interface AppReleaseService {
 
-    List<AppReleaseResponse> listAll();
+    /** Public list; blank product defaults to SOPPOS_POS. */
+    List<AppReleaseResponse> listPublic(String product);
 
-    AppReleaseResponse latestByPlatform(String platform);
+    /** CMS list; blank product means no product filter. */
+    List<AppReleaseResponse> listAll(String product);
 
-    Page<AppReleaseResponse> search(String search, String platform, int page, int size);
+    /** Blank product defaults to SOPPOS_POS. */
+    AppReleaseResponse latestByPlatform(String platform, String product);
+
+    /** Blank product means no product filter. */
+    Page<AppReleaseResponse> search(String search, String platform, String product, int page, int size);
 
     AppReleaseResponse getById(String id);
 

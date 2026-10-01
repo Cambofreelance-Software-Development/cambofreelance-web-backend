@@ -10,6 +10,9 @@ public class AppReleaseRequest {
     @NotBlank
     private String appName;
 
+    // Optional; blank defaults to SOPPOS_POS
+    private String productKey;
+
     @NotBlank
     private String platform;
 
