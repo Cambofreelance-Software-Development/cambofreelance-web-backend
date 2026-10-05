@@ -59,4 +59,12 @@ public final class ErrorCode {
 
     public static final String POS_REGISTRATION_FAILED          = "ERR-0038";
     public static final String INVALID_COMMISSION_RATE          = "ERR-0039";
+
+    public static final String IMPORT_INVALID_PERIOD            = "ERR-0040";
+    public static final String POS_MANUAL_LINK                  = "ERR-0041";
+    public static final String REFERRAL_CODE_TAKEN              = "ERR-0042";
+    public static final String POS_REGISTRATION_ALREADY_LINKED  = "ERR-0043";
+    public static final String CLIENT_ALREADY_REFERRED          = "ERR-0044";
+    public static final String INVALID_REFERRER                 = "ERR-0045";
+    public static final String IMPORT_INVALID_POS               = "ERR-0046";
 }

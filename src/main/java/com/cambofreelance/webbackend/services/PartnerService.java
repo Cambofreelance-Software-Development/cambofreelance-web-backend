@@ -47,6 +47,17 @@ public interface PartnerService {
 
     PartnerApplicationResponse adminReview(String id, PartnerReviewRequest request, String adminId);
 
+    /** Admin onboards an existing (offline) partner directly — creates/reactivates the user's
+     *  application and approves it in one step, with no admin notification. */
+    PartnerAdminDetailResponse adminCreateOnBehalf(String userId, com.cambofreelance.webbackend.dto.request.AdminPartnerCreateRequest request, String adminId);
+
+    /** Attributes existing clients to an APPROVED partner; per-client problems are reported as skipped. */
+    com.cambofreelance.webbackend.dto.response.LinkPartnerClientsResponse adminLinkClients(
+        String id, com.cambofreelance.webbackend.dto.request.LinkPartnerClientsRequest request, String adminId);
+
+    /** Removes a client's attribution to this partner (users.referred_by + ACTIVE/PENDING subscriptions). */
+    void adminUnlinkClient(String id, String clientUserId, String adminId);
+
     /** Pin (or clear, when {@code request.getRate()} is null) this partner's commission rate
      *  to a custom value instead of the tier-derived default. */
     PartnerAdminDetailResponse updateCommissionRate(String id, PartnerCommissionRateRequest request, String adminId);

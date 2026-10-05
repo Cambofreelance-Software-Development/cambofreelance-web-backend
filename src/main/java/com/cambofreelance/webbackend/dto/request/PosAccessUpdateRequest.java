@@ -1,5 +1,6 @@
 package com.cambofreelance.webbackend.dto.request;
 
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -21,4 +22,14 @@ public class PosAccessUpdateRequest {
 
     @Size(max = 255)
     private String rootPassword;
+
+    /** Optional — link the subscription to an existing SOP POS registration (enables PATCH sync).
+     *  Blank/absent leaves the current registration id untouched. */
+    @Size(max = 64)
+    private String posRegistrationId;
+
+    /** Optional explicit link mode: MANUAL (never auto-sync) / PLATFORM (sync from this platform;
+     *  without a registration id the next sync provisions a new tenant). */
+    @Pattern(regexp = "PLATFORM|MANUAL", message = "POS link mode must be PLATFORM or MANUAL")
+    private String posLinkMode;
 }

@@ -49,6 +49,10 @@ public interface SubscriptionService {
     /** Admin manually records a subscription's POS access details (backend URL, login, ...). */
     SubscriptionResponse updatePosAccess(String subscriptionId, com.cambofreelance.webbackend.dto.request.PosAccessUpdateRequest request, String adminId);
 
+    /** Admin onboards an EXISTING client (already on SOP POS / paid offline): grants a subscription
+     *  for an explicit period with no checkout and no payment transaction. */
+    SubscriptionResponse grantSubscription(com.cambofreelance.webbackend.dto.request.SubscriptionGrantRequest request, String adminId);
+
     /** Scheduled by SubscriptionJobs — retries SOP POS provisioning for subscriptions whose sync failed. */
     void retryFailedPosSyncs();
 

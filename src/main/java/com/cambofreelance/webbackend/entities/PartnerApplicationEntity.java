@@ -102,4 +102,8 @@ public class PartnerApplicationEntity extends BaseEntity implements Serializable
     /** Admin override of the tier-derived commission rate (e.g. 0.15 = 15%). Null = use PartnerTier.rateOf(tier). */
     @Column(name = "commission_rate_override")
     private java.math.BigDecimal commissionRateOverride;
+
+    /** APPLICATION (self-applied) / ADMIN (created directly by an admin for an existing partner). */
+    @Column(name = "source")
+    private String source = com.cambofreelance.webbackend.constants.Constants.PARTNER_SOURCE_APPLICATION;
 }

@@ -1,6 +1,8 @@
 package com.cambofreelance.webbackend.controllers;
 
 import com.cambofreelance.webbackend.constants.Constants;
+import com.cambofreelance.webbackend.dto.request.AdminPartnerCreateRequest;
+import com.cambofreelance.webbackend.dto.request.LinkPartnerClientsRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerApplicationRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerCommissionRateRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerPayoutRequest;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -147,6 +150,41 @@ public class PartnerController {
     ) {
         var result = partnerService.adminReview(id, request, adminId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    /** Admin onboards an existing (offline) partner directly — approved immediately, no application flow. */
+    @PostMapping("/cms/partners/on-behalf/{userId}")
+    @PreAuthorize("hasAuthority('partner.create')")
+    public ResponseEntity<Object> adminCreateOnBehalf(
+        @PathVariable String userId,
+        @Valid @RequestBody AdminPartnerCreateRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = partnerService.adminCreateOnBehalf(userId, request, adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.CREATED);
+    }
+
+    /** Attribute existing clients to an approved partner. Per-client problems come back in {@code skipped}. */
+    @PostMapping("/cms/partners/{id}/clients")
+    @PreAuthorize("hasAuthority('partner.link')")
+    public ResponseEntity<Object> adminLinkClients(
+        @PathVariable String id,
+        @Valid @RequestBody LinkPartnerClientsRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = partnerService.adminLinkClients(id, request, adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/cms/partners/{id}/clients/{userId}")
+    @PreAuthorize("hasAuthority('partner.link')")
+    public ResponseEntity<Object> adminUnlinkClient(
+        @PathVariable String id,
+        @PathVariable String userId,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        partnerService.adminUnlinkClient(id, userId, adminId);
+        return new ResponseEntity<>(new MessageResponse("Client unlinked successfully", ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
     @PutMapping("/cms/partners/{id}/commission-rate")

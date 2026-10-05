@@ -5,11 +5,14 @@ import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.constants.ErrorCode;
 import com.cambofreelance.webbackend.constants.PartnerApplicationStatus;
 import com.cambofreelance.webbackend.constants.PartnerTier;
+import com.cambofreelance.webbackend.dto.request.AdminPartnerCreateRequest;
+import com.cambofreelance.webbackend.dto.request.LinkPartnerClientsRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerApplicationRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerCommissionRateRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerPayoutRequest;
 import com.cambofreelance.webbackend.dto.request.PartnerReviewRequest;
 import com.cambofreelance.webbackend.dto.response.AdminReferredClientResponse;
+import com.cambofreelance.webbackend.dto.response.LinkPartnerClientsResponse;
 import com.cambofreelance.webbackend.dto.response.PartnerAdminDetailResponse;
 import com.cambofreelance.webbackend.dto.response.PartnerApplicationResponse;
 import com.cambofreelance.webbackend.dto.response.PartnerPayoutResponse;
@@ -98,13 +101,24 @@ public class PartnerServiceImpl implements PartnerService {
 
         Optional<PartnerApplicationEntity> existing =
             applicationRepository.findByUserIdAndStatus(userId, Constants.STATUS_ACTIVE);
+        if (existing.isPresent() && !PartnerApplicationStatus.isReapplyable(existing.get().getAppStatus())) {
+            throw new AppException(ErrorCode.PARTNER_APPLICATION_EXISTS,
+                "You already have a partner application in progress");
+        }
+        PartnerApplicationEntity app = submitInternal(user, existing.orElse(null), request, userId, true);
+        return PartnerApplicationResponse.from(app);
+    }
+
+    /**
+     * Shared submit path for the self-serve application and the admin "create partner directly"
+     * flow. Re-uses {@code existing} in place (keeping its id and partner ref) or creates a new
+     * row, applies the form and marks it SUBMITTED. Only the self-serve path notifies admins.
+     */
+    private PartnerApplicationEntity submitInternal(UserEntity user, PartnerApplicationEntity existing,
+                                                    PartnerApplicationRequest request, String actor, boolean notify) {
         PartnerApplicationEntity app;
-        if (existing.isPresent()) {
-            app = existing.get();
-            if (!PartnerApplicationStatus.isReapplyable(app.getAppStatus())) {
-                throw new AppException(ErrorCode.PARTNER_APPLICATION_EXISTS,
-                    "You already have a partner application in progress");
-            }
+        if (existing != null) {
+            app = existing;
             // Re-apply in place — keep the id and the partner ref already issued.
             app.setReviewedBy(null);
             app.setReviewedAt(null);
@@ -113,9 +127,9 @@ public class PartnerServiceImpl implements PartnerService {
         } else {
             app = new PartnerApplicationEntity();
             app.setId(UUID.randomUUID().toString());
-            app.setUserId(userId);
+            app.setUserId(user.getUserId());
             app.setStatus(Constants.STATUS_ACTIVE);
-            app.setCreatedBy(userId);
+            app.setCreatedBy(actor);
         }
         if (!StringUtils.hasText(app.getPartnerRef())) {
             app.setPartnerRef(generatePartnerRef());
@@ -126,17 +140,18 @@ public class PartnerServiceImpl implements PartnerService {
         app.setPayoutChannel(StringUtils.hasText(app.getPayoutChannel()) ? app.getPayoutChannel() : "ABA");
         app.setAppStatus(PartnerApplicationStatus.SUBMITTED);
         app.setSubmittedAt(new Date());
-        app.setUpdatedBy(userId);
+        app.setUpdatedBy(actor);
         app.setUpdatedAt(new Date());
         applicationRepository.save(app);
 
-        notificationService.create(
-            Constants.NOTIF_TYPE_PARTNER_APPLICATION,
-            "New partner application",
-            app.getPartnerRef() + " — " + app.getCompanyName() + " (" + user.getUsername() + ")",
-            app.getId(), Constants.NOTIF_REF_PARTNER);
-
-        return PartnerApplicationResponse.from(app);
+        if (notify) {
+            notificationService.create(
+                Constants.NOTIF_TYPE_PARTNER_APPLICATION,
+                "New partner application",
+                app.getPartnerRef() + " — " + app.getCompanyName() + " (" + user.getUsername() + ")",
+                app.getId(), Constants.NOTIF_REF_PARTNER);
+        }
+        return app;
     }
 
     @Override
@@ -356,22 +371,230 @@ public class PartnerServiceImpl implements PartnerService {
         app.setUpdatedAt(now);
 
         if (PartnerApplicationStatus.APPROVED.equals(decision)) {
-            app.setActivatedAt(now);
-            UserEntity user = userRepository.findById(app.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Partner user not found"));
-            // The partner ref becomes the user's referral code so the existing attribution
-            // pipeline (registration -> subscription.referrerId -> payment.referrerId) credits
-            // every downstream payment to this partner with no extra wiring.
-            user.setReferralCode(app.getPartnerRef());
-            user.setUpdatedBy(adminId);
-            user.setUpdatedAt(now);
-            userRepository.save(user);
-            log.info("Partner {} approved — referral code of user {} set to {}",
-                app.getPartnerRef(), user.getUserId(), app.getPartnerRef());
+            activatePartner(app, adminId, now);
         }
 
         applicationRepository.save(app);
         return PartnerApplicationResponse.from(app);
+    }
+
+    /**
+     * Approval side effects shared by adminReview(APPROVED) and the admin "create partner
+     * directly" flow: stamps activation and makes the partner ref the user's referral code so the
+     * existing attribution pipeline (registration -> subscription.referrerId -> payment.referrerId)
+     * credits every downstream payment to this partner with no extra wiring.
+     */
+    private void activatePartner(PartnerApplicationEntity app, String adminId, Date now) {
+        app.setActivatedAt(now);
+        UserEntity user = userRepository.findById(app.getUserId())
+            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Partner user not found"));
+        if (userRepository.existsByReferralCodeAndUserIdNot(app.getPartnerRef(), user.getUserId())) {
+            AppException ex = new AppException(ErrorCode.REFERRAL_CODE_TAKEN, "Partner/referral code is already in use");
+            ex.setHttpStatus(HttpStatus.CONFLICT);
+            throw ex;
+        }
+        user.setReferralCode(app.getPartnerRef());
+        user.setUpdatedBy(adminId);
+        user.setUpdatedAt(now);
+        userRepository.save(user);
+        log.info("Partner {} approved — referral code of user {} set to {}",
+            app.getPartnerRef(), user.getUserId(), app.getPartnerRef());
+    }
+
+    // ── Admin manual onboarding (existing partners / clients) ───────────────
+
+    private static final String DEFAULT_ADMIN_REVIEW_NOTE = "Manually onboarded by admin";
+
+    @Override
+    @Transactional
+    @Auditable(action = "CREATE", module = "PARTNER")
+    public PartnerAdminDetailResponse adminCreateOnBehalf(String userId, AdminPartnerCreateRequest request, String adminId) {
+        String actor = StringUtils.hasText(adminId) ? adminId : Constants.SYSTEM;
+        Date now = new Date();
+
+        UserEntity user = userRepository.findById(userId)
+            .filter(u -> Constants.STATUS_ACTIVE.equals(u.getStatus()))
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "User not found");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+
+        BigDecimal rate = request.getCommissionRateOverride();
+        if (rate != null && (rate.compareTo(BigDecimal.ZERO) < 0 || rate.compareTo(BigDecimal.ONE) > 0)) {
+            throw new AppException(ErrorCode.INVALID_COMMISSION_RATE, "Commission rate must be between 0 and 1");
+        }
+
+        // An admin-onboarded partner is a known business: make sure they can log in.
+        boolean userChanged = false;
+        if (!Constants.APPROVAL_APPROVED.equals(user.getApprovalStatus())) {
+            user.setApprovalStatus(Constants.APPROVAL_APPROVED);
+            user.setApprovedBy(actor);
+            user.setApprovedAt(now);
+            userChanged = true;
+        }
+        if (!Boolean.TRUE.equals(user.getPhoneVerified()) && !Boolean.TRUE.equals(user.getEmailVerified())) {
+            user.setEmailVerified(true);
+            userChanged = true;
+        }
+        if (userChanged) {
+            user.setUpdatedBy(actor);
+            user.setUpdatedAt(now);
+            userRepository.save(user);
+        }
+
+        // partner_applications.user_id is UNIQUE regardless of status, so look up the row in any state.
+        PartnerApplicationEntity existing = applicationRepository.findByUserId(userId).orElse(null);
+        if (existing != null) {
+            if (Constants.STATUS_ACTIVE.equals(existing.getStatus())
+                && PartnerApplicationStatus.APPROVED.equals(existing.getAppStatus())) {
+                throw new AppException(ErrorCode.PARTNER_APPLICATION_EXISTS, "This user is already an approved partner");
+            }
+            if (!Constants.STATUS_ACTIVE.equals(existing.getStatus())) {
+                existing.setStatus(Constants.STATUS_ACTIVE);
+            }
+        }
+
+        // Same submit path as the public form (no admin notification), then straight to APPROVED.
+        request.setAgreementAccepted(Boolean.TRUE);
+        PartnerApplicationEntity app = submitInternal(user, existing, request, actor, false);
+
+        app.setAppStatus(PartnerApplicationStatus.APPROVED);
+        app.setReviewedBy(actor);
+        app.setReviewedAt(now);
+        app.setReviewNote(StringUtils.hasText(request.getReviewNote())
+            ? request.getReviewNote().trim() : DEFAULT_ADMIN_REVIEW_NOTE);
+        app.setSource(Constants.PARTNER_SOURCE_ADMIN);
+        // Always assign (null = tier default) so a custom rate left on a reused row never lingers.
+        app.setCommissionRateOverride(rate);
+        app.setUpdatedBy(actor);
+        app.setUpdatedAt(now);
+        activatePartner(app, actor, now);
+        applicationRepository.save(app);
+
+        return adminGet(app.getId());
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "LINK_CLIENTS", module = "PARTNER", entityClass = PartnerApplicationEntity.class)
+    public LinkPartnerClientsResponse adminLinkClients(String id, LinkPartnerClientsRequest request, String adminId) {
+        String actor = StringUtils.hasText(adminId) ? adminId : Constants.SYSTEM;
+        Date now = new Date();
+        PartnerApplicationEntity app = requireApprovedPartner(id);
+        UserEntity partner = userRepository.findById(app.getUserId())
+            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Partner user not found"));
+        String partnerId = partner.getUserId();
+        boolean override = Boolean.TRUE.equals(request.getOverrideExisting());
+
+        List<String> linked = new ArrayList<>();
+        List<LinkPartnerClientsResponse.Skipped> skipped = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+
+        for (String rawId : request.getClientUserIds()) {
+            String clientId = rawId == null ? null : rawId.trim();
+            if (!StringUtils.hasText(clientId)) {
+                skipped.add(new LinkPartnerClientsResponse.Skipped(rawId, "NOT_FOUND"));
+                continue;
+            }
+            if (!seen.add(clientId)) {
+                skipped.add(new LinkPartnerClientsResponse.Skipped(clientId, "DUPLICATE"));
+                continue;
+            }
+            UserEntity client = userRepository.findById(clientId)
+                .filter(u -> Constants.STATUS_ACTIVE.equals(u.getStatus()))
+                .orElse(null);
+            if (client == null) {
+                skipped.add(new LinkPartnerClientsResponse.Skipped(clientId, "NOT_FOUND"));
+                continue;
+            }
+            if (clientId.equals(partnerId)) {
+                skipped.add(new LinkPartnerClientsResponse.Skipped(clientId, "SELF"));
+                continue;
+            }
+            if (clientId.equals(partner.getReferredBy())) {
+                // The client referred the partner — linking back would create a referral cycle.
+                skipped.add(new LinkPartnerClientsResponse.Skipped(clientId, "CYCLE"));
+                continue;
+            }
+            if (StringUtils.hasText(client.getReferredBy()) && !partnerId.equals(client.getReferredBy()) && !override) {
+                skipped.add(new LinkPartnerClientsResponse.Skipped(clientId, "ALREADY_REFERRED"));
+                continue;
+            }
+
+            client.setReferredBy(partnerId);
+            // Partner client lists/counts only include verified accounts.
+            if (!Boolean.TRUE.equals(client.getPhoneVerified()) && !Boolean.TRUE.equals(client.getEmailVerified())) {
+                client.setEmailVerified(true);
+            }
+            client.setUpdatedBy(actor);
+            client.setUpdatedAt(now);
+            userRepository.save(client);
+
+            // Tier counts ACTIVE subscriptions by referrer_id; future payments snapshot it too.
+            // Past payment_transaction rows are deliberately left alone (no commission back-fill).
+            for (UserSubscriptionEntity sub : subscriptionRepository.findByUserIdAndSubStatusIn(
+                    clientId, List.of(Constants.SUB_ACTIVE, Constants.SUB_PENDING_PAYMENT))) {
+                if (!partnerId.equals(sub.getReferrerId())) {
+                    sub.setReferrerId(partnerId);
+                    sub.setUpdatedBy(actor);
+                    sub.setUpdatedAt(now);
+                    subscriptionRepository.save(sub);
+                }
+            }
+            linked.add(clientId);
+        }
+
+        log.info("Partner {} — admin {} linked {} client(s), skipped {}",
+            app.getPartnerRef(), actor, linked.size(), skipped.size());
+        return LinkPartnerClientsResponse.builder().linked(linked).skipped(skipped).build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UNLINK_CLIENT", module = "PARTNER", entityClass = PartnerApplicationEntity.class)
+    public void adminUnlinkClient(String id, String clientUserId, String adminId) {
+        String actor = StringUtils.hasText(adminId) ? adminId : Constants.SYSTEM;
+        Date now = new Date();
+        PartnerApplicationEntity app = applicationRepository
+            .findByIdAndStatus(id, Constants.STATUS_ACTIVE)
+            .orElseThrow(() -> notFound());
+        String partnerId = app.getUserId();
+
+        UserEntity client = userRepository.findById(clientUserId)
+            .filter(u -> partnerId.equals(u.getReferredBy()))
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.PARTNER_CLIENT_NOT_FOUND, "Referred client not found");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+
+        client.setReferredBy(null);
+        client.setUpdatedBy(actor);
+        client.setUpdatedAt(now);
+        userRepository.save(client);
+
+        for (UserSubscriptionEntity sub : subscriptionRepository.findByUserIdAndSubStatusIn(
+                clientUserId, List.of(Constants.SUB_ACTIVE, Constants.SUB_PENDING_PAYMENT))) {
+            if (partnerId.equals(sub.getReferrerId())) {
+                sub.setReferrerId(null);
+                sub.setUpdatedBy(actor);
+                sub.setUpdatedAt(now);
+                subscriptionRepository.save(sub);
+            }
+        }
+        log.info("Partner {} — admin {} unlinked client {}", app.getPartnerRef(), actor, clientUserId);
+    }
+
+    private PartnerApplicationEntity requireApprovedPartner(String id) {
+        PartnerApplicationEntity app = applicationRepository
+            .findByIdAndStatus(id, Constants.STATUS_ACTIVE)
+            .orElseThrow(() -> notFound());
+        if (!PartnerApplicationStatus.APPROVED.equals(app.getAppStatus())) {
+            throw new AppException(ErrorCode.PARTNER_INVALID_STATE,
+                "Clients can only be linked to an approved partner");
+        }
+        return app;
     }
 
     @Override

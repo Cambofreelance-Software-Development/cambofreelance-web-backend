@@ -4,6 +4,7 @@ import com.cambofreelance.webbackend.constants.Constants;
 import com.cambofreelance.webbackend.dto.request.AutoRenewToggleRequest;
 import com.cambofreelance.webbackend.dto.request.PosAccessUpdateRequest;
 import com.cambofreelance.webbackend.dto.request.SubscriptionCheckoutRequest;
+import com.cambofreelance.webbackend.dto.request.SubscriptionGrantRequest;
 import com.cambofreelance.webbackend.logger.contants.ErrorCode;
 import com.cambofreelance.webbackend.logger.exceptions.MessageResponse;
 import com.cambofreelance.webbackend.services.SubscriptionService;
@@ -149,6 +150,18 @@ public class SubscriptionController {
     ) {
         var result = subscriptionService.resyncPosTenant(subscriptionId, adminId);
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    /** Admin onboards an existing client (already on SOP POS / paid offline): grants a subscription
+     *  for an explicit period — no checkout, no payment transaction. */
+    @PostMapping("/cms/subscriptions/grant")
+    @PreAuthorize("hasAuthority('client.import')")
+    public ResponseEntity<Object> grantSubscription(
+        @Valid @RequestBody SubscriptionGrantRequest request,
+        @RequestHeader(value = Constants.USER_ID, required = false) String adminId
+    ) {
+        var result = subscriptionService.grantSubscription(request, adminId);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.CREATED);
     }
 
     /** Admin manually enters a subscription's POS access details (backend URL, username, password, ...). */

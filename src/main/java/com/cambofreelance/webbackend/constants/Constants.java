@@ -141,4 +141,17 @@ public final class Constants {
     // SOP POS tenant provisioning sync statuses
     public static final String POS_SYNC_SYNCED = "SYNCED";
     public static final String POS_SYNC_FAILED = "FAILED";
+
+    // How the POS tenant of a subscription is managed: PLATFORM = provisioned/updated by our
+    // sync; MANUAL = managed outside the platform, never auto-synced; null = not provisioned yet.
+    public static final String POS_LINK_PLATFORM = "PLATFORM";
+    public static final String POS_LINK_MANUAL = "MANUAL";
+
+    // user_subscription.source
+    public static final String SUB_SOURCE_CHECKOUT = "CHECKOUT";
+    public static final String SUB_SOURCE_ADMIN_IMPORT = "ADMIN_IMPORT";
+
+    // partner_applications.source
+    public static final String PARTNER_SOURCE_APPLICATION = "APPLICATION";
+    public static final String PARTNER_SOURCE_ADMIN = "ADMIN";
 }

@@ -14,6 +14,9 @@ public interface PartnerApplicationRepository extends JpaRepository<PartnerAppli
 
     Optional<PartnerApplicationEntity> findByIdAndStatus(String id, String status);
 
+    /** partner_applications.user_id is UNIQUE regardless of status — the row, whatever its state. */
+    Optional<PartnerApplicationEntity> findByUserId(String userId);
+
     boolean existsByPartnerRef(String partnerRef);
 
     long countByPartnerRefStartingWith(String prefix);

@@ -25,10 +25,29 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
      *  tenant identity forward when a lapsed subscriber re-subscribes (reactivate, don't duplicate). */
     Optional<UserSubscriptionEntity> findFirstByUserIdAndPosRegistrationIdIsNotNullOrderByCreatedAtDesc(String userId);
 
-    /** ACTIVE subscriptions whose SOP POS sync failed — retried by SubscriptionJobs. */
-    @Query("SELECT s FROM UserSubscriptionEntity s WHERE s.posSyncStatus = :status AND s.subStatus = :subStatus")
+    /** This user's subscriptions that carry any SOP POS tenant identity — platform-provisioned
+     *  (registration id), manually linked (any access field), or explicitly MANUAL (managed outside
+     *  the platform, e.g. imported with POS "later") — newest first. The first row is carried
+     *  forward onto a new subscription so the same tenant is reused, not duplicated. */
+    @Query("SELECT s FROM UserSubscriptionEntity s WHERE s.userId = :userId "
+         + "AND (s.posRegistrationId IS NOT NULL OR s.posClientCode IS NOT NULL "
+         + "OR s.posBackendUrl IS NOT NULL OR s.posEmenuUrl IS NOT NULL OR s.posRootUser IS NOT NULL "
+         + "OR s.posLinkMode = 'MANUAL') "
+         + "ORDER BY s.createdAt DESC")
+    List<UserSubscriptionEntity> findPosLinkedByUserIdOrderByCreatedAtDesc(@Param("userId") String userId);
+
+    /** Whether a subscription of a DIFFERENT user already uses this POS registration id. */
+    boolean existsByPosRegistrationIdAndUserIdNot(String posRegistrationId, String userId);
+
+    /** ACTIVE subscriptions whose SOP POS sync failed — retried by SubscriptionJobs.
+     *  Manually-linked tenants (pos_link_mode = MANUAL) are never auto-synced. */
+    @Query("SELECT s FROM UserSubscriptionEntity s WHERE s.posSyncStatus = :status AND s.subStatus = :subStatus "
+         + "AND (s.posLinkMode IS NULL OR s.posLinkMode <> :manualMode)")
     List<UserSubscriptionEntity> findPosSyncRetryCandidates(
-        @Param("status") String status, @Param("subStatus") String subStatus);
+        @Param("status") String status, @Param("subStatus") String subStatus,
+        @Param("manualMode") String manualMode);
+
+    List<UserSubscriptionEntity> findByUserIdAndSubStatusIn(String userId, java.util.Collection<String> subStatuses);
 
     Page<UserSubscriptionEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 

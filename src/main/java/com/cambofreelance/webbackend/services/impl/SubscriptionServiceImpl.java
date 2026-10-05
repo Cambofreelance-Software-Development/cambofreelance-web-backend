@@ -8,6 +8,7 @@ import com.cambofreelance.webbackend.dto.response.MySubscriptionResponse;
 import com.cambofreelance.webbackend.dto.response.PaymentTransactionResponse;
 import com.cambofreelance.webbackend.dto.response.SubscriptionCheckoutResponse;
 import com.cambofreelance.webbackend.dto.response.SubscriptionResponse;
+import com.cambofreelance.webbackend.entities.ClientEntity;
 import com.cambofreelance.webbackend.entities.PaymentTransactionEntity;
 import com.cambofreelance.webbackend.entities.PricingPlanEntity;
 import com.cambofreelance.webbackend.entities.UserEntity;
@@ -72,6 +73,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final com.cambofreelance.webbackend.soppos.SopPosClient sopPosClient;
     private final EmailService emailService;
     private final NotificationService notificationService;
+    private final org.springframework.transaction.PlatformTransactionManager transactionManager;
     private final SecureRandom secureRandom = new SecureRandom();
 
     /** ABA has not enabled Card-on-File for this merchant yet — flip only once confirmed. */
@@ -174,16 +176,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             sub.setCreatedBy(userId);
             // Reuse the SOP POS tenant from a previous (lapsed) subscription so re-subscribing
             // reactivates it via PATCH instead of provisioning a duplicate client.
-            subscriptionRepository
-                .findFirstByUserIdAndPosRegistrationIdIsNotNullOrderByCreatedAtDesc(userId)
-                .ifPresent(prev -> {
-                    sub.setPosRegistrationId(prev.getPosRegistrationId());
-                    sub.setPosClientCode(prev.getPosClientCode());
-                    sub.setPosBackendUrl(prev.getPosBackendUrl());
-                    sub.setPosEmenuUrl(prev.getPosEmenuUrl());
-                    sub.setPosRootUser(prev.getPosRootUser());
-                    sub.setPosRootPassword(prev.getPosRootPassword());
-                });
+            carryOverPosTenant(userId, sub);
             subscriptionRepository.save(sub);
         }
 
@@ -782,6 +775,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
      * to the POS API), which is carried forward across renewals, upgrades and re-subscriptions.
      */
     private void syncPosTenant(UserSubscriptionEntity sub) {
+        if (Constants.POS_LINK_MANUAL.equals(sub.getPosLinkMode())) {
+            // Tenant is managed outside the platform — never POST (duplicate) or PATCH it.
+            log.info("[SopPos] skipped tenant sync for sub={} user={} — POS tenant is linked manually",
+                sub.getId(), sub.getUserId());
+            return;
+        }
         if (!sopPosClient.isEnabled()) {
             log.warn("[SopPos] skipped tenant sync for sub={} user={} — integration disabled "
                 + "(set soppos.enabled=true, soppos.base-url and soppos.api-key)", sub.getId(), sub.getUserId());
@@ -825,6 +824,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             return;
         }
 
+        sub.setPosLinkMode(Constants.POS_LINK_PLATFORM);
         sub.setPosSyncStatus(Constants.POS_SYNC_SYNCED);
         sub.setPosSyncError(null);
         sub.setPosSyncedAt(new Date());
@@ -880,6 +880,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 ex.setHttpStatus(HttpStatus.NOT_FOUND);
                 return ex;
             });
+        if (Constants.POS_LINK_MANUAL.equals(sub.getPosLinkMode())) {
+            AppException ex = new AppException(ErrorCode.POS_MANUAL_LINK,
+                "This POS tenant is managed manually; update POS access instead of syncing");
+            ex.setHttpStatus(HttpStatus.CONFLICT);
+            throw ex;
+        }
         if (!sopPosClient.isEnabled()) {
             AppException ex = new AppException(ErrorCode.POS_REGISTRATION_FAILED,
                 "SOP POS integration is not enabled");
@@ -908,11 +914,306 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         sub.setPosClientCode(blankToNull(request.getClientCode()));
         sub.setPosRootUser(blankToNull(request.getRootUser()));
         sub.setPosRootPassword(blankToNull(request.getRootPassword()));
+
+        String registrationId = blankToNull(request.getPosRegistrationId());
+        String explicitMode = blankToNull(request.getPosLinkMode());
+        if (registrationId != null) {
+            // Linking to a known SOP POS registration: later syncs PATCH it instead of POSTing a duplicate.
+            requirePosRegistrationFree(registrationId, sub.getUserId());
+            sub.setPosRegistrationId(registrationId);
+            sub.setPosLinkMode(Constants.POS_LINK_MANUAL.equals(explicitMode)
+                ? Constants.POS_LINK_MANUAL : Constants.POS_LINK_PLATFORM);
+        } else if (explicitMode != null) {
+            if (Constants.POS_LINK_MANUAL.equals(explicitMode)) {
+                sub.setPosLinkMode(Constants.POS_LINK_MANUAL);
+            } else {
+                // PLATFORM without a registration id = "let the platform provision on the next sync".
+                sub.setPosLinkMode(StringUtils.hasText(sub.getPosRegistrationId()) ? Constants.POS_LINK_PLATFORM : null);
+            }
+        } else if (!StringUtils.hasText(sub.getPosRegistrationId())
+            && (sub.getPosBackendUrl() != null || sub.getPosEmenuUrl() != null || sub.getPosClientCode() != null
+                || sub.getPosRootUser() != null || sub.getPosRootPassword() != null)) {
+            // Access details typed in for a tenant the platform never registered — it lives
+            // outside the platform, so a sync must never POST a duplicate tenant for it.
+            sub.setPosLinkMode(Constants.POS_LINK_MANUAL);
+        }
+
         sub.setUpdatedAt(new Date());
         sub.setUpdatedBy(adminId);
         subscriptionRepository.save(sub);
-        log.info("[SopPos] admin={} manually set POS access for sub={} user={}", adminId, sub.getId(), sub.getUserId());
+        log.info("[SopPos] admin={} manually set POS access for sub={} user={} (link mode {})",
+            adminId, sub.getId(), sub.getUserId(), sub.getPosLinkMode());
         return toSubscriptionResponse(sub);
+    }
+
+    /** A SOP POS registration belongs to exactly one client — reject one already used by another user. */
+    private void requirePosRegistrationFree(String registrationId, String userId) {
+        if (subscriptionRepository.existsByPosRegistrationIdAndUserIdNot(registrationId, userId)) {
+            AppException ex = new AppException(ErrorCode.POS_REGISTRATION_ALREADY_LINKED,
+                "This POS registration is already linked to another client");
+            ex.setHttpStatus(HttpStatus.CONFLICT);
+            throw ex;
+        }
+    }
+
+    /**
+     * Copies the SOP POS tenant identity of the user's latest POS-linked subscription (platform
+     * registered or manually linked) onto a new one, so the same tenant is reused — a platform
+     * tenant gets PATCHed, a manual one stays untouched — instead of a duplicate being provisioned.
+     */
+    /** Whether the row records an actual SOP POS tenant (not just a MANUAL "link later" marker). */
+    private static boolean hasPosIdentity(UserSubscriptionEntity s) {
+        return StringUtils.hasText(s.getPosRegistrationId()) || StringUtils.hasText(s.getPosClientCode())
+            || StringUtils.hasText(s.getPosBackendUrl()) || StringUtils.hasText(s.getPosEmenuUrl())
+            || StringUtils.hasText(s.getPosRootUser());
+    }
+
+    private void carryOverPosTenant(String userId, UserSubscriptionEntity sub) {
+        subscriptionRepository.findPosLinkedByUserIdOrderByCreatedAtDesc(userId).stream()
+            .findFirst()
+            .ifPresent(prev -> {
+                sub.setPosRegistrationId(prev.getPosRegistrationId());
+                sub.setPosClientCode(prev.getPosClientCode());
+                sub.setPosBackendUrl(prev.getPosBackendUrl());
+                sub.setPosEmenuUrl(prev.getPosEmenuUrl());
+                sub.setPosRootUser(prev.getPosRootUser());
+                sub.setPosRootPassword(prev.getPosRootPassword());
+                sub.setPosLinkMode(StringUtils.hasText(prev.getPosRegistrationId())
+                    ? (prev.getPosLinkMode() != null ? prev.getPosLinkMode() : Constants.POS_LINK_PLATFORM)
+                    : Constants.POS_LINK_MANUAL);
+            });
+    }
+
+    // ── Admin manual onboarding (existing clients) ──────────────────────────
+
+    private static final java.time.ZoneId BUSINESS_ZONE = java.time.ZoneId.of("Asia/Phnom_Penh");
+    private static final String POS_MODE_LINK_EXISTING = "LINK_EXISTING";
+    private static final String POS_MODE_PROVISION_NEW = "PROVISION_NEW";
+
+    @Override
+    @Transactional
+    @Auditable(action = "IMPORT", module = "SUBSCRIPTION")
+    public SubscriptionResponse grantSubscription(
+            com.cambofreelance.webbackend.dto.request.SubscriptionGrantRequest request, String adminId) {
+        String actor = StringUtils.hasText(adminId) ? adminId : Constants.SYSTEM;
+        Date now = new Date();
+
+        UserEntity user = userRepository.findById(request.getUserId())
+            .filter(u -> Constants.STATUS_ACTIVE.equals(u.getStatus()))
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "User not found");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+
+        PricingPlanEntity plan = planRepository.findById(request.getPlanId())
+            .filter(p -> Constants.STATUS_ACTIVE.equals(p.getStatus()))
+            .orElseThrow(() -> {
+                AppException ex = new AppException(ErrorCode.PLAN_NOT_AVAILABLE, "Pricing plan not available");
+                ex.setHttpStatus(HttpStatus.NOT_FOUND);
+                return ex;
+            });
+
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new AppException(ErrorCode.IMPORT_INVALID_PERIOD, "Subscription end date must be after start date");
+        }
+        Date startAt = Date.from(request.getStartDate().atStartOfDay(BUSINESS_ZONE).toInstant());
+        Date expiresAt = Date.from(request.getEndDate().atTime(java.time.LocalTime.MAX).atZone(BUSINESS_ZONE).toInstant());
+
+        String posMode = StringUtils.hasText(request.getPosMode()) ? request.getPosMode().trim().toUpperCase() : "LATER";
+        if (POS_MODE_LINK_EXISTING.equals(posMode)
+            && (!StringUtils.hasText(request.getPosClientCode()) || !StringUtils.hasText(request.getPosBackendUrl()))) {
+            throw new AppException(ErrorCode.IMPORT_INVALID_POS,
+                "POS access details are required to link an existing tenant");
+        }
+
+        if (subscriptionRepository
+            .findFirstByUserIdAndSubStatusAndExpiresAtAfterOrderByExpiresAtDesc(user.getUserId(), Constants.SUB_ACTIVE, now)
+            .isPresent()) {
+            throw new AppException(ErrorCode.SUBSCRIPTION_ALREADY_ACTIVE, "An active subscription already exists");
+        }
+
+        // a. An imported client is a known, real customer: make sure they can log in and are
+        //    counted as a verified referral (partner counts require a verified contact channel).
+        boolean userChanged = false;
+        if (!Constants.APPROVAL_APPROVED.equals(user.getApprovalStatus())) {
+            user.setApprovalStatus(Constants.APPROVAL_APPROVED);
+            user.setApprovedBy(actor);
+            user.setApprovedAt(now);
+            userChanged = true;
+        }
+        if (!Boolean.TRUE.equals(user.getPhoneVerified()) && !Boolean.TRUE.equals(user.getEmailVerified())) {
+            user.setEmailVerified(true);
+            userChanged = true;
+        }
+
+        // d. Referrer attribution
+        if (StringUtils.hasText(request.getReferrerCode())) {
+            UserEntity referrer = userRepository
+                .findByReferralCodeAndStatus(request.getReferrerCode().trim().toUpperCase(), Constants.STATUS_ACTIVE)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REFERRAL_CODE, "Invalid referral code"));
+            if (referrer.getUserId().equals(user.getUserId())) {
+                throw new AppException(ErrorCode.INVALID_REFERRER, "Invalid referrer");
+            }
+            if (!StringUtils.hasText(user.getReferredBy())) {
+                user.setReferredBy(referrer.getUserId());
+                userChanged = true;
+            } else if (!user.getReferredBy().equals(referrer.getUserId())) {
+                AppException ex = new AppException(ErrorCode.CLIENT_ALREADY_REFERRED,
+                    "Client is already attributed to another referrer");
+                ex.setHttpStatus(HttpStatus.CONFLICT);
+                throw ex;
+            }
+        }
+        if (userChanged) {
+            user.setUpdatedAt(now);
+            user.setUpdatedBy(actor);
+            userRepository.save(user);
+        }
+
+        // c. Abandon any unpaid checkout attempts — mirrors createCheckout.
+        subscriptionRepository.findByUserIdAndSubStatus(user.getUserId(), Constants.SUB_PENDING_PAYMENT)
+            .forEach(s -> {
+                s.setSubStatus(Constants.SUB_CANCELLED);
+                s.setUpdatedBy(actor);
+                s.setUpdatedAt(now);
+                subscriptionRepository.save(s);
+            });
+
+        // e. Client profile: fully onboarded, active.
+        upsertImportedClient(user, request.getCompanyName(), actor, now);
+
+        // f. The subscription itself — no payment transaction is recorded.
+        String cycle = StringUtils.hasText(request.getBillingCycle())
+            ? request.getBillingCycle().trim().toUpperCase() : Constants.BILLING_YEARLY;
+        UserSubscriptionEntity sub = new UserSubscriptionEntity();
+        sub.setId(UUID.randomUUID().toString());
+        sub.setUserId(user.getUserId());
+        sub.setPlanId(plan.getId());
+        sub.setBillingCycle(cycle);
+        sub.setPrice(request.getPrice() != null
+            ? request.getPrice().setScale(2, RoundingMode.HALF_UP) : priceFor(plan, cycle));
+        sub.setCurrency("USD");
+        sub.setSubStatus(expiresAt.after(now) ? Constants.SUB_ACTIVE : Constants.SUB_EXPIRED);
+        sub.setStartAt(startAt);
+        sub.setExpiresAt(expiresAt);
+        sub.setAutoRenew(false);
+        sub.setAutoRenewFailureCount(0);
+        sub.setNotice7dSent(false);
+        sub.setNotice3dSent(false);
+        sub.setNotice1dSent(false);
+        sub.setReferrerId(user.getReferredBy());
+        sub.setSource(Constants.SUB_SOURCE_ADMIN_IMPORT);
+        sub.setImportNote(blankToNull(request.getNote()));
+        sub.setCreatedBy(actor);
+        sub.setCreatedAt(now);
+
+        // g. POS tenant
+        if (POS_MODE_LINK_EXISTING.equals(posMode)) {
+            sub.setPosClientCode(blankToNull(request.getPosClientCode()));
+            sub.setPosBackendUrl(blankToNull(request.getPosBackendUrl()));
+            sub.setPosEmenuUrl(blankToNull(request.getPosEmenuUrl()));
+            sub.setPosRootUser(blankToNull(request.getPosRootUser()));
+            sub.setPosRootPassword(blankToNull(request.getPosRootPassword()));
+            String registrationId = blankToNull(request.getPosRegistrationId());
+            if (registrationId != null) {
+                requirePosRegistrationFree(registrationId, user.getUserId());
+                sub.setPosRegistrationId(registrationId);
+                sub.setPosLinkMode(Constants.POS_LINK_PLATFORM);
+                sub.setPosSyncStatus(Constants.POS_SYNC_SYNCED);
+                sub.setPosSyncedAt(now);
+            } else {
+                sub.setPosLinkMode(Constants.POS_LINK_MANUAL);
+            }
+        } else if (POS_MODE_PROVISION_NEW.equals(posMode)) {
+            // Reuse a tenant the platform already registered for this user (PATCH, not a duplicate
+            // POST). If the user's latest known tenant is managed manually, refuse — provisioning
+            // would create a second tenant for a client that already runs SOP POS.
+            List<UserSubscriptionEntity> posRows =
+                subscriptionRepository.findPosLinkedByUserIdOrderByCreatedAtDesc(user.getUserId());
+            UserSubscriptionEntity latestTenant = posRows.stream()
+                .filter(SubscriptionServiceImpl::hasPosIdentity)
+                .findFirst().orElse(null);
+            if (latestTenant != null && (Constants.POS_LINK_MANUAL.equals(latestTenant.getPosLinkMode())
+                    || !StringUtils.hasText(latestTenant.getPosRegistrationId()))) {
+                throw new AppException(ErrorCode.POS_MANUAL_LINK,
+                    "This client already has a manually managed POS tenant; link the existing tenant instead");
+            }
+            posRows.stream()
+                .filter(prev -> StringUtils.hasText(prev.getPosRegistrationId())
+                    && !Constants.POS_LINK_MANUAL.equals(prev.getPosLinkMode()))
+                .findFirst()
+                .ifPresent(prev -> {
+                    sub.setPosRegistrationId(prev.getPosRegistrationId());
+                    sub.setPosClientCode(prev.getPosClientCode());
+                    sub.setPosBackendUrl(prev.getPosBackendUrl());
+                    sub.setPosEmenuUrl(prev.getPosEmenuUrl());
+                    sub.setPosRootUser(prev.getPosRootUser());
+                    sub.setPosRootPassword(prev.getPosRootPassword());
+                });
+            sub.setPosLinkMode(null);
+        } else {
+            // LATER — nothing linked yet; never auto-provision until an admin links/opts in.
+            sub.setPosLinkMode(Constants.POS_LINK_MANUAL);
+        }
+        subscriptionRepository.save(sub);
+        log.info("[Subscription] admin={} imported sub={} user={} plan={} {} → {} (pos mode {})",
+            actor, sub.getId(), user.getUserId(), plan.getId(), startAt, expiresAt, posMode);
+
+        if (POS_MODE_PROVISION_NEW.equals(posMode) && Constants.SUB_ACTIVE.equals(sub.getSubStatus())) {
+            // Provision only once the import is committed — the POS call is a network round-trip
+            // and its failure is recorded on the subscription (and retried), never failing the request.
+            // Runs in its OWN transaction: inside afterCommit the finished transaction's resources
+            // are still bound, so writes joining it would never be flushed. Reload the row fresh
+            // rather than reusing the entity from the committed persistence context.
+            String subId = sub.getId();
+            Runnable provision = () -> {
+                try {
+                    org.springframework.transaction.support.TransactionTemplate tx =
+                        new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+                    tx.setPropagationBehavior(
+                        org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                    tx.executeWithoutResult(status -> subscriptionRepository.findById(subId)
+                        .ifPresent(this::syncPosTenant));
+                } catch (Exception e) {
+                    log.error("[SopPos] provisioning after import failed for sub={}", subId, e);
+                }
+            };
+            if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+                org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            provision.run();
+                        }
+                    });
+            } else {
+                provision.run();
+            }
+        }
+
+        return toSubscriptionResponse(sub);
+    }
+
+    private void upsertImportedClient(UserEntity user, String companyName, String actor, Date now) {
+        ClientEntity c = clientRepository.findByUserId(user.getUserId()).orElseGet(() -> {
+            ClientEntity created = new ClientEntity();
+            created.setId(UUID.randomUUID().toString());
+            created.setUserId(user.getUserId());
+            created.setCompanyEmail(user.getEmail());
+            created.setCreatedBy(actor);
+            created.setCreatedAt(now);
+            return created;
+        });
+        if (StringUtils.hasText(companyName)) {
+            c.setCompanyName(companyName.trim());
+        }
+        c.setEmailVerified(true);
+        c.setClientStatus(Constants.CLIENT_ACTIVE);
+        c.setOnboardingStep(Constants.STEP_DONE);
+        c.setUpdatedAt(now);
+        c.setUpdatedBy(actor);
+        clientRepository.save(c);
     }
 
     private static String blankToNull(String s) {
@@ -926,7 +1227,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             return;
         }
         List<UserSubscriptionEntity> candidates = subscriptionRepository.findPosSyncRetryCandidates(
-            Constants.POS_SYNC_FAILED, Constants.SUB_ACTIVE);
+            Constants.POS_SYNC_FAILED, Constants.SUB_ACTIVE, Constants.POS_LINK_MANUAL);
         for (UserSubscriptionEntity sub : candidates) {
             try {
                 syncPosTenant(sub);
@@ -1118,6 +1419,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .hasPaymentToken(StringUtils.hasText(s.getPaymentToken()))
             .autoRenewFailureCount(s.getAutoRenewFailureCount())
             .paymentTokenCapturedAt(s.getPaymentTokenCapturedAt())
+            .source(s.getSource())
+            .importNote(s.getImportNote())
+            .posRegistrationId(s.getPosRegistrationId())
+            .posLinkMode(s.getPosLinkMode())
             .posClientCode(s.getPosClientCode())
             .posBackendUrl(s.getPosBackendUrl())
             .posEmenuUrl(s.getPosEmenuUrl())

@@ -35,6 +35,9 @@ public class PartnerApplicationResponse {
     private Boolean agreementAccepted;
     private String payoutChannel;
 
+    /** APPLICATION (self-applied) / ADMIN (created directly by an admin). */
+    private String source;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private java.util.Date submittedAt;
 
@@ -91,6 +94,7 @@ public class PartnerApplicationResponse {
             .notes(e.getNotes())
             .agreementAccepted(e.getAgreementAccepted())
             .payoutChannel(e.getPayoutChannel())
+            .source(e.getSource())
             .submittedAt(e.getSubmittedAt())
             .reviewedBy(e.getReviewedBy())
             .reviewedAt(e.getReviewedAt())

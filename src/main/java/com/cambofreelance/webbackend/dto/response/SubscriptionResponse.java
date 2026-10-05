@@ -39,7 +39,14 @@ public class SubscriptionResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date paymentTokenCapturedAt;
 
+    /** CHECKOUT / ADMIN_IMPORT */
+    private String source;
+    private String importNote;
+
     // ── SOP POS tenant access ─────────────────────────────────────────────
+    private String posRegistrationId;
+    /** PLATFORM / MANUAL / null (not provisioned yet) */
+    private String posLinkMode;
     private String posClientCode;
     private String posBackendUrl;
     private String posEmenuUrl;

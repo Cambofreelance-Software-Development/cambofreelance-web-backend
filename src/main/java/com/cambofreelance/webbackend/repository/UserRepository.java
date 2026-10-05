@@ -28,6 +28,9 @@ public interface UserRepository extends JpaRepository<UserEntity, String>, JpaSp
 
     boolean existsByReferralCode(String referralCode);
 
+    /** Whether a user OTHER than {@code userId} already holds this referral code. */
+    boolean existsByReferralCodeAndUserIdNot(String referralCode, String userId);
+
     /**
      * Count of accounts registered with this user's referral code that finished signup
      * verification (phone or email OTP). Excludes registrations still pending verification —

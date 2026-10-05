@@ -125,4 +125,18 @@ public class UserSubscriptionEntity extends BaseEntity implements Serializable {
     @Column(name = "pos_last_attempt_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date posLastAttemptAt;
+
+    /** PLATFORM (synced by this platform) / MANUAL (managed outside, never auto-synced) /
+     *  null (not provisioned yet — the next sync POSTs a new tenant). */
+    @Column(name = "pos_link_mode")
+    private String posLinkMode;
+
+    // ── Admin manual onboarding ────────────────────────────────────────────
+
+    /** CHECKOUT (self-serve) / ADMIN_IMPORT (granted by an admin for an existing client). */
+    @Column(name = "source")
+    private String source = com.cambofreelance.webbackend.constants.Constants.SUB_SOURCE_CHECKOUT;
+
+    @Column(name = "import_note")
+    private String importNote;
 }
