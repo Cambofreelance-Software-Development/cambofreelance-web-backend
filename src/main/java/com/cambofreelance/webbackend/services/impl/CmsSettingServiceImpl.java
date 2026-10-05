@@ -64,6 +64,7 @@ public class CmsSettingServiceImpl implements CmsSettingService {
     private final SpacesService spacesService;
     private final IpWhitelistCache ipWhitelistCache;
     private final EmailService emailService;
+    private final com.cambofreelance.webbackend.soppos.SopPosClient sopPosClient;
 
     @Value("${cms.upload.dir:uploads/logos}")
     private String uploadDir;
@@ -166,6 +167,37 @@ public class CmsSettingServiceImpl implements CmsSettingService {
 
         batchUpsert(SettingGroup.SMTP, values);
         return getSmtpSettings();
+    }
+
+    // ── Client management (SOP POS) credentials ──────────────────────────────
+
+    @Override
+    public com.cambofreelance.webbackend.dto.response.SopPosSettingResponse getSopPosSettings() {
+        var s = sopPosClient.currentSettings();
+        return com.cambofreelance.webbackend.dto.response.SopPosSettingResponse.builder()
+            .enabled(s.enabled())
+            .baseUrl(s.baseUrl())
+            .hasApiKey(s.hasApiKey())
+            .active(sopPosClient.isEnabled())
+            .build();
+    }
+
+    @Override
+    @Transactional
+    @Auditable(action = "UPDATE", module = "SETTINGS", description = "Updated client management (SOP POS) credentials")
+    public com.cambofreelance.webbackend.dto.response.SopPosSettingResponse updateSopPosSettings(
+            com.cambofreelance.webbackend.dto.request.SopPosSettingRequest req) {
+        Map<String, String> existing = loadGroup(SettingGroup.SOPPOS);
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("soppos_enabled", String.valueOf(Boolean.TRUE.equals(req.getEnabled())));
+        values.put("soppos_base_url", req.getBaseUrl() != null ? req.getBaseUrl().trim() : "");
+        if (req.getApiKey() != null && !req.getApiKey().isBlank()) {
+            values.put("soppos_api_key", req.getApiKey().trim());
+        } else if (existing.containsKey("soppos_api_key")) {
+            values.put("soppos_api_key", existing.get("soppos_api_key"));
+        }
+        batchUpsert(SettingGroup.SOPPOS, values);
+        return getSopPosSettings();
     }
 
     @Override

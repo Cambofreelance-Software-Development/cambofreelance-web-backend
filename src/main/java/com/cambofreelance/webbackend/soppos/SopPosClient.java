@@ -7,7 +7,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Set;
+import com.cambofreelance.webbackend.constants.SettingGroup;
+import com.cambofreelance.webbackend.entities.CmsSettingEntity;
+import com.cambofreelance.webbackend.repository.CmsSettingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,6 +51,7 @@ public class SopPosClient {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final CmsSettingRepository settingRepository;
 
     @Value("${soppos.enabled:false}")
     private boolean enabled;
@@ -57,8 +62,30 @@ public class SopPosClient {
     @Value("${soppos.api-key:}")
     private String apiKey;
 
+    /** Effective connection settings: admin-entered values (Settings > Client Management Credential) win over application.yaml. */
+    private record Config(boolean enabled, String baseUrl, String apiKey) {}
+
+    /** What the admin settings screen shows — the API key itself is never exposed. */
+    public record CurrentSettings(boolean enabled, String baseUrl, boolean hasApiKey) {}
+
+    private Config config() {
+        Map<String, String> db = settingRepository.findAllBySettingGroup(SettingGroup.SOPPOS).stream()
+            .collect(Collectors.toMap(CmsSettingEntity::getSettingKey,
+                e -> e.getSettingValue() != null ? e.getSettingValue() : "", (a, b) -> a));
+        boolean en = db.containsKey("soppos_enabled") ? Boolean.parseBoolean(db.get("soppos_enabled")) : enabled;
+        String url = StringUtils.hasText(db.get("soppos_base_url")) ? db.get("soppos_base_url").trim() : baseUrl;
+        String key = StringUtils.hasText(db.get("soppos_api_key")) ? db.get("soppos_api_key").trim() : apiKey;
+        return new Config(en, url, key);
+    }
+
+    public CurrentSettings currentSettings() {
+        Config c = config();
+        return new CurrentSettings(c.enabled(), c.baseUrl() != null ? c.baseUrl() : "", StringUtils.hasText(c.apiKey()));
+    }
+
     public boolean isEnabled() {
-        return enabled && StringUtils.hasText(baseUrl) && StringUtils.hasText(apiKey);
+        Config c = config();
+        return c.enabled() && StringUtils.hasText(c.baseUrl()) && StringUtils.hasText(c.apiKey());
     }
 
     /** Access details returned by the registration API. */
@@ -114,14 +141,16 @@ public class SopPosClient {
     }
 
     private JsonNode send(HttpMethod method, String path, Map<String, Object> body, String ref) {
-        if (!isEnabled()) {
-            throw new IllegalStateException("SOP POS integration is not configured (soppos.base-url / soppos.api-key)");
+        Config cfg = config();
+        if (!cfg.enabled() || !StringUtils.hasText(cfg.baseUrl()) || !StringUtils.hasText(cfg.apiKey())) {
+            throw new IllegalStateException("SOP POS integration is not configured (Settings > Client Management Credential, or soppos.* in config)");
         }
+        String base = cfg.baseUrl().trim().replaceAll("/+$", "");
         String response;
         try {
             response = webClient.method(method)
-                .uri(baseUrl + path)
-                .header("X-Api-Key", apiKey)
+                .uri(base + path)
+                .header("X-Api-Key", cfg.apiKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(body)

@@ -41,6 +41,9 @@ public interface CmsSettingService {
     SmtpSettingResponse getSmtpSettings();
     SmtpSettingResponse updateSmtpSettings(SmtpSettingRequest request);
 
+    com.cambofreelance.webbackend.dto.response.SopPosSettingResponse getSopPosSettings();
+    com.cambofreelance.webbackend.dto.response.SopPosSettingResponse updateSopPosSettings(com.cambofreelance.webbackend.dto.request.SopPosSettingRequest request);
+
     CmsSeoSettingResponse getSeoSettings();
     CmsSeoSettingResponse updateSeoSettings(CmsSeoSettingRequest request);
 

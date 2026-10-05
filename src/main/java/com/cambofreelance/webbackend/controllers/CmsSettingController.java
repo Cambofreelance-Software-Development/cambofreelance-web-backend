@@ -83,6 +83,24 @@ public class CmsSettingController {
         return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
     }
 
+    // ── Client management credentials (SOP POS) ──────────────────────────────
+
+    @GetMapping("/soppos")
+    @PreAuthorize("hasAuthority('settings.view')")
+    public ResponseEntity<Object> getSopPosSettings() {
+        var result = cmsSettingService.getSopPosSettings();
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
+    @PutMapping("/soppos")
+    @PreAuthorize("hasAuthority('settings.update')")
+    public ResponseEntity<Object> updateSopPosSettings(
+        @Valid @RequestBody com.cambofreelance.webbackend.dto.request.SopPosSettingRequest request
+    ) {
+        var result = cmsSettingService.updateSopPosSettings(request);
+        return new ResponseEntity<>(new MessageResponse(result, ErrorCode.SUCCESS), HttpStatus.OK);
+    }
+
     @PostMapping("/smtp/test-email")
     @PreAuthorize("hasAuthority('settings.update')")
     public ResponseEntity<Object> sendSmtpTestEmail(@RequestParam String to) {

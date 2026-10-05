@@ -14,6 +14,7 @@ public final class SettingGroup {
     public static final String PAGE_HEROES  = "PAGE_HEROES";
     public static final String PAGE_CTAS    = "PAGE_CTAS";
     public static final String SMTP         = "SMTP";
+    public static final String SOPPOS       = "SOPPOS";
 }
 
 
