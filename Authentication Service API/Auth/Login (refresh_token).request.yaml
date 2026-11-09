@@ -22,4 +22,4 @@ scripts:
         pm.collectionVariables.set('refresh_token', json.data.refresh_token);
       }
     language: text/javascript
-order: 2000
+order: 3000

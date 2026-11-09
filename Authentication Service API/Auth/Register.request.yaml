@@ -13,4 +13,4 @@ body:
       "password": "Password@123",
       "confirmPassword": "Password@123"
     }
-order: 5000
+order: 6000
