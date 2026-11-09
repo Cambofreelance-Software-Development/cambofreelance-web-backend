@@ -1,0 +1,25 @@
+$kind: http-request
+name: PUT /cms/subscription-packages/:id
+url: "{{base_url}}/cms/subscription-packages/:id"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sample Name",
+      "monthlyPrice": 100.0,
+      "customPricing": true,
+      "maxCustomers": 1,
+      "maxLoans": 1,
+      "maxUsers": 1,
+      "description": "Sample description",
+      "sortOrder": 1
+    }
+examples: ./.resources/PUT -cms-subscription-packages-id.resources/examples
+order: 5000

@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/cms/roles/:id/clone"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAMPLE_CODE",
+      "name": "Sample Name"
+    }
+examples: ./.resources/Clone.resources/examples
+order: 7000

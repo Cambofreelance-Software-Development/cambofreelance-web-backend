@@ -1,0 +1,31 @@
+$kind: http-request
+name: PUT /me/customers/:customerId
+url: "{{base_url}}/me/customers/:customerId"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  customerId: "{{customer_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "gender": "sample",
+      "dateOfBirth": "2026-06-19",
+      "phoneNumber": "+85512345678",
+      "alternatePhone": "+85512345678",
+      "identityCardNumber": 1,
+      "address": "Phnom Penh",
+      "occupation": "sample",
+      "employerName": "sample",
+      "monthlyIncome": 100.5,
+      "guarantorName": "sample",
+      "guarantorPhone": "+85512345678"
+    }
+examples: ./.resources/PUT -me-customers-customerId.resources/examples
+order: 4000

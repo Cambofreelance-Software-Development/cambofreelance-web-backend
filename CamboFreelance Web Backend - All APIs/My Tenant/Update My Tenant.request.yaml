@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sample Name",
+      "logoUrl": "https://example.com/logo.png"
+    }
+examples: ./.resources/Update My Tenant.resources/examples
+order: 2000

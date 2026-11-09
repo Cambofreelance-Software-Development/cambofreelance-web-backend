@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/me/customers/:customerId/approve"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  customerId: "{{customer_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "note": "sample"
+    }
+examples: ./.resources/Approve.resources/examples
+order: 10000

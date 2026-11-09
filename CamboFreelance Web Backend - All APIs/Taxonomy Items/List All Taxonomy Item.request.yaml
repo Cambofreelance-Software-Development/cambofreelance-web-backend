@@ -1,0 +1,42 @@
+$kind: http-request
+url: "{{base_url}}/api/taxonomies/taxonomy-items"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "userId": "{{user_id}}",
+      "username": "admin@cambofreelance.com",
+      "phoneNumber": "+85512345678",
+      "email": "john@example.com",
+      "applicationType": "WEB",
+      "status": "ACTIVE",
+      "password": "Password@123",
+      "confirmPassword": "Password@123",
+      "deviceId": "{{device_id}}",
+      "osType": "GENERAL",
+      "osVersion": "sample",
+      "ip": "sample",
+      "lang": "sample",
+      "clientSecret": "secret",
+      "clientId": "cambofreelance-cms",
+      "sessionId": "{{session_id}}",
+      "application": "sample",
+      "filter": [
+        "sample"
+      ],
+      "paginate": "sample",
+      "sortBy": "sample",
+      "sortDirection": "sample",
+      "search": "sample",
+      "applicationFeatureId": "{{application_feature_id}}",
+      "applicationFeatureDetailId": "{{application_feature_detail_id}}",
+      "code": "SAMPLE_CODE",
+      "requesterUsername": "sample"
+    }
+examples: ./.resources/List All Taxonomy Item.resources/examples
+order: 3000

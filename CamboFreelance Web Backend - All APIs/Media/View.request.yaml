@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/media/:id/view"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/View.resources/examples
+order: 5000

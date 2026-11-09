@@ -1,0 +1,22 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/me/tenant/invoices"
+  method: GET
+  headers:
+    Authorization: Bearer {{access_token}}
+    User-Id: "{{user_id}}"
+    Tenant-Id: "{{tenant_id}}"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

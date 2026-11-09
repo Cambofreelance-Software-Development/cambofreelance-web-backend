@@ -1,0 +1,11 @@
+$kind: http-request
+name: GET /cms/roles/:id
+url: "{{base_url}}/cms/roles/:id"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/GET -cms-roles-id.resources/examples
+order: 2000

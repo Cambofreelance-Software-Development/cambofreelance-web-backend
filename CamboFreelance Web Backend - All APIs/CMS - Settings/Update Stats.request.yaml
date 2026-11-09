@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/stats"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "projectsCompleted": 1,
+      "happyClients": 1,
+      "clientSatisfaction": 1
+    }
+examples: ./.resources/Update Stats.resources/examples
+order: 13000

@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{base_url}}/cms/response-codes?search=&type=&status=ACT&serviceType=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  - key: search
+    value: ""
+    disabled: true
+  - key: type
+    value: ""
+    disabled: true
+    description: SUC | ERR
+  - key: status
+    value: ACT
+    description: ACT | DEL
+  - key: serviceType
+    value: ""
+    disabled: true
+  - key: page
+    value: "0"
+  - key: size
+    value: "20"
+order: 1000

@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/cms/users/:userId/sessions/:sessionId"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  userId: user-uuid-here
+  sessionId: session-uuid-here
+order: 2000

@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/cdn"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "enabled": true,
+      "provider": "google",
+      "baseUrl": "https://example.com",
+      "customDomain": "sample"
+    }
+examples: ./.resources/Update Cdn Settings.resources/examples
+order: 7000

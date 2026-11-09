@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/cms/tenants/:tenantId/invoices"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  tenantId: "{{tenant_id}}"
+examples: ./.resources/List For Tenant.resources/examples
+order: 1000

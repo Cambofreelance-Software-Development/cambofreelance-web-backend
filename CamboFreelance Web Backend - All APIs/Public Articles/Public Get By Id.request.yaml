@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{base_url}}/articles/:id"
+method: GET
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/Public Get By Id.resources/examples
+order: 2000

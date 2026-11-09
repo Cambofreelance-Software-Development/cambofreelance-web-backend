@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/me/loan-disbursements/:disbursementId/contract"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  disbursementId: "{{disbursement_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "mediaId": "{{media_id}}"
+    }
+examples: ./.resources/Upload Contract.resources/examples
+order: 5000

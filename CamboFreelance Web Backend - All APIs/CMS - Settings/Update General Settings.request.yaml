@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/general"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "siteName": "sample",
+      "environment": "sample",
+      "defaultLanguage": "sample",
+      "timeZone": "sample",
+      "siteLogo": "sample"
+    }
+examples: ./.resources/Update General Settings.resources/examples
+order: 2000

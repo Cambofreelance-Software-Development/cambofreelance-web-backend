@@ -1,0 +1,15 @@
+# Use this workspace to collaborate
+workspace:
+  id: d25fb30f-70a8-4815-ab1d-20331f13ccb6
+
+localResources:
+  collections:
+    - ../Authentication Service API
+    - ../CamboFreelance Web Backend - All APIs
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../Authentication Service API: cambofreelance-auth-service-v1
+    ../CamboFreelance Web Backend - All APIs: cambofreelance-web-backend-all-apis

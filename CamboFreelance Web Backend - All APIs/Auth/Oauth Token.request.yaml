@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{base_url}}/oauth/token"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "clientSecret": "secret",
+      "clientId": "cambofreelance-cms",
+      "scope": "openid",
+      "applicationType": "WEB",
+      "username": "admin@cambofreelance.com",
+      "password": "Password@123",
+      "deviceId": "{{device_id}}",
+      "grantType": "password",
+      "redirectUri": "http://localhost:3000/oauth/callback",
+      "refreshToken": "{{refresh_token}}",
+      "provider": "google",
+      "code": "SAMPLE_CODE"
+    }
+examples: ./.resources/Oauth Token.resources/examples
+order: 1000

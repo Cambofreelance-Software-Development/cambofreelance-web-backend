@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/oauth/register"
+  method: POST
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "username": "admin@cambofreelance.com",
+        "phoneNumber": "+85512345678",
+        "email": "john@example.com",
+        "password": "Password@123",
+        "confirmPassword": "Password@123"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/user/preferences"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "value": "sample"
+    }
+examples: ./.resources/Save My Preferences.resources/examples
+order: 12000

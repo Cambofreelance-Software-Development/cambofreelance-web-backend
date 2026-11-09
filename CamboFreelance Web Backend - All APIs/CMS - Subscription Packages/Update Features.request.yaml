@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/cms/subscription-packages/:id/features"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "features": "sample"
+    }
+examples: ./.resources/Update Features.resources/examples
+order: 7000

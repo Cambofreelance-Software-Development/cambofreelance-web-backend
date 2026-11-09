@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/cms/articles/:id/copy"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/Copy.resources/examples
+order: 4000

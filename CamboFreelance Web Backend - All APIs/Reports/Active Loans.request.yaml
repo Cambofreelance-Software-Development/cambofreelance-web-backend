@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/me/reports/active-loans"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+examples: ./.resources/Active Loans.resources/examples
+order: 2000

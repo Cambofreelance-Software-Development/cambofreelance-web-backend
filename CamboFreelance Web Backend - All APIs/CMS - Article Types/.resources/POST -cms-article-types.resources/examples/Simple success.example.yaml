@@ -1,0 +1,31 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/cms/article-types"
+  method: POST
+  headers:
+    Authorization: Bearer {{access_token}}
+    User-Id: "{{user_id}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SAMPLE_CODE",
+        "label": "sample",
+        "labelKh": "sample",
+        "sortOrder": 1
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

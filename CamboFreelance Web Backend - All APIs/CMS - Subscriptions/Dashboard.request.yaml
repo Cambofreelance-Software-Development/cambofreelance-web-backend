@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/subscriptions/dashboard"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+examples: ./.resources/Dashboard.resources/examples
+order: 1000

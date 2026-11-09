@@ -1,0 +1,8 @@
+$kind: collection
+description: Full API collection for the CamboFreelance authentication & CMS service.
+variables:
+  base_url: http://localhost:8080
+  access_token: ""
+  refresh_token: ""
+  user_id: ""
+  device_id: web-browser-001

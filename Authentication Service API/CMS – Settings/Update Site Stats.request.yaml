@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/stats"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "projectsCompleted": 150,
+      "happyClients": 120,
+      "clientSatisfaction": 98
+    }
+order: 13000

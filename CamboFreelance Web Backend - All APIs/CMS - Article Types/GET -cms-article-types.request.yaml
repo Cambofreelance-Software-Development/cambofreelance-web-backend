@@ -1,0 +1,9 @@
+$kind: http-request
+name: GET /cms/article-types
+url: "{{base_url}}/cms/article-types"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+examples: ./.resources/GET -cms-article-types.resources/examples
+order: 1000

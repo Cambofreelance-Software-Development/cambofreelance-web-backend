@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/stats"
+method: GET
+order: 12000

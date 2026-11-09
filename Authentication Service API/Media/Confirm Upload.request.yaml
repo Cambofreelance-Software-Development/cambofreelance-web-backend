@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/media/confirm/:id"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: media-uuid-here
+order: 2000

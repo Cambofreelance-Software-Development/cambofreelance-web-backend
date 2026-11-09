@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/me/reports/monthly-collection?year="
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+queryParams:
+  year: ""
+examples: ./.resources/Monthly Collection.resources/examples
+order: 6000

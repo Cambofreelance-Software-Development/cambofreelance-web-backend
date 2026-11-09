@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/users?search=&status=&roleId=&page=0&size=10"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  search: ""
+  status: ""
+  roleId: ""
+  page: "0"
+  size: "10"
+examples: ./.resources/List Users.resources/examples
+order: 4000

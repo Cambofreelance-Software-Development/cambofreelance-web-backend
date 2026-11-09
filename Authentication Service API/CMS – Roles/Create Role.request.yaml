@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/cms/roles"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "code": "EDITOR",
+      "name": "Editor",
+      "convention": "Can create and edit articles",
+      "level": 2,
+      "description": "Content editor with limited admin access",
+      "permissionIds": ["permission-uuid-1", "permission-uuid-2"]
+    }
+order: 3000

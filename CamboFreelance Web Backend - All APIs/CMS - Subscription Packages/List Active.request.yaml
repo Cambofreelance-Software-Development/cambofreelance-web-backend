@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/subscription-packages/active"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+examples: ./.resources/List Active.resources/examples
+order: 2000

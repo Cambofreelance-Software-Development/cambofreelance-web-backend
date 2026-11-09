@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/response-codes/:id"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: "1"
+order: 5000

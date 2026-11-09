@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/users/:userId/sessions"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  userId: user-uuid-here
+order: 1000

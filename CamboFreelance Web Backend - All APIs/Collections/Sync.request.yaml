@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/me/collections/sync"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+examples: ./.resources/Sync.resources/examples
+order: 1000

@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/roles/:id"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: role-uuid-here
+order: 9000

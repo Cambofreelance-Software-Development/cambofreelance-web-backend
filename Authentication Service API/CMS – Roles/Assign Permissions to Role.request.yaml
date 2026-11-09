@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/cms/roles/:id/permissions"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: role-uuid-here
+body:
+  type: text
+  content: '["permission-uuid-1", "permission-uuid-2", "permission-uuid-3"]'
+order: 7000

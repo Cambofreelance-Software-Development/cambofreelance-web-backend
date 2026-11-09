@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/me/loan-applications/:loanApplicationId/schedule/recalculate"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  loanApplicationId: "{{loan_application_id}}"
+examples: ./.resources/Recalculate.resources/examples
+order: 14000

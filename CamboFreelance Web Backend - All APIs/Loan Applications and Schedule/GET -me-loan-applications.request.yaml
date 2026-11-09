@@ -1,0 +1,16 @@
+$kind: http-request
+name: GET /me/loan-applications
+url: "{{base_url}}/me/loan-applications?search=&applicationStatus=&customerId=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+queryParams:
+  search: ""
+  applicationStatus: ""
+  customerId: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/GET -me-loan-applications.resources/examples
+order: 2000

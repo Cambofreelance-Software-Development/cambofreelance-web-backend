@@ -1,0 +1,26 @@
+$kind: http-request
+name: PUT /cms/response-codes/:id
+url: "{{base_url}}/cms/response-codes/:id"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAMPLE_CODE",
+      "description": "Sample description",
+      "httpStatus": "ACTIVE",
+      "key": "sample",
+      "type": "GENERAL",
+      "messageEn": "sample",
+      "messageKm": "sample",
+      "messageCn": "sample",
+      "serviceType": "GENERAL"
+    }
+examples: ./.resources/PUT -cms-response-codes-id.resources/examples
+order: 4000

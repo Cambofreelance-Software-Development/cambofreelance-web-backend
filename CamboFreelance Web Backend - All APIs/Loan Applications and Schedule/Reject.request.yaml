@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/me/loan-applications/:loanApplicationId/reject"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  loanApplicationId: "{{loan_application_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "note": "sample"
+    }
+examples: ./.resources/Reject.resources/examples
+order: 7000

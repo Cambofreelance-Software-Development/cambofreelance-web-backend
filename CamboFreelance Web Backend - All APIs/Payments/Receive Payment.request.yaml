@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{base_url}}/me/payments"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "loanApplicationId": "{{loan_application_id}}",
+      "paymentDate": "2026-06-19",
+      "principalPaid": "{{principal_paid}}",
+      "interestPaid": "{{interest_paid}}",
+      "penaltyFee": 100.0,
+      "totalPaid": "{{total_paid}}",
+      "paymentMethod": "CASH",
+      "paymentType": "GENERAL",
+      "notes": "Sample notes"
+    }
+examples: ./.resources/Receive Payment.resources/examples
+order: 1000

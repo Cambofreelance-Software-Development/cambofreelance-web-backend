@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/me/collections/promises/:ptpId/status"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  ptpId: "{{ptp_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "ptpStatus": "ACTIVE"
+    }
+examples: ./.resources/Update Ptp Status.resources/examples
+order: 11000

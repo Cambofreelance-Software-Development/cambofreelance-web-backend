@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/cms/audit-logs/purge?days=90"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  - key: days
+    value: "90"
+    description: Delete logs older than N days (default 90)
+order: 2000

@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/roles/:roleId"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  roleId: "{{role_id}}"
+examples: ./.resources/Delete Role.resources/examples
+order: 17000

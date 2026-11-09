@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/media/:id"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: media-uuid-here
+order: 6000

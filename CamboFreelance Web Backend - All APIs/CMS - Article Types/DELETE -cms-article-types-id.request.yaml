@@ -1,0 +1,11 @@
+$kind: http-request
+name: DELETE /cms/article-types/:id
+url: "{{base_url}}/cms/article-types/:id"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/DELETE -cms-article-types-id.resources/examples
+order: 4000

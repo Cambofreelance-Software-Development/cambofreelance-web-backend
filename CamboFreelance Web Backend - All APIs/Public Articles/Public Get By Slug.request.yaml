@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{base_url}}/articles/slug/:slug"
+method: GET
+pathVariables:
+  slug: "{{slug}}"
+examples: ./.resources/Public Get By Slug.resources/examples
+order: 3000

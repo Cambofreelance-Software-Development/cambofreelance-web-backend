@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/cms/tenants/:tenantId/invoices/generate"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  tenantId: "{{tenant_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "value": "sample"
+    }
+examples: ./.resources/Generate.resources/examples
+order: 2000

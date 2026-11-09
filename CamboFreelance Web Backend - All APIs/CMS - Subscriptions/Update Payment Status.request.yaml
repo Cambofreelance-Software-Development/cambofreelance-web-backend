@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/cms/subscriptions/:id/payment-status"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "paymentStatus": "PAID"
+    }
+examples: ./.resources/Update Payment Status.resources/examples
+order: 6000

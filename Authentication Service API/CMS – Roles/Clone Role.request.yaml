@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{base_url}}/cms/roles/:id/clone"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: role-uuid-here
+body:
+  type: text
+  content: |-
+    {
+      "code": "EDITOR_COPY",
+      "name": "Editor (Copy)"
+    }
+order: 6000

@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/cms/tenants/:tenantId/users?search=&status=&page=0&size=20"
+  method: GET
+  headers:
+    Authorization: Bearer {{access_token}}
+    User-Id: "{{user_id}}"
+  queryParams:
+    search: ""
+    status: ""
+    page: "0"
+    size: "20"
+  pathVariables:
+    tenantId: "{{tenant_id}}"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

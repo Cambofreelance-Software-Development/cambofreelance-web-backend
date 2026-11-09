@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{base_url}}/cms/roles/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: role-uuid-here
+body:
+  type: text
+  content: |-
+    {
+      "code": "EDITOR",
+      "name": "Senior Editor",
+      "convention": "Can create, edit and publish articles",
+      "level": 3,
+      "description": "Senior content editor",
+      "permissionIds": ["permission-uuid-1"]
+    }
+order: 4000

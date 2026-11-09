@@ -1,0 +1,12 @@
+$kind: http-request
+name: GET /me/loan-disbursements/:disbursementId
+url: "{{base_url}}/me/loan-disbursements/:disbursementId"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  disbursementId: "{{disbursement_id}}"
+examples: ./.resources/GET -me-loan-disbursements-disbursementId.resources/examples
+order: 3000

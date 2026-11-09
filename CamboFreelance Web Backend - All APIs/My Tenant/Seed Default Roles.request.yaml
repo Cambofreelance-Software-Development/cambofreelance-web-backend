@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/roles/seed-defaults"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+examples: ./.resources/Seed Default Roles.resources/examples
+order: 18000

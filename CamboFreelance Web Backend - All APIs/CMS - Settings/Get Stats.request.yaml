@@ -1,0 +1,5 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/stats"
+method: GET
+examples: ./.resources/Get Stats.resources/examples
+order: 12000

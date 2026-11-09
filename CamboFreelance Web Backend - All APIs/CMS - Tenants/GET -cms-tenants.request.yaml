@@ -1,0 +1,15 @@
+$kind: http-request
+name: GET /cms/tenants
+url: "{{base_url}}/cms/tenants?search=&status=&tenantType=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  search: ""
+  status: ""
+  tenantType: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/GET -cms-tenants.resources/examples
+order: 8000

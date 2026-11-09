@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/article-types/:id"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: type-uuid-here
+order: 4000

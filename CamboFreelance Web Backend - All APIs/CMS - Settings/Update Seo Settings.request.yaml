@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/seo"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Sample Title",
+      "description": "Sample description",
+      "keywords": "sample",
+      "canonicalUrl": "https://example.com",
+      "robots": "sample",
+      "ogTitle": "sample",
+      "ogDescription": "sample",
+      "ogImage": "sample"
+    }
+examples: ./.resources/Update Seo Settings.resources/examples
+order: 5000

@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/cms/subscriptions/:id/auto-renewal"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "key": "value"
+    }
+examples: ./.resources/Update Auto Renewal.resources/examples
+order: 7000

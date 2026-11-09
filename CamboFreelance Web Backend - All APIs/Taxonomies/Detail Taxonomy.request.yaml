@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/api/taxonomies/detail"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "value": "sample"
+    }
+examples: ./.resources/Detail Taxonomy.resources/examples
+order: 3000

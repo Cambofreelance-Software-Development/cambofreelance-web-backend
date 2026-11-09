@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/roles"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sample Name",
+      "description": "Sample description",
+      "permissions": [
+        "users.view",
+        "users.create"
+      ]
+    }
+examples: ./.resources/Create Role.resources/examples
+order: 15000

@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/articles?type=&search=&page=0&size=20"
+method: GET
+queryParams:
+  type: ""
+  search: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/Public List.resources/examples
+order: 1000

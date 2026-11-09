@@ -1,0 +1,11 @@
+$kind: http-request
+name: GET /cms/response-codes/:id
+url: "{{base_url}}/cms/response-codes/:id"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/GET -cms-response-codes-id.resources/examples
+order: 2000

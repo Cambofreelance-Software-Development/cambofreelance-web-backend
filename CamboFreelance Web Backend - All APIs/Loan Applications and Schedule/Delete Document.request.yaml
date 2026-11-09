@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/me/loan-applications/:loanApplicationId/documents/:documentId"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  loanApplicationId: "{{loan_application_id}}"
+  documentId: "{{document_id}}"
+examples: ./.resources/Delete Document.resources/examples
+order: 10000

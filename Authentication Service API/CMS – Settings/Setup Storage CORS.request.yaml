@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/storage/setup-cors?origins=https://cambofreelance.com&origins=http://localhost:3000"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  - key: origins
+    value: https://cambofreelance.com
+  - key: origins
+    value: http://localhost:3000
+order: 10000

@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/cms/roles/:id/status"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: role-uuid-here
+body:
+  type: text
+  content: |-
+    {
+      "status": "ACT"
+    }
+order: 5000

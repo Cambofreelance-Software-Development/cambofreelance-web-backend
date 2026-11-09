@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/me/customers/:customerId/submit"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  customerId: "{{customer_id}}"
+examples: ./.resources/Submit For Verification.resources/examples
+order: 8000

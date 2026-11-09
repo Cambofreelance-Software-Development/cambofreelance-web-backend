@@ -1,0 +1,12 @@
+$kind: http-request
+name: GET /me/payments/:id
+url: "{{base_url}}/me/payments/:id"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/GET -me-payments-id.resources/examples
+order: 3000

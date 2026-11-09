@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/tenants/dashboard"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+examples: ./.resources/Dashboard.resources/examples
+order: 9000

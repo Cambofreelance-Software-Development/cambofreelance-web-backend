@@ -1,0 +1,16 @@
+$kind: http-request
+name: GET /cms/response-codes
+url: "{{base_url}}/cms/response-codes?search=&type=&status=&serviceType=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  search: ""
+  type: ""
+  status: ""
+  serviceType: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/GET -cms-response-codes.resources/examples
+order: 1000

@@ -1,0 +1,31 @@
+$kind: http-request
+url: "{{base_url}}/user/preferences"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+body:
+  type: text
+  content: |-
+    {
+      "theme": "dark",
+      "color": {
+        "primary": "#6366f1",
+        "secondary": "#8b5cf6",
+        "accent": "#06b6d4"
+      },
+      "layout": {
+        "sidebarCollapsed": false,
+        "navStyle": "sidebar",
+        "menuPosition": "left",
+        "compactMode": false
+      },
+      "accessibility": {
+        "fontSize": "medium",
+        "highContrast": false,
+        "reducedMotion": false,
+        "screenReader": false
+      }
+    }
+order: 6000

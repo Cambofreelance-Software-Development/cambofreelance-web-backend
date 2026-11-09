@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{base_url}}/cms/article-types"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "code": "TIPS",
+      "label": "Tips & Tricks",
+      "labelKh": "គន្លឹះ និងល្បិចនានា",
+      "sortOrder": 10
+    }
+order: 2000

@@ -1,0 +1,5 @@
+$kind: http-request
+url: "{{base_url}}/oauth/logout"
+method: POST
+examples: ./.resources/Logout.resources/examples
+order: 5000

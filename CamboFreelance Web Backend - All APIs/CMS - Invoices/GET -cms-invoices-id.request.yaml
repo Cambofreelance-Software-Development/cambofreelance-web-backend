@@ -1,0 +1,11 @@
+$kind: http-request
+name: GET /cms/invoices/:id
+url: "{{base_url}}/cms/invoices/:id"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/GET -cms-invoices-id.resources/examples
+order: 2000

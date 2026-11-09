@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/cms/article-types/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: type-uuid-here
+body:
+  type: text
+  content: |-
+    {
+      "code": "TIPS",
+      "label": "Tips & Tricks (Updated)",
+      "labelKh": "គន្លឹះ និងល្បិចនានា",
+      "sortOrder": 5
+    }
+order: 3000

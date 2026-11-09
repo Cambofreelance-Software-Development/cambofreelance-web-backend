@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/logo"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: /path/to/logo.png
+order: 3000

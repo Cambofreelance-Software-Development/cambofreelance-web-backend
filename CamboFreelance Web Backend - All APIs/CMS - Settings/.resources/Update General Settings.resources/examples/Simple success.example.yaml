@@ -1,0 +1,32 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/cms/settings/general"
+  method: PUT
+  headers:
+    Authorization: Bearer {{access_token}}
+    User-Id: "{{user_id}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "siteName": "sample",
+        "environment": "sample",
+        "defaultLanguage": "sample",
+        "timeZone": "sample",
+        "siteLogo": "sample"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

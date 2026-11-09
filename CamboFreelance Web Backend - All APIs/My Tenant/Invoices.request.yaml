@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/invoices"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+examples: ./.resources/Invoices.resources/examples
+order: 12000

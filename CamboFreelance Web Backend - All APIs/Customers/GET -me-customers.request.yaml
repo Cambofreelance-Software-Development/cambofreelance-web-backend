@@ -1,0 +1,15 @@
+$kind: http-request
+name: GET /me/customers
+url: "{{base_url}}/me/customers?search=&onboardingStatus=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+queryParams:
+  search: ""
+  onboardingStatus: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/GET -me-customers.resources/examples
+order: 2000

@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/logo"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: []
+examples: ./.resources/Upload Logo.resources/examples
+order: 3000

@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{base_url}}/users/:userId"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  userId: user-uuid-here
+body:
+  type: text
+  content: |-
+    {
+      "username": "jane_doe_updated",
+      "email": "jane.updated@example.com",
+      "phoneNumber": "+85598765432",
+      "userType": "ADMIN",
+      "roleIds": ["role-uuid-here"]
+    }
+order: 3000

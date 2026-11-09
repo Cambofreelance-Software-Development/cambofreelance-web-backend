@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/storage"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "provider": "google",
+      "bucket": "sample",
+      "accessKey": "sample",
+      "secretKey": "sample",
+      "endpoint": "sample",
+      "region": "sample",
+      "publicUrl": "https://example.com"
+    }
+examples: ./.resources/Update Storage Settings.resources/examples
+order: 9000

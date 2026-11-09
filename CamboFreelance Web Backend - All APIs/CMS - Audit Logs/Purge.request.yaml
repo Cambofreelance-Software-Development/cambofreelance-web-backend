@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/cms/audit-logs/purge?days=90"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  days: "90"
+examples: ./.resources/Purge.resources/examples
+order: 2000

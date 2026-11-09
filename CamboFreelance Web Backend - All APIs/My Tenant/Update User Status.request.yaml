@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/users/:userId/status"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  userId: "{{user_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "status": "ACTIVE"
+    }
+examples: ./.resources/Update User Status.resources/examples
+order: 8000

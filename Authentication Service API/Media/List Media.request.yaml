@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/media?mediaType=IMAGE&search=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  - key: mediaType
+    value: IMAGE
+    disabled: true
+    description: IMAGE | VIDEO | DOCUMENT
+  - key: search
+    value: ""
+    disabled: true
+  - key: page
+    value: "0"
+  - key: size
+    value: "20"
+order: 3000

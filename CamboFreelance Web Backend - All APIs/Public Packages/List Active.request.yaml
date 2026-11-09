@@ -1,0 +1,5 @@
+$kind: http-request
+url: "{{base_url}}/packages/active"
+method: GET
+examples: ./.resources/List Active.resources/examples
+order: 1000

@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/seo"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+examples: ./.resources/Get Seo Settings.resources/examples
+order: 4000

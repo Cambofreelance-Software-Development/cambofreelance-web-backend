@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/subscription/history"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+examples: ./.resources/Subscription History.resources/examples
+order: 11000

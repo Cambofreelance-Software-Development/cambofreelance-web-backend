@@ -1,0 +1,12 @@
+$kind: http-request
+name: GET /me/loan-applications/:loanApplicationId
+url: "{{base_url}}/me/loan-applications/:loanApplicationId"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  loanApplicationId: "{{loan_application_id}}"
+examples: ./.resources/GET -me-loan-applications-loanApplicationId.resources/examples
+order: 3000

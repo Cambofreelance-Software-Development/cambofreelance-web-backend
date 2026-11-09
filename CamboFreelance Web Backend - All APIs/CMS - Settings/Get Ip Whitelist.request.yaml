@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/ip-whitelist"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+examples: ./.resources/Get Ip Whitelist.resources/examples
+order: 14000

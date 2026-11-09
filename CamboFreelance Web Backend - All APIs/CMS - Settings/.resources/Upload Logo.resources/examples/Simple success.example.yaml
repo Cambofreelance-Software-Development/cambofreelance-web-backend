@@ -1,0 +1,29 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/cms/settings/logo?file="
+  method: POST
+  headers:
+    Authorization: Bearer {{access_token}}
+    User-Id: "{{user_id}}"
+  queryParams:
+    file: ""
+  body:
+    type: formdata
+    content:
+      - type: file
+        key: file
+        src: []
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

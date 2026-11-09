@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{base_url}}/me/loan-applications/:loanApplicationId/schedule/installments/:installmentId"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  loanApplicationId: "{{loan_application_id}}"
+  installmentId: "{{installment_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "installmentStatus": "ACTIVE",
+      "paidAmount": 100.0,
+      "paidDate": "2026-06-19",
+      "notes": "Sample notes"
+    }
+examples: ./.resources/Update Installment.resources/examples
+order: 15000

@@ -1,0 +1,36 @@
+$kind: http-request
+name: PUT /cms/articles/:id
+url: "{{base_url}}/cms/articles/:id"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "title": "Sample Title",
+      "content": "Sample content",
+      "excerpt": "sample",
+      "titleKh": "sample",
+      "contentKh": "sample",
+      "excerptKh": "sample",
+      "type": "GENERAL",
+      "workflowStatus": "DRAFT",
+      "featuredImageId": "{{featured_image_id}}",
+      "attachmentIds": [
+        "{{attachment_id}}"
+      ],
+      "authorId": "{{author_id}}",
+      "authorName": "sample",
+      "tags": [
+        "sample"
+      ],
+      "publishedAt": "sample",
+      "sortOrder": 1
+    }
+examples: ./.resources/PUT -cms-articles-id.resources/examples
+order: 2000

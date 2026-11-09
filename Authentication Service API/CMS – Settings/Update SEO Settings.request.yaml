@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/seo"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "title": "CamboFreelance – Freelance Platform for Cambodia",
+      "description": "Find and hire top Cambodian freelancers for any project.",
+      "keywords": "freelance, cambodia, hire, developer",
+      "canonicalUrl": "https://cambofreelance.com",
+      "robots": "index, follow",
+      "ogTitle": "CamboFreelance",
+      "ogDescription": "Top freelance platform in Cambodia",
+      "ogImage": "https://cambofreelance.com/og-image.png"
+    }
+order: 5000

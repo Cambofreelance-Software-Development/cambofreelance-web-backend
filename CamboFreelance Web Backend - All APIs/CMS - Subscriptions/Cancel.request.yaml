@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/cms/subscriptions/:id/cancel"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/Cancel.resources/examples
+order: 8000

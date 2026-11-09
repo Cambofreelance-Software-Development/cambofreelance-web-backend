@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/cms/roles/:id/status"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "key": "value"
+    }
+examples: ./.resources/Toggle Status.resources/examples
+order: 6000

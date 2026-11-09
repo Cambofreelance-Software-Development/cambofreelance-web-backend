@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/users/:userId"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  userId: "{{user_id}}"
+examples: ./.resources/Assign User.resources/examples
+order: 4000

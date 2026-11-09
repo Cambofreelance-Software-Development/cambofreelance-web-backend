@@ -1,0 +1,18 @@
+$kind: http-request
+name: GET /cms/audit-logs
+url: "{{base_url}}/cms/audit-logs?userId=&action=&module=&search=&dateFrom=&dateTo=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  userId: ""
+  action: ""
+  module: ""
+  search: ""
+  dateFrom: ""
+  dateTo: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/GET -cms-audit-logs.resources/examples
+order: 1000

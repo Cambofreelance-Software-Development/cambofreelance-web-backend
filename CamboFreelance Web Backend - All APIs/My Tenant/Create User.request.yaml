@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/users"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "admin@cambofreelance.com",
+      "email": "john@example.com",
+      "phoneNumber": "+85512345678",
+      "password": "Password@123"
+    }
+examples: ./.resources/Create User.resources/examples
+order: 6000

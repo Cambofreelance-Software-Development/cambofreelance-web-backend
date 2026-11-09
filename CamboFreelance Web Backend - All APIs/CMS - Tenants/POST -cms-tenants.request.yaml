@@ -1,0 +1,27 @@
+$kind: http-request
+name: POST /cms/tenants
+url: "{{base_url}}/cms/tenants"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAMPLE_CODE",
+      "name": "Sample Name",
+      "tenantType": "GENERAL",
+      "description": "Sample description",
+      "logoUrl": "https://example.com/logo.png",
+      "primaryColor": "sample",
+      "secondaryColor": "sample",
+      "companyName": "sample",
+      "companyAddress": "sample",
+      "companyEmail": "john@example.com",
+      "companyPhone": "+85512345678",
+      "website": "https://example.com"
+    }
+examples: ./.resources/POST -cms-tenants.resources/examples
+order: 12000

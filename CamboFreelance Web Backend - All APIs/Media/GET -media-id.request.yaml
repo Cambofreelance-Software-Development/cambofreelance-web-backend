@@ -1,0 +1,11 @@
+$kind: http-request
+name: GET /media/:id
+url: "{{base_url}}/media/:id"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/GET -media-id.resources/examples
+order: 4000

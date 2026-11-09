@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{base_url}}/cms/tenants/:tenantId/subscriptions/downgrade"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  tenantId: "{{tenant_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "packageId": "{{package_id}}",
+      "billingCycle": "sample",
+      "amount": 1000.0,
+      "currency": "sample",
+      "autoRenewal": true,
+      "startDate": "2026-06-19"
+    }
+examples: ./.resources/Downgrade.resources/examples
+order: 7000

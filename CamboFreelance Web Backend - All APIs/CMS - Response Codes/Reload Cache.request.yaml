@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/cms/response-codes/reload-cache"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+examples: ./.resources/Reload Cache.resources/examples
+order: 6000

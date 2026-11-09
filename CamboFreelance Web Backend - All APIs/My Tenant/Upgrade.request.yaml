@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/subscription/upgrade"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "packageId": "{{package_id}}",
+      "billingCycle": "sample",
+      "amount": 1000.0,
+      "currency": "sample",
+      "autoRenewal": true,
+      "startDate": "2026-06-19"
+    }
+examples: ./.resources/Upgrade.resources/examples
+order: 10000

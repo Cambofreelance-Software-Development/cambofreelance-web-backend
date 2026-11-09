@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/users/:userId/status"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  userId: user-uuid-here
+body:
+  type: text
+  content: |-
+    {
+      "status": "ACT"
+    }
+order: 4000

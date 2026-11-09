@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/cms/response-codes"
+  method: POST
+  headers:
+    Authorization: Bearer {{access_token}}
+    User-Id: "{{user_id}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SAMPLE_CODE",
+        "description": "Sample description",
+        "httpStatus": "ACTIVE",
+        "key": "sample",
+        "type": "GENERAL",
+        "messageEn": "sample",
+        "messageKm": "sample",
+        "messageCn": "sample",
+        "serviceType": "GENERAL"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

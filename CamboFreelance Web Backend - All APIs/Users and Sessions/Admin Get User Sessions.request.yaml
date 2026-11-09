@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/cms/users/:userId/sessions"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  userId: "{{user_id}}"
+examples: ./.resources/Admin Get User Sessions.resources/examples
+order: 16000

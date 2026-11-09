@@ -1,0 +1,25 @@
+$kind: http-request
+name: PUT /cms/roles/:id
+url: "{{base_url}}/cms/roles/:id"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAMPLE_CODE",
+      "name": "Sample Name",
+      "convention": "sample",
+      "level": 1,
+      "description": "Sample description",
+      "permissionIds": [
+        "{{permission_id}}"
+      ]
+    }
+examples: ./.resources/PUT -cms-roles-id.resources/examples
+order: 4000

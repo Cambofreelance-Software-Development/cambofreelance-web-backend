@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/ip-whitelist"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "enabled": true,
+      "rules": [
+        "sample"
+      ]
+    }
+examples: ./.resources/Update Ip Whitelist.resources/examples
+order: 15000

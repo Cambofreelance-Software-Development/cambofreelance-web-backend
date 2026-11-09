@@ -1,0 +1,21 @@
+$kind: http-request
+name: PUT /cms/article-types/:id
+url: "{{base_url}}/cms/article-types/:id"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAMPLE_CODE",
+      "label": "sample",
+      "labelKh": "sample",
+      "sortOrder": 1
+    }
+examples: ./.resources/PUT -cms-article-types-id.resources/examples
+order: 3000

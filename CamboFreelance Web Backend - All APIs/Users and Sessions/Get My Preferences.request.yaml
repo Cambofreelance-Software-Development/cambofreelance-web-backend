@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/user/preferences"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+examples: ./.resources/Get My Preferences.resources/examples
+order: 11000

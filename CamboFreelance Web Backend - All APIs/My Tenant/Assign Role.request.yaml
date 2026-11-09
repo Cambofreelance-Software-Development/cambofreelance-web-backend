@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/me/tenant/users/:userId/roles/:roleId"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  userId: "{{user_id}}"
+  roleId: "{{role_id}}"
+examples: ./.resources/Assign Role.resources/examples
+order: 19000

@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/storage"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "provider": "MINIO",
+      "bucket": "cambofreelance-media",
+      "accessKey": "minioadmin",
+      "secretKey": "minioadmin",
+      "endpoint": "http://localhost:9000",
+      "region": "ap-southeast-1",
+      "publicUrl": "http://localhost:9000/cambofreelance-media"
+    }
+order: 9000

@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{base_url}}/users/:userId"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  userId: "{{user_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "username": "admin@cambofreelance.com",
+      "email": "john@example.com",
+      "phoneNumber": "+85512345678",
+      "password": "Password@123",
+      "userType": "GENERAL",
+      "roleIds": [
+        "{{role_id}}"
+      ],
+      "tenantId": "{{tenant_id}}"
+    }
+examples: ./.resources/Update User.resources/examples
+order: 7000

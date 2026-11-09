@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/media/presign"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fileName": "document.pdf",
+      "mimeType": "application/pdf",
+      "fileSize": 1
+    }
+examples: ./.resources/Presign.resources/examples
+order: 1000

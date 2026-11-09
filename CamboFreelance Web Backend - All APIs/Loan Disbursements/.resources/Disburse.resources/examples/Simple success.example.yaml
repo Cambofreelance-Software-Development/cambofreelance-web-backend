@@ -1,0 +1,32 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/me/loan-disbursements/:disbursementId/disburse"
+  method: POST
+  headers:
+    Authorization: Bearer {{access_token}}
+    User-Id: "{{user_id}}"
+    Tenant-Id: "{{tenant_id}}"
+    Content-Type: application/json
+  pathVariables:
+    disbursementId: "{{disbursement_id}}"
+  body:
+    type: json
+    content: |-
+      {
+        "disbursementDate": "2026-06-19",
+        "notes": "Sample notes"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

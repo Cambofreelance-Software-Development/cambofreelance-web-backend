@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/cms/users/:userId/sessions/:sessionId"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  userId: "{{user_id}}"
+  sessionId: "{{session_id}}"
+examples: ./.resources/Admin Revoke Session.resources/examples
+order: 17000

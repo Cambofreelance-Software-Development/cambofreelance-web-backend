@@ -1,0 +1,29 @@
+$kind: http-request
+name: POST /me/customers
+url: "{{base_url}}/me/customers"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "gender": "sample",
+      "dateOfBirth": "2026-06-19",
+      "phoneNumber": "+85512345678",
+      "alternatePhone": "+85512345678",
+      "identityCardNumber": 1,
+      "address": "Phnom Penh",
+      "occupation": "sample",
+      "employerName": "sample",
+      "monthlyIncome": 100.5,
+      "guarantorName": "sample",
+      "guarantorPhone": "+85512345678"
+    }
+examples: ./.resources/POST -me-customers.resources/examples
+order: 1000

@@ -1,0 +1,28 @@
+$kind: http-request
+name: PUT /me/loan-applications/:loanApplicationId
+url: "{{base_url}}/me/loan-applications/:loanApplicationId"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  loanApplicationId: "{{loan_application_id}}"
+body:
+  type: json
+  content: |-
+    {
+      "customerId": "{{customer_id}}",
+      "loanAmount": 100.0,
+      "currency": "sample",
+      "tenorValue": 1,
+      "tenorUnit": "sample",
+      "paymentType": "GENERAL",
+      "interestRate": 1.5,
+      "serviceFeeRate": 100.0,
+      "firstPaymentDate": "2026-06-19",
+      "purpose": "sample"
+    }
+examples: ./.resources/PUT -me-loan-applications-loanApplicationId.resources/examples
+order: 4000

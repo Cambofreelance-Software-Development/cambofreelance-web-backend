@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/cms/tenants/:tenantId/users/:userId"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  tenantId: "{{tenant_id}}"
+  userId: "{{user_id}}"
+examples: ./.resources/Remove User.resources/examples
+order: 20000

@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/cms/articles?type=&workflowStatus=&authorId=&search=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  type: ""
+  workflowStatus: ""
+  authorId: ""
+  search: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/Admin List.resources/examples
+order: 6000

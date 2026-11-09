@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/cms/tenants/:id/approve"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/Approve.resources/examples
+order: 16000

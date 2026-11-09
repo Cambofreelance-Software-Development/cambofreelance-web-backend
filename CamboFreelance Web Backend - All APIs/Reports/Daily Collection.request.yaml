@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/me/reports/daily-collection?dateFrom=&dateTo="
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+queryParams:
+  dateFrom: ""
+  dateTo: ""
+examples: ./.resources/Daily Collection.resources/examples
+order: 5000

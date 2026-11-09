@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/cms/response-codes/reload-cache"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+order: 6000

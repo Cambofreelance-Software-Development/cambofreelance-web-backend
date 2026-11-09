@@ -1,0 +1,14 @@
+$kind: http-request
+name: GET /cms/subscription-packages
+url: "{{base_url}}/cms/subscription-packages?search=&status=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  search: ""
+  status: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/GET -cms-subscription-packages.resources/examples
+order: 1000

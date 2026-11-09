@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{base_url}}/me/collections/:id/promises"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "promiseDate": "2026-06-19",
+      "promiseAmount": 100.0,
+      "notes": "Sample notes"
+    }
+examples: ./.resources/Add Promise.resources/examples
+order: 10000

@@ -1,0 +1,12 @@
+$kind: http-request
+name: DELETE /me/media-library/:id
+url: "{{base_url}}/me/media-library/:id"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/DELETE -me-media-library-id.resources/examples
+order: 5000

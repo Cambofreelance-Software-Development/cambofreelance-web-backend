@@ -1,0 +1,23 @@
+$kind: http-request
+name: PUT /me/media-library/:id
+url: "{{base_url}}/me/media-library/:id"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "folder": "sample",
+      "title": "Sample Title",
+      "altText": "sample",
+      "description": "Sample description",
+      "tags": "sample"
+    }
+examples: ./.resources/PUT -me-media-library-id.resources/examples
+order: 4000

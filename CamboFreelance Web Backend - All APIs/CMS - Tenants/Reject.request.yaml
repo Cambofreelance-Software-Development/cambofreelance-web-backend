@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/cms/tenants/:id/reject"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "reason": "Missing required document"
+    }
+examples: ./.resources/Reject.resources/examples
+order: 17000

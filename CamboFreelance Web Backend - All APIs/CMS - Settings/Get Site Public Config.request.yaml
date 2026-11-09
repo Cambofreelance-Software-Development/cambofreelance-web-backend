@@ -1,0 +1,5 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/public"
+method: GET
+examples: ./.resources/Get Site Public Config.resources/examples
+order: 11000

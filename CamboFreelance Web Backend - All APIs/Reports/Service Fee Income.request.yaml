@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/me/reports/service-fee-income?year="
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+queryParams:
+  year: ""
+examples: ./.resources/Service Fee Income.resources/examples
+order: 9000

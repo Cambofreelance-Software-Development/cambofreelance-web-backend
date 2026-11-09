@@ -1,0 +1,24 @@
+$kind: http-request
+name: POST /cms/response-codes
+url: "{{base_url}}/cms/response-codes"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAMPLE_CODE",
+      "description": "Sample description",
+      "httpStatus": "ACTIVE",
+      "key": "sample",
+      "type": "GENERAL",
+      "messageEn": "sample",
+      "messageKm": "sample",
+      "messageCn": "sample",
+      "serviceType": "GENERAL"
+    }
+examples: ./.resources/POST -cms-response-codes.resources/examples
+order: 3000

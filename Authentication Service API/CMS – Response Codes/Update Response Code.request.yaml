@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{base_url}}/cms/response-codes/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+pathVariables:
+  id: "1"
+body:
+  type: text
+  content: |-
+    {
+      "code": "SUC-00099",
+      "description": "Updated description",
+      "httpStatus": "200",
+      "key": "MESSAGE",
+      "type": "SUC",
+      "messageEn": "Updated success message",
+      "messageKm": "សារជោគជ័យធ្វើបច្ចុប្បន្នភាព",
+      "messageCn": "更新成功消息",
+      "serviceType": "ALL"
+    }
+order: 4000

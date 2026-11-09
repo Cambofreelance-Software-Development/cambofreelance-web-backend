@@ -1,0 +1,7 @@
+$kind: http-request
+name: View/Stream File (public)
+url: "{{base_url}}/media/:id/view"
+method: GET
+pathVariables:
+  id: media-uuid-here
+order: 5000

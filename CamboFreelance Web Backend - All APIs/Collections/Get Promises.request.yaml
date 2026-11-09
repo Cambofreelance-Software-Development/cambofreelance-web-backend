@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/me/collections/:id/promises"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/Get Promises.resources/examples
+order: 9000

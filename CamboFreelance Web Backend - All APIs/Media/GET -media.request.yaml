@@ -1,0 +1,14 @@
+$kind: http-request
+name: GET /media
+url: "{{base_url}}/media?mediaType=&search=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  mediaType: ""
+  search: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/GET -media.resources/examples
+order: 3000

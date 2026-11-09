@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/oauth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "admin@cambofreelance.com",
+      "phoneNumber": "+85512345678",
+      "email": "john@example.com",
+      "password": "Password@123",
+      "confirmPassword": "Password@123"
+    }
+examples: ./.resources/Register.resources/examples
+order: 2000

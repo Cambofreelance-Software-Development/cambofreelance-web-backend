@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/general"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "siteName": "CamboFreelance",
+      "environment": "DEV",
+      "defaultLanguage": "EN",
+      "timeZone": "Asia/Phnom_Penh",
+      "siteLogo": null
+    }
+order: 2000

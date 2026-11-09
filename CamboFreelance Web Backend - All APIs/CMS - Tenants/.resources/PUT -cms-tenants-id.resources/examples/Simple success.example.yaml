@@ -1,0 +1,40 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/cms/tenants/:id"
+  method: PUT
+  headers:
+    Authorization: Bearer {{access_token}}
+    User-Id: "{{user_id}}"
+    Content-Type: application/json
+  pathVariables:
+    id: "{{id}}"
+  body:
+    type: json
+    content: |-
+      {
+        "name": "Sample Name",
+        "tenantType": "GENERAL",
+        "description": "Sample description",
+        "logoUrl": "https://example.com/logo.png",
+        "primaryColor": "sample",
+        "secondaryColor": "sample",
+        "companyName": "sample",
+        "companyAddress": "sample",
+        "companyEmail": "john@example.com",
+        "companyPhone": "+85512345678",
+        "website": "https://example.com"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "code": "SUCCESS",
+        "message": "Success",
+        "data": {}
+      }
+order: 1000

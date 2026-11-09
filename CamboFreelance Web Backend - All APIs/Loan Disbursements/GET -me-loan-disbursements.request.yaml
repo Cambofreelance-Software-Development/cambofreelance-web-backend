@@ -1,0 +1,15 @@
+$kind: http-request
+name: GET /me/loan-disbursements
+url: "{{base_url}}/me/loan-disbursements?search=&disbursementStatus=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+queryParams:
+  search: ""
+  disbursementStatus: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/GET -me-loan-disbursements.resources/examples
+order: 2000

@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/articles/slug/:slug"
+method: GET
+pathVariables:
+  slug: my-first-blog-post
+order: 3000

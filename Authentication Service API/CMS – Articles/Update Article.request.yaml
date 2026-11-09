@@ -1,0 +1,29 @@
+$kind: http-request
+url: "{{base_url}}/cms/articles/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: article-uuid-here
+body:
+  type: text
+  content: |-
+    {
+      "title": "Updated: Getting Started with Spring Boot",
+      "content": "<p>Updated content...</p>",
+      "excerpt": "Updated excerpt.",
+      "titleKh": "ធ្វើបច្ចុប្បន្នភាព: ការចាប់ផ្ដើមជាមួយ Spring Boot",
+      "contentKh": "<p>ខ្លឹមសារធ្វើបច្ចុប្បន្នភាព...</p>",
+      "excerptKh": "ការស្ដែងខ្លីធ្វើបច្ចុប្បន្នភាព",
+      "type": "BLOGS",
+      "featuredImageId": null,
+      "attachmentIds": [],
+      "authorId": null,
+      "authorName": "John Doe",
+      "tags": ["spring", "java"],
+      "publishedAt": null,
+      "sortOrder": 1
+    }
+order: 4000

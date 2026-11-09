@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{base_url}}/me/reports/outstanding-balance"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+examples: ./.resources/Outstanding Balance.resources/examples
+order: 10000

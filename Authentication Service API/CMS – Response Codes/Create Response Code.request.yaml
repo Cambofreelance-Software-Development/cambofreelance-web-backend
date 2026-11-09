@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{base_url}}/cms/response-codes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "code": "SUC-00099",
+      "description": "Custom success response",
+      "httpStatus": "200",
+      "key": "MESSAGE",
+      "type": "SUC",
+      "messageEn": "Operation completed successfully",
+      "messageKm": "ប្រតិបត្តិការបានបញ្ចប់ដោយជោគជ័យ",
+      "messageCn": "操作成功完成",
+      "serviceType": "ALL"
+    }
+order: 3000

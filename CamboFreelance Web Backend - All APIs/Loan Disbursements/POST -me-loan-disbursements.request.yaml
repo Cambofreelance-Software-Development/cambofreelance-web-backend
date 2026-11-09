@@ -1,0 +1,19 @@
+$kind: http-request
+name: POST /me/loan-disbursements
+url: "{{base_url}}/me/loan-disbursements"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "loanApplicationId": "{{loan_application_id}}",
+      "disbursementAmount": 100.0,
+      "notes": "Sample notes"
+    }
+examples: ./.resources/POST -me-loan-disbursements.resources/examples
+order: 1000

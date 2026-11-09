@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/cms/subscriptions?status=&paymentStatus=&tenantId=&page=0&size=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+queryParams:
+  status: ""
+  paymentStatus: ""
+  tenantId: ""
+  page: "0"
+  size: "20"
+examples: ./.resources/List All.resources/examples
+order: 2000

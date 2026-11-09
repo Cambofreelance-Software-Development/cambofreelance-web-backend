@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{base_url}}/me/collections/:id/notes"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+  Content-Type: application/json
+pathVariables:
+  id: "{{id}}"
+body:
+  type: json
+  content: |-
+    {
+      "noteType": "GENERAL",
+      "content": "Sample content",
+      "contactPerson": "sample",
+      "contactResult": "sample"
+    }
+examples: ./.resources/Add Note.resources/examples
+order: 8000

@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/me/customers/:customerId/documents/:documentId"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Tenant-Id: "{{tenant_id}}"
+pathVariables:
+  customerId: "{{customer_id}}"
+  documentId: "{{document_id}}"
+examples: ./.resources/Delete Document.resources/examples
+order: 7000

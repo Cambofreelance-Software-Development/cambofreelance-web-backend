@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/cms/articles/:id"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+pathVariables:
+  id: "{{id}}"
+examples: ./.resources/Admin Get By Id.resources/examples
+order: 7000

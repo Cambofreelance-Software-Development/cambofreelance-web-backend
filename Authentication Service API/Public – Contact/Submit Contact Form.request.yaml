@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/contact"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "fullName": "Dinsaren Khun",
+      "email": "dinsarenkh@gmail.com",
+      "subject": "Partnership Inquiry",
+      "message": "Hello, I would like to discuss a potential partnership opportunity with your team."
+    }
+order: 1000

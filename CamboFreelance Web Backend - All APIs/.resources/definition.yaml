@@ -1,0 +1,21 @@
+$kind: collection
+description: Generated from Spring MVC controllers. Each request includes a simple sample body when a request DTO is present and a generic MessageResponse success example. Set collection variables before running protected endpoints.
+variables:
+  base_url: http://localhost:26022
+  access_token: ""
+  refresh_token: ""
+  user_id: ""
+  tenant_id: ""
+  device_id: web-browser-001
+  id: 00000000-0000-0000-0000-000000000001
+  customer_id: 00000000-0000-0000-0000-000000000002
+  loan_application_id: 00000000-0000-0000-0000-000000000003
+  document_id: 00000000-0000-0000-0000-000000000004
+  role_id: 00000000-0000-0000-0000-000000000005
+  media_id: 00000000-0000-0000-0000-000000000007
+auth:
+  - id: fdb9382d-683f-4d03-be02-dee3419fc86b
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{access_token}}"

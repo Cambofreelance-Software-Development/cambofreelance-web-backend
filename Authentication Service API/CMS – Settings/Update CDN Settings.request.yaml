@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{base_url}}/cms/settings/cdn"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+body:
+  type: text
+  content: |-
+    {
+      "enabled": true,
+      "provider": "cloudflare",
+      "baseUrl": "https://cdn.cambofreelance.com",
+      "customDomain": "media.cambofreelance.com"
+    }
+order: 7000

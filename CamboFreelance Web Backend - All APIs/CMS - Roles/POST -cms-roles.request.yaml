@@ -1,0 +1,23 @@
+$kind: http-request
+name: POST /cms/roles
+url: "{{base_url}}/cms/roles"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  User-Id: "{{user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAMPLE_CODE",
+      "name": "Sample Name",
+      "convention": "sample",
+      "level": 1,
+      "description": "Sample description",
+      "permissionIds": [
+        "{{permission_id}}"
+      ]
+    }
+examples: ./.resources/POST -cms-roles.resources/examples
+order: 3000
