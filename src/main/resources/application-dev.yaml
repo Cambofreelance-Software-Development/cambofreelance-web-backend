@@ -58,11 +58,11 @@ spring:
             enable: true
   data:
     redis:
-      host: localhost
+      host: 194.233.91.140
       port: 6379
       timeout: 30000
       user: default
-      #      password: CF@2025
+      password: CF@2025
       ssl:
         enabled: false
       repositories:
