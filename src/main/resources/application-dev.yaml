@@ -59,10 +59,10 @@ spring:
   data:
     redis:
       host: 194.233.91.140
-      port: 6379
+      port: 16379
       timeout: 30000
       user: default
-      password: CF@2025
+#      password: CF@2025
       ssl:
         enabled: false
       repositories:
